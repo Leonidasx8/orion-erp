@@ -1,6 +1,6 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { db } from '@/lib/db/client';
 import { tenants, tenantMembers, platformAuditLog, seriesDocumentos } from '@/lib/db/schema';
@@ -79,8 +79,12 @@ export async function crearTenant(input: TenantWizardInput) {
       tenantId: t.id,
       userId: newUser.id,
       rol: 'superadmin',
-      activo: false, // se activa cuando acepta la invitación
+      estado: 'pendiente', // se activa cuando acepta la invitación
+      invitadoPor: user.id,
     });
+
+    // Roles base: Superadmin, Comercial, Facturación + sus permisos
+    await tx.execute(sql`SELECT seed_roles_base_para_tenant(${t.id}, ${user.id})`);
 
     // Audit log
     await tx.insert(platformAuditLog).values({

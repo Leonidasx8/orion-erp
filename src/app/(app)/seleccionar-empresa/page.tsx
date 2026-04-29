@@ -22,7 +22,7 @@ export default async function SeleccionarEmpresaPage() {
     .where(
       and(
         eq(tenantMembers.userId, user.id),
-        eq(tenantMembers.activo, true),
+        eq(tenantMembers.estado, 'activo'),
         eq(tenants.estado, 'activo')
       )
     );

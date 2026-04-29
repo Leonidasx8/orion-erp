@@ -100,9 +100,7 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
                 <span className="font-mono text-xs text-muted-foreground">{m.userId}</span>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">{m.rol}</Badge>
-                  <Badge variant={m.activo ? 'default' : 'outline'}>
-                    {m.activo ? 'activo' : 'pendiente'}
-                  </Badge>
+                  <Badge variant={m.estado === 'activo' ? 'default' : 'outline'}>{m.estado}</Badge>
                 </div>
               </li>
             ))}

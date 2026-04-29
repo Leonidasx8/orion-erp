@@ -15,7 +15,7 @@ export async function userBelongsToTenant(
         eq(tenants.slug, slug),
         eq(tenantMembers.userId, userId),
         eq(tenants.estado, 'activo'),
-        eq(tenantMembers.activo, true)
+        eq(tenantMembers.estado, 'activo')
       )
     )
     .limit(1);

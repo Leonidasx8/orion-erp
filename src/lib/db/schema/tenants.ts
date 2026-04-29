@@ -75,9 +75,11 @@ export const tenantMembers = pgTable('tenant_members', {
     .references(() => tenants.id, { onDelete: 'cascade' }),
   userId: uuid('user_id').notNull(),
   rol: text('rol').notNull().default('comercial'),
-  activo: boolean('activo').notNull().default(true),
+  estado: text('estado').notNull().default('activo'),
+  invitadoPor: uuid('invitado_por'),
   invitedAt: timestamptz('invited_at').notNull().defaultNow(),
   joinedAt: timestamptz('joined_at'),
+  ultimoLoginAt: timestamptz('ultimo_login_at'),
 });
 
 export type Tenant = typeof tenants.$inferSelect;
