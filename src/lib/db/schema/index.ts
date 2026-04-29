@@ -3,3 +3,7 @@ export * from './series-documentos';
 export * from './roles';
 export * from './permisos';
 export * from './audit-permisos';
+export * from './clientes';
+export * from './direcciones-cliente';
+export * from './contactos-cliente';
+export * from './validaciones-documento';
