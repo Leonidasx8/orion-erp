@@ -1,0 +1,51 @@
+{
+  "_comment": "Configuración MCP para Antigravity. Reemplazá los placeholders <...> con tus credenciales reales antes de usar. Este archivo NO se commitea con tokens reales — usá variables de entorno o gh secret.",
+
+  "mcpServers": {
+    "supabase-local": {
+      "_comment": "Supabase local en Docker. Read-write durante desarrollo.",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+      ]
+    },
+
+    "supabase-staging": {
+      "_comment": "Supabase staging en remoto. Read-only para evitar accidentes.",
+      "serverUrl": "https://mcp.supabase.com/mcp?project_ref=<STAGING_PROJECT_REF>&read_only=true&features=database,docs,functions",
+      "headers": {}
+    },
+
+    "github": {
+      "_comment": "GitHub MCP para crear PRs, leer issues. Reemplazar el PAT.",
+      "serverUrl": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer <GITHUB_PAT_FINE_GRAINED>"
+      }
+    },
+
+    "context7": {
+      "_comment": "Documentación actualizada de librerías. Sin auth requerida.",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+
+    "playwright": {
+      "_comment": "Browser automation para testing y scraping puntual.",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp"]
+    },
+
+    "filesystem": {
+      "_comment": "Acceso a archivos del proyecto. Cambiar la ruta a /Users/<tu-user>/dev/orion-erp",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/<TU_USER_MAC>/dev/orion-erp"
+      ]
+    }
+  }
+}

@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+build
+dist
+coverage
+.vercel
+public
+src/lib/database.types.ts
+*.lock
+*.log
+pnpm-lock.yaml
+supabase/.branches
+supabase/.temp

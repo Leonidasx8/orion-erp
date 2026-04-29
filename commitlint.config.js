@@ -1,0 +1,52 @@
+/** @type {import('@commitlint/types').UserConfig} */
+module.exports = {
+  extends: ['@commitlint/config-conventional'],
+  rules: {
+    'type-enum': [
+      2,
+      'always',
+      [
+        'feat',
+        'fix',
+        'docs',
+        'style',
+        'refactor',
+        'perf',
+        'test',
+        'chore',
+        'revert',
+        'build',
+        'ci',
+      ],
+    ],
+    'scope-enum': [
+      2,
+      'always',
+      [
+        'auth',
+        'tenants',
+        'clientes',
+        'productos',
+        'cotizaciones',
+        'ordenes',
+        'kardex',
+        'guias',
+        'facturas',
+        'credito',
+        'reportes',
+        'admin',
+        'sunat',
+        'pdf',
+        'db',
+        'ui',
+        'infra',
+        'deps',
+        'adr',
+        'config',
+        'seed',
+      ],
+    ],
+    'subject-case': [0], // permitir mayúsculas en términos como SUNAT, IGV
+    'header-max-length': [2, 'always', 100],
+  },
+};
