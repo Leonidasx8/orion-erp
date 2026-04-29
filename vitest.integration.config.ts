@@ -6,7 +6,7 @@ export default defineConfig({
     include: ['tests/integration/**/*.test.ts'],
     environment: 'node',
     // Tests de integración corren secuencialmente para evitar conflictos de DB
-    singleThread: true,
+    maxWorkers: 1,
     // Necesita Supabase local corriendo (pnpm db:start)
     setupFiles: ['tests/integration/setup.ts'],
   },
