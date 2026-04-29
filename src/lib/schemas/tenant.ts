@@ -40,7 +40,7 @@ export const TenantStep4Schema = z.object({
       z.object({
         tipoDocumento: z.enum(['01', '03', '07', '08', '09', '31']),
         serie: z.string().regex(/^[FBT][0-9]{3}$/, { message: 'Ej: F001, B001, T001' }),
-        correlativoInicial: z.coerce.number().int().nonnegative().default(0),
+        correlativoInicial: z.number().int().nonnegative(),
       })
     )
     .min(1, 'Debe agregar al menos una serie'),
