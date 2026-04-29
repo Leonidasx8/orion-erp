@@ -1,7 +1,16 @@
 # KICKOFF — Reunión Día 1 con Lucas
 
 > Guion estructurado para la primera reunión oficial del proyecto.
-> **Duración: 90 minutos.** Modalidad: presencial o videollamada (Google Meet recomendado para grabar).
+> **Duración: 105 minutos** (90 originales + 15 min de decisiones de producto que el
+> plan reveló como críticas). Modalidad: presencial o videollamada (Google Meet
+> recomendado para grabar).
+>
+> **Documentos a tener abiertos durante la reunión**:
+>
+> - `docs/KICKOFF-CHECKLIST-LUCAS.md` (Google Doc compartido) — formulario completo, pantalla compartida
+> - `docs/IMPLEMENTATION-PLAN.md` — para mostrar roadmap si pregunta
+> - `docs/PATTERNS-FROM-REFERENCES.md` — para mostrar investigación si pregunta
+> - Tu IDE con `pnpm dev` corriendo (demo del setup)
 
 ## Objetivo
 
@@ -17,13 +26,17 @@ Al finalizar esta reunión:
 
 ## Antes de la reunión (Dignita)
 
-- [ ] Enviar el Checklist en Google Doc 48h antes
+- [ ] Enviar **`docs/KICKOFF-CHECKLIST-LUCAS.md`** convertido a Google Doc 48h antes
+  - Es el formulario completo con TODAS las preguntas (12 secciones, ~60 ítems)
+  - Lucas debe pre-completar lo que pueda; en la reunión cerramos lo pendiente
 - [ ] Verificar que Lucas haya marcado los ítems pre-Kickoff
 - [ ] Tener abierto el Sistema Orión local con Supabase corriendo (demo del setup)
 - [ ] Confirmar pago recibido en cuenta
-- [ ] Tener impresos: contrato firmado, anexo I, checklist
+- [ ] Tener impresos: contrato firmado, anexo I, checklist (`KICKOFF-CHECKLIST-LUCAS.md`)
 - [ ] Calculadora abierta para resolver preguntas de costos
 - [ ] Grabar la reunión (con consentimiento)
+- [ ] Tener `docs/IMPLEMENTATION-PLAN.md` y `docs/PATTERNS-FROM-REFERENCES.md` abiertos
+      por si Lucas quiere ver detalle técnico
 
 ## Agenda minuto a minuto
 
@@ -108,7 +121,11 @@ Mi recomendación: `getorion.app` (Cloudflare Registrar) por escalabilidad.
 
 Decisión confirmada por Lucas: ********\_\_\_\_********
 
-### 00:50–01:05 · Decisión clave: NUBEFACT (15 min)
+### 00:50–01:05 · Decisión clave: NUBEFACT (10 min) — REDUCIDO
+
+> **Cambio respecto a la versión anterior**: este bloque baja a 10 min porque
+> agregamos el bloque "Decisiones de producto" abajo (15 min). NUBEFACT puede
+> compartir tiempo con la firma del cuestionario al final.
 
 Mostrá la tabla del checklist. Argumentos:
 
@@ -125,7 +142,51 @@ Mostrá la tabla del checklist. Argumentos:
 - Mientras estamos en reunión: nos da las RUTAs y TOKENs si ya las tiene
 - Si no: deadline para entrega = Día 16
 
-### 01:05–01:15 · Lista de usuarios iniciales (10 min)
+### 01:00–01:15 · Decisiones de producto críticas (15 min) — NUEVO
+
+> Sin estas decisiones, los módulos B.4 (Catálogo), B.5 (Cotizaciones), B.7 (Kardex),
+> B.9 (Facturación) y B.10 (Crédito) quedan parcialmente bloqueados. Resolverlas
+> hoy = ahorro de 4-8h en re-trabajo + 1 ida-vuelta de aclaraciones.
+>
+> **Pantalla compartida**: abrir `docs/KICKOFF-CHECKLIST-LUCAS.md` sección "I.
+> Decisiones de producto" y resolver de a una. Cada decisión tiene una
+> recomendación marcada como [D] — si Lucas confía, puede aceptar la default.
+
+**Inventario y Kardex (3 min)**
+
+- Costo promedio vs FIFO → recomendación: **costo promedio**
+- ¿Permite stock negativo? → recomendación: **NO, bloquear**
+- Multi-warehouse → recomendación: **uno solo** (Idex tiene 1 almacén central)
+
+**Crédito y cobranzas (4 min)**
+
+- Plazo crédito default → 30 días para clientes nuevos
+- Pago en moneda distinta → tipo cambio del DÍA del pago (SUNAT TC)
+- Pago mayor al saldo → **rechazar**, error claro
+- Exceder línea crédito → **bloquear automáticamente** la nueva factura
+
+**Cotizaciones (3 min)**
+
+- Validez → **15 días**
+- Descuento Comerciales → hasta 5% sin aprobación
+- Margen mínimo → **bloqueante** (no permite emitir)
+- Email automático al enviar → **NO en v1**, manual
+
+**Catálogo (2 min)**
+
+- Productos descatalogados → solo flag, mantener histórico
+- ¿Quién ve precio compra? → Superadmin + Facturación
+- ¿Quién edita margen mínimo? → solo Superadmin
+
+**SUNAT (3 min)**
+
+- Series adicionales → solo F001/B001 (a menos que Lucas confirme otra sucursal)
+- ¿Quién anula factura? → solo Superadmin
+- NC parcial en v1 → **NO**, solo NC totales
+
+**TODAS las decisiones quedan registradas en el Google Doc del checklist.**
+
+### 01:15–01:25 · Lista de usuarios iniciales (10 min)
 
 Pantalla con un Google Sheet:
 
@@ -138,7 +199,7 @@ Pantalla con un Google Sheet:
 
 Mínimo a definir hoy: 4 usuarios para Idex y 2 para Agroalves.
 
-### 01:15–01:25 · Próximos pasos (10 min)
+### 01:25–01:35 · Próximos pasos (10 min)
 
 Cronograma de las siguientes 2 semanas (mostrarlo en pantalla):
 
@@ -161,7 +222,7 @@ Próximas reuniones programadas:
 - Demo #2: Día 10
 - Demos posteriores: cada 5 días hábiles
 
-### 01:25–01:30 · Firma + cierre (5 min)
+### 01:35–01:45 · Firma + cierre (10 min)
 
 - Lucas firma el Checklist (DocuSign en pantalla o impreso)
 - Confirmamos que el primer pago (USD 690) está acreditado
