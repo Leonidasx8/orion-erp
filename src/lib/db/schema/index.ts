@@ -7,3 +7,4 @@ export * from './clientes';
 export * from './direcciones-cliente';
 export * from './contactos-cliente';
 export * from './validaciones-documento';
+export * from './productos';
