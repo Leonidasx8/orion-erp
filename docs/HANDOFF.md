@@ -2,9 +2,9 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-04-30 20:15 GMT-5
+**Última actualización:** 2026-04-30 20:30 GMT-5
 **Branch activa:** `feat/B-05-cotizaciones`
-**Último commit:** `a068a87` (revert UI B.5)
+**Último commit:** pendiente (Task 1 completa — migration 0017 + Drizzle cotizacionesVersiones)
 
 ---
 
@@ -49,17 +49,17 @@ Plan: `docs/plans/B-05-cotizaciones.md` (en repo de setup `Downloads/orion-erp-s
 
 ### Tareas (9 total)
 
-| #   | Tarea                                       | Estado     | Comentario                                                                                                                                                                                                |
-| --- | ------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Schema + RLS + Drizzle                      | 🟡 Parcial | Falta tabla `cotizaciones_versiones` (snapshot JSON post-envío). Resto hecho.                                                                                                                             |
-| 2   | Correlativo `COT-YYYY-NNNNNN`               | ✅         | Implementado con `pg_advisory_xact_lock` en función `siguiente_numero_cotizacion`. **Decisión:** no usé contador en tabla como dice el plan; el lock transaccional es equivalente funcional y más simple. |
-| 3   | State machine xstate                        | ❌         | Las transiciones están inline en cada server action. **Decisión:** plan pide xstate v5 explícito; pendiente decidir si refactorizar o mantener (5 estados es marginal para xstate).                       |
-| 4   | Server actions CRUD                         | ✅         | 7 actions: crear, actualizar, enviar, aceptar, rechazar, duplicar, eliminar. Todas con `requirePermission()` y validación de tenant del cliente.                                                          |
-| 5   | Form líneas + DnD + cmdk                    | ⛔         | **Bloqueado por Claude Design.**                                                                                                                                                                          |
-| 6   | Selector margen mínimo                      | 🟡         | UI bloqueada. Validación backend (rechazar si `precio - costo < margen_minimo` del producto) NO implementada.                                                                                             |
-| 7   | Template react-pdf                          | ⛔         | **Bloqueado por Claude Design** (layout visual).                                                                                                                                                          |
-| 8   | Server action PDF + Supabase Storage upload | ⛔         | Depende de Task 7.                                                                                                                                                                                        |
-| 9   | Conversión a OC/factura/guía                | 🟡         | UI modal bloqueada. Lógica backend depende de B.6/B.9 (downstream, no aplica aún).                                                                                                                        |
+| #   | Tarea                                       | Estado | Comentario                                                                                                                                                                                                |
+| --- | ------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Schema + RLS + Drizzle                      | ✅     | `cotizaciones_versiones` añadida en `0017_cotizaciones_versiones.sql` + Drizzle schema. Tipos: `CotizacionVersion`, `TipoEventoVersion`.                                                                  |
+| 2   | Correlativo `COT-YYYY-NNNNNN`               | ✅     | Implementado con `pg_advisory_xact_lock` en función `siguiente_numero_cotizacion`. **Decisión:** no usé contador en tabla como dice el plan; el lock transaccional es equivalente funcional y más simple. |
+| 3   | State machine xstate                        | ❌     | Las transiciones están inline en cada server action. **Decisión:** plan pide xstate v5 explícito; pendiente decidir si refactorizar o mantener (5 estados es marginal para xstate).                       |
+| 4   | Server actions CRUD                         | ✅     | 7 actions: crear, actualizar, enviar, aceptar, rechazar, duplicar, eliminar. Todas con `requirePermission()` y validación de tenant del cliente.                                                          |
+| 5   | Form líneas + DnD + cmdk                    | ⛔     | **Bloqueado por Claude Design.**                                                                                                                                                                          |
+| 6   | Selector margen mínimo                      | 🟡     | UI bloqueada. Validación backend (rechazar si `precio - costo < margen_minimo` del producto) NO implementada.                                                                                             |
+| 7   | Template react-pdf                          | ⛔     | **Bloqueado por Claude Design** (layout visual).                                                                                                                                                          |
+| 8   | Server action PDF + Supabase Storage upload | ⛔     | Depende de Task 7.                                                                                                                                                                                        |
+| 9   | Conversión a OC/factura/guía                | 🟡     | UI modal bloqueada. Lógica backend depende de B.6/B.9 (downstream, no aplica aún).                                                                                                                        |
 
 ### Archivos creados en B.5 (commit `8dc0f84`)
 
@@ -79,9 +79,9 @@ Se crearon `CotizacionForm`, `CotizacionesList`, `CotizacionAcciones` + 4 pages,
 
 ### Próximas tareas backend disponibles (sin esperar Claude Design)
 
-1. **Cerrar Task 1:** crear migration `0017_cotizaciones_versiones.sql` con tabla `cotizaciones_versiones`, Drizzle schema, RLS.
-2. **Server action de snapshot:** función que cree una versión (JSON) cuando se edite/regenere PDF de una cotización ya enviada.
-3. **Validación margen mínimo (Task 6 backend):** verificar primero si `productos` tiene columna `margen_minimo`; si no, agregar.
+1. ✅ ~~Cerrar Task 1~~ — `0017_cotizaciones_versiones.sql` + Drizzle schema creados.
+2. **Server action de snapshot (Task 2):** `crearVersionCotizacion(cotizacionId, tipoEvento)` — copia header + items a `cotizaciones_versiones` como JSON. Llamar desde `actualizarCotizacion` cuando estado ≠ 'borrador', y desde `generarPDF` (futuro).
+3. **Validación margen mínimo (Task 6 backend):** verificar si `productos` tiene columna `margen_minimo`; si no, agregar migration. Luego validar en `crearCotizacion`/`actualizarCotizacion`.
 4. **(Opcional) Refactor xstate:** evaluar si vale la pena. La implementación inline funciona; xstate solo añade ceremonia para 5 estados.
 5. **Cron de vencimiento:** scheduled function que marque `vencida` las cotizaciones con `fechaVencimiento < today AND estado = 'enviada'`.
 
@@ -128,6 +128,7 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
 - 20:25 — **Error:** se commiteó UI B.5 (`01e3def`) sin esperar aprobación Claude Design.
 - 20:35 — Revert `a068a87`. UI eliminada del working tree.
 - 20:40 — Creado este archivo HANDOFF.md.
+- 20:30 — **Task 1 completada:** migration `0017_cotizaciones_versiones.sql` + Drizzle schema `cotizacionesVersiones` + tipos. Typecheck verde, 10/10 tests pasan.
 
 ### 2026-04-29
 

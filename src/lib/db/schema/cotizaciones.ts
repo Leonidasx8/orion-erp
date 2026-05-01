@@ -8,6 +8,7 @@ import {
   date,
   boolean,
   integer,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { tenants } from './tenants';
 import { clientes } from './clientes';
@@ -91,9 +92,31 @@ export const cotizacionItems = pgTable('cotizacion_items', {
   createdAt: timestamptz('created_at').notNull().defaultNow(),
 });
 
+export const cotizacionesVersiones = pgTable('cotizaciones_versiones', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  cotizacionId: uuid('cotizacion_id')
+    .notNull()
+    .references(() => cotizaciones.id, { onDelete: 'cascade' }),
+
+  version: integer('version').notNull(),
+
+  tipoEvento: text('tipo_evento').notNull(),
+
+  datos: jsonb('datos').notNull(),
+
+  creadoPor: uuid('creado_por').notNull(),
+  createdAt: timestamptz('created_at').notNull().defaultNow(),
+});
+
 export type Cotizacion = typeof cotizaciones.$inferSelect;
 export type NewCotizacion = typeof cotizaciones.$inferInsert;
 export type CotizacionItem = typeof cotizacionItems.$inferSelect;
 export type NewCotizacionItem = typeof cotizacionItems.$inferInsert;
+export type CotizacionVersion = typeof cotizacionesVersiones.$inferSelect;
+export type NewCotizacionVersion = typeof cotizacionesVersiones.$inferInsert;
+export type TipoEventoVersion = 'pre_edicion' | 'pdf_generado' | 'envio';
 
 export type EstadoCotizacion = 'borrador' | 'enviada' | 'aceptada' | 'rechazada' | 'vencida';
