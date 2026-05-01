@@ -2,9 +2,9 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-01 14:23 GMT-5
-**Branch activa:** `feat/B-05-cotizaciones`
-**Último commit:** pendiente (Task 5 completa — cron de vencimiento de cotizaciones)
+**Última actualización:** 2026-05-01 14:33 GMT-5
+**Branch activa:** `feat/B-06-ordenes-compra`
+**Último commit:** pendiente (B.6 Tasks 1+3 — schema, Drizzle, Zod, 7 server actions OC)
 
 ---
 
@@ -27,8 +27,8 @@
 | B.2 Auth + RBAC + MFA                      | ✅ Mergeado                       | `feat/B-02-auth-roles`     |
 | B.3 Clientes (B2B/B2C, SUNAT autocomplete) | ✅ Mergeado                       | `feat/B-03-clientes`       |
 | B.4 Productos catálogo                     | ✅ Mergeado                       | `feat/B-04-productos`      |
-| **B.5 Cotizaciones**                       | 🟡 **EN CURSO** — backend parcial | `feat/B-05-cotizaciones`   |
-| B.6 Órdenes de compra                      | ⏸️ Pendiente                      | —                          |
+| B.5 Cotizaciones                           | 🟡 Backend completo — UI gate     | `feat/B-05-cotizaciones`   |
+| **B.6 Órdenes de compra**                  | 🟡 **EN CURSO** — backend parcial | `feat/B-06-ordenes-compra` |
 | B.7 Kardex                                 | ⏸️ Pendiente                      | —                          |
 | B.8 Guías de remisión                      | ⏸️ Pendiente (depende NUBEFACT)   | —                          |
 | B.9 Facturación SUNAT/NUBEFACT             | ⏸️ Pendiente                      | —                          |
@@ -41,6 +41,30 @@
 - ⏸️ Credenciales NUBEFACT sandbox (bloquea B.8/B.9)
 - ✅ Credenciales apis.net.pe (B.3 ya las consume)
 - ⏸️ `CRON_SECRET` en Vercel env (requerido para cron de vencimiento B.5)
+
+---
+
+## B.6 — Órdenes de compra: estado detallado
+
+Plan: `docs/plans/B-06-ordenes-compra.md`.
+
+### Tareas (4 total)
+
+| #   | Tarea                                     | Estado | Comentario                                                                                                             |
+| --- | ----------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
+| 1   | Schema OC + flag es_proveedor en clientes | ✅     | Migrations 0019/0020, Drizzle schema, Zod schema. Correlativo via `generar_numero_orden_compra()` (upsert atómico).    |
+| 2   | Reuso form de B.5                         | ⛔     | **Bloqueado por Claude Design** — requiere componentes B.5 aprobados primero.                                          |
+| 3   | State machine OC + Server Actions         | ✅     | 7 actions: crear, crearDesdeCotizacion, enviar, aprobar, recibirParcial, cerrar, eliminar. TODO B.7 en recibirParcial. |
+| 4   | PDF template OC + listado/detalle UI      | ⛔     | **Bloqueado por Claude Design.**                                                                                       |
+
+### Próximas tareas disponibles en B.6
+
+- Todo lo no-UI de B.6 está hecho. Esperar Claude Design para Tasks 2 y 4.
+- Cuando llegue B.7 (Kardex): completar `// TODO B.7` en `recibirParcial` (`src/server/actions/ordenes-compra.ts`).
+
+### **Decisión:** `generar_numero_orden_compra` usa upsert en tabla `correlativos_orden_compra`
+
+Plan original de B.5 usó `pg_advisory_xact_lock`. Para B.6 el plan ya define su propio patrón con tabla de correlativos + upsert `ON CONFLICT DO UPDATE`. Ambos son válidos; no hay razón para uniformar.
 
 ---
 
@@ -132,7 +156,8 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
 - 20:30 — **Task 1 completada:** migration `0017_cotizaciones_versiones.sql` + Drizzle schema `cotizacionesVersiones` + tipos. Commit `a6bab0e`.
 - 21:58 — **Task 2 completada:** `capturarVersion()` helper en `src/lib/cotizaciones/versiones.ts`. `enviarCotizacion` envuelto en transacción con snapshot tipo `envio`. Commit `90433c8`.
 - 2026-05-01 13:35 — **Task 3 completada (margen backend):** migration `0018_productos_margen_minimo.sql`, `margenMinimo` en Drizzle schema productos, `validarMargenMinimo()` en cotizaciones actions. Commit `9a189a2`.
-- 2026-05-01 14:23 — **Task 5 completada (cron vencimiento):** `src/app/api/cron/cotizaciones-vencer/route.ts` + `vercel.json`. Cron diario 06:00 UTC. Requiere `CRON_SECRET` en env de Vercel.
+- 2026-05-01 14:23 — **Task 5 completada (cron vencimiento):** `src/app/api/cron/cotizaciones-vencer/route.ts` + `vercel.json`. Cron diario 06:00 UTC. Commit `35724a7`.
+- 2026-05-01 14:33 — **B.6 Tasks 1+3:** migrations 0019/0020, Drizzle + Zod OC, 7 server actions. Branch `feat/B-06-ordenes-compra`.
 
 ### 2026-04-29
 
