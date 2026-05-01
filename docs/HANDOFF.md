@@ -2,9 +2,9 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-01 14:33 GMT-5
-**Branch activa:** `feat/B-06-ordenes-compra`
-**Último commit:** pendiente (B.6 Tasks 1+3 — schema, Drizzle, Zod, 7 server actions OC)
+**Última actualización:** 2026-05-01 14:48 GMT-5
+**Branch activa:** `feat/B-07-kardex` (sale de `feat/B-06-ordenes-compra`)
+**Último commit:** pendiente (B.7 backend — kardex schema, función registrar_movimiento_stock, 4 server actions, wire B.6→kardex)
 
 ---
 
@@ -20,20 +20,20 @@
 
 ## Roadmap general
 
-| Módulo                                     | Estado                            | Branch / commit            |
-| ------------------------------------------ | --------------------------------- | -------------------------- |
-| B.0 Tenants                                | ✅ Mergeado                       | `feat/B-00-tenants` → main |
-| B.1 Multi-empresa                          | ✅ Mergeado                       | `feat/B-01-multiempresa`   |
-| B.2 Auth + RBAC + MFA                      | ✅ Mergeado                       | `feat/B-02-auth-roles`     |
-| B.3 Clientes (B2B/B2C, SUNAT autocomplete) | ✅ Mergeado                       | `feat/B-03-clientes`       |
-| B.4 Productos catálogo                     | ✅ Mergeado                       | `feat/B-04-productos`      |
-| B.5 Cotizaciones                           | 🟡 Backend completo — UI gate     | `feat/B-05-cotizaciones`   |
-| **B.6 Órdenes de compra**                  | 🟡 **EN CURSO** — backend parcial | `feat/B-06-ordenes-compra` |
-| B.7 Kardex                                 | ⏸️ Pendiente                      | —                          |
-| B.8 Guías de remisión                      | ⏸️ Pendiente (depende NUBEFACT)   | —                          |
-| B.9 Facturación SUNAT/NUBEFACT             | ⏸️ Pendiente                      | —                          |
-| B.10 Crédito + CxC                         | ⏸️ Pendiente                      | —                          |
-| B.11 Reportes                              | ⏸️ Pendiente                      | —                          |
+| Módulo                                     | Estado                                      | Branch / commit            |
+| ------------------------------------------ | ------------------------------------------- | -------------------------- |
+| B.0 Tenants                                | ✅ Mergeado                                 | `feat/B-00-tenants` → main |
+| B.1 Multi-empresa                          | ✅ Mergeado                                 | `feat/B-01-multiempresa`   |
+| B.2 Auth + RBAC + MFA                      | ✅ Mergeado                                 | `feat/B-02-auth-roles`     |
+| B.3 Clientes (B2B/B2C, SUNAT autocomplete) | ✅ Mergeado                                 | `feat/B-03-clientes`       |
+| B.4 Productos catálogo                     | ✅ Mergeado                                 | `feat/B-04-productos`      |
+| B.5 Cotizaciones                           | 🟡 Backend completo — UI gate               | `feat/B-05-cotizaciones`   |
+| B.6 Órdenes de compra                      | 🟡 Backend completo — UI gate               | `feat/B-06-ordenes-compra` |
+| **B.7 Kardex**                             | 🟡 **EN CURSO** — backend completo, UI gate | `feat/B-07-kardex`         |
+| B.8 Guías de remisión                      | ⏸️ Pendiente (depende NUBEFACT)             | —                          |
+| B.9 Facturación SUNAT/NUBEFACT             | ⏸️ Pendiente                                | —                          |
+| B.10 Crédito + CxC                         | ⏸️ Pendiente                                | —                          |
+| B.11 Reportes                              | ⏸️ Pendiente                                | —                          |
 
 **Gates externos pendientes:**
 
@@ -41,6 +41,42 @@
 - ⏸️ Credenciales NUBEFACT sandbox (bloquea B.8/B.9)
 - ✅ Credenciales apis.net.pe (B.3 ya las consume)
 - ⏸️ `CRON_SECRET` en Vercel env (requerido para cron de vencimiento B.5)
+- ⏸️ `pnpm db:migrate` (reset DB local con migraciones 0016–0022) — necesario antes de correr `tests/integration/kardex/`
+
+---
+
+## B.7 — Kardex (Inventario): estado detallado
+
+Plan: `docs/plans/B-07-kardex.md`. ADR: `docs/DECISIONS/0010-kardex-costing-policy.md`.
+
+### Tareas (10 total)
+
+| #   | Tarea                                                    | Estado | Comentario                                                                                                                                     |
+| --- | -------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0   | ADR política de costing                                  | ✅     | Costo promedio ponderado, stock negativo bloqueado por default, sin multi-warehouse en MVP, sin reservas.                                      |
+| 1   | Schema kardex_movimientos + costos_inventario + RLS      | ✅     | Migration `0021`. Append-only. RLS solo SELECT en kardex; INSERTs van por la función SQL.                                                      |
+| 2   | Vistas stock_actual + stock_critico                      | ✅     | Migration `0022`. `security_invoker = true` para respetar RLS. Adaptado al schema real (`codigo`, `nombre`, `stock_minimo`).                   |
+| 3   | Función registrar_movimiento_stock con SELECT FOR UPDATE | ✅     | En migration `0021` (incluida con la tabla). Lock por producto; productos diferentes corren en paralelo.                                       |
+| 4   | Server actions: ajusteManualStock, consultarKardex       | ✅     | `src/server/actions/kardex.ts`. Errores PG mapeados a mensajes de negocio.                                                                     |
+| 5   | Helpers internos kardex (B.6/B.9 wire-up)                | ✅     | `src/server/actions/kardex-internal.ts`: `registrarEntradaPorOC`, `registrarSalidaPorFactura`, `registrarSalidaPorGuia`, `reversarMovimiento`. |
+| 5b  | Wire B.6 `recibirParcial` → kardex                       | ✅     | `recibirParcial` ahora invoca `registrarEntradaPorOC` por cada línea con producto. Usa `precioUnitario` como costo.                            |
+| 6   | UI inventario + KardexTimeline                           | ⛔     | **Bloqueado por Claude Design.**                                                                                                               |
+| 7   | UI ajustes manuales                                      | ⛔     | **Bloqueado por Claude Design.**                                                                                                               |
+| 8   | Tests de concurrencia (vitest integration)               | 🟡     | Escritos en `tests/integration/kardex/concurrencia.test.ts` (9 casos). Requieren `pnpm db:migrate` para correr — pendiente.                    |
+| 9   | UI stock crítico                                         | ⛔     | **Bloqueado por Claude Design.**                                                                                                               |
+
+### Decisiones técnicas no obvias
+
+- **`tipoCambio` y `costoUnitario` se cachean en kardex_movimientos** (`saldo_post`, `costo_promedio_post`) para no recalcular acumulados al renderizar el timeline.
+- **RLS de `kardex_movimientos` es SELECT-only**. INSERTs SIEMPRE deben pasar por `registrar_movimiento_stock()` (con permisos de Casbin en server action). Drizzle no se usa para INSERT directo.
+- **`reversarMovimiento` no muta el original** — inserta un movimiento `'anulacion'` con tipo inverso. Mantiene auditoría inmutable.
+- **`recibirParcial` salta kardex si la línea no tiene `productoId`** (líneas ad-hoc sin producto en catálogo).
+
+### Pendientes
+
+- Correr `pnpm db:migrate` (⚠️ borra data dev local) y luego `pnpm test:integration tests/integration/kardex/concurrencia.test.ts` para validar.
+- Cuando llegue B.9 facturación: invocar `registrarSalidaPorFactura` desde el action de emisión.
+- Cuando llegue B.8 guías: invocar `registrarSalidaPorGuia`.
 
 ---
 
@@ -157,7 +193,8 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
 - 21:58 — **Task 2 completada:** `capturarVersion()` helper en `src/lib/cotizaciones/versiones.ts`. `enviarCotizacion` envuelto en transacción con snapshot tipo `envio`. Commit `90433c8`.
 - 2026-05-01 13:35 — **Task 3 completada (margen backend):** migration `0018_productos_margen_minimo.sql`, `margenMinimo` en Drizzle schema productos, `validarMargenMinimo()` en cotizaciones actions. Commit `9a189a2`.
 - 2026-05-01 14:23 — **Task 5 completada (cron vencimiento):** `src/app/api/cron/cotizaciones-vencer/route.ts` + `vercel.json`. Cron diario 06:00 UTC. Commit `35724a7`.
-- 2026-05-01 14:33 — **B.6 Tasks 1+3:** migrations 0019/0020, Drizzle + Zod OC, 7 server actions. Branch `feat/B-06-ordenes-compra`.
+- 2026-05-01 14:33 — **B.6 Tasks 1+3:** migrations 0019/0020, Drizzle + Zod OC, 7 server actions. Commit `22fb83a` en `feat/B-06-ordenes-compra`.
+- 2026-05-01 14:48 — **B.7 backend:** ADR 0010, migrations 0021/0022, Drizzle kardex, 4 server actions + 4 helpers internos, wire B.6→kardex en `recibirParcial`. Branch `feat/B-07-kardex` desde B.6. Tests integration escritos pero requieren `pnpm db:migrate`. Cambio a Opus 4.7.
 
 ### 2026-04-29
 

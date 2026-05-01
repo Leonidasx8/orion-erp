@@ -13,6 +13,7 @@ import {
 } from '@/lib/db/schema';
 import { ordenCompraSchema, type OrdenCompraInput } from '@/lib/schemas/orden-compra';
 import { calcularItem } from '@/lib/cotizaciones/calculo';
+import { registrarEntradaPorOC } from '@/server/actions/kardex-internal';
 
 const IGV_RATE = 0.18;
 
@@ -266,7 +267,7 @@ export async function recibirParcial(
   if (recepciones.length === 0)
     return { success: false, error: 'Debes indicar al menos una línea' };
 
-  const { tenant } = await requirePermission('ordenes.recibir');
+  const { user, tenant } = await requirePermission('ordenes.recibir');
 
   const [actual] = await db
     .select({ estado: ordenesCompra.estado })
@@ -300,7 +301,17 @@ export async function recibirParcial(
           .set({ cantidadRecibida: String(nuevaCantidad) })
           .where(eq(lineasOrdenCompra.id, recep.lineaId));
 
-        // TODO B.7: registrar_entrada_stock(linea.productoId, recep.cantidadRecibida, 'orden_compra', ordenId)
+        // Registrar entrada de stock en kardex (solo si hay producto asociado)
+        if (linea.productoId) {
+          await registrarEntradaPorOC(tx, {
+            tenantId: tenant.id,
+            productoId: linea.productoId,
+            cantidad: recep.cantidadRecibida,
+            costoUnitario: Number(linea.precioUnitario),
+            ordenCompraId: ordenId,
+            userId: user.id,
+          });
+        }
       }
 
       // Recalcular estado según si todas las líneas están totalmente recibidas

@@ -10,3 +10,4 @@ export * from './validaciones-documento';
 export * from './productos';
 export * from './cotizaciones';
 export * from './ordenes-compra';
+export * from './kardex';
