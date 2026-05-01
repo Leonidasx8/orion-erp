@@ -11,6 +11,7 @@ import {
   type CotizacionInput,
 } from '@/lib/schemas/cotizacion';
 import { calcularTotales, calcularItem } from '@/lib/cotizaciones/calculo';
+import { capturarVersion } from '@/lib/cotizaciones/versiones';
 
 type ActionResult<T = undefined> = { success: true; data: T } | { success: false; error: string };
 
@@ -186,7 +187,7 @@ export async function actualizarCotizacion(
 }
 
 export async function enviarCotizacion(cotizacionId: string): Promise<ActionResult> {
-  const { tenant } = await requirePermission('cotizaciones.enviar');
+  const { user, tenant } = await requirePermission('cotizaciones.enviar');
 
   const [actual] = await db
     .select({ estado: cotizaciones.estado })
@@ -200,17 +201,25 @@ export async function enviarCotizacion(cotizacionId: string): Promise<ActionResu
       error: `Solo se puede enviar desde borrador (actual: ${actual.estado})`,
     };
 
-  // Validar que tenga al menos un item
   const itemsCount = await db.$count(
     cotizacionItems,
     eq(cotizacionItems.cotizacionId, cotizacionId)
   );
   if (itemsCount === 0) return { success: false, error: 'La cotización no tiene ítems' };
 
-  await db
-    .update(cotizaciones)
-    .set({ estado: 'enviada', enviadaAt: new Date(), updatedAt: new Date() })
-    .where(eq(cotizaciones.id, cotizacionId));
+  try {
+    await db.transaction(async (tx) => {
+      // Snapshot del estado que se está enviando al cliente
+      await capturarVersion(tx, cotizacionId, tenant.id, user.id, 'envio');
+
+      await tx
+        .update(cotizaciones)
+        .set({ estado: 'enviada', enviadaAt: new Date(), updatedAt: new Date() })
+        .where(eq(cotizaciones.id, cotizacionId));
+    });
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Error al enviar' };
+  }
 
   revalidatePath(`/${tenant.slug}/cotizaciones`);
   revalidatePath(`/${tenant.slug}/cotizaciones/${cotizacionId}`);

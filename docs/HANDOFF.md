@@ -2,9 +2,9 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-04-30 20:30 GMT-5
+**Última actualización:** 2026-04-30 21:58 GMT-5
 **Branch activa:** `feat/B-05-cotizaciones`
-**Último commit:** pendiente (Task 1 completa — migration 0017 + Drizzle cotizacionesVersiones)
+**Último commit:** pendiente (Task 2 completa — capturarVersion helper + enviarCotizacion transaccional)
 
 ---
 
@@ -80,7 +80,7 @@ Se crearon `CotizacionForm`, `CotizacionesList`, `CotizacionAcciones` + 4 pages,
 ### Próximas tareas backend disponibles (sin esperar Claude Design)
 
 1. ✅ ~~Cerrar Task 1~~ — `0017_cotizaciones_versiones.sql` + Drizzle schema creados.
-2. **Server action de snapshot (Task 2):** `crearVersionCotizacion(cotizacionId, tipoEvento)` — copia header + items a `cotizaciones_versiones` como JSON. Llamar desde `actualizarCotizacion` cuando estado ≠ 'borrador', y desde `generarPDF` (futuro).
+2. ✅ ~~Server action de snapshot~~ — `capturarVersion()` en `src/lib/cotizaciones/versiones.ts`. Wired en `enviarCotizacion` (tipo `envio`, dentro de transacción). Pendiente: llamar con tipo `pre_edicion` cuando se permita edición post-envío, y tipo `pdf_generado` desde B.5 Task 8.
 3. **Validación margen mínimo (Task 6 backend):** verificar si `productos` tiene columna `margen_minimo`; si no, agregar migration. Luego validar en `crearCotizacion`/`actualizarCotizacion`.
 4. **(Opcional) Refactor xstate:** evaluar si vale la pena. La implementación inline funciona; xstate solo añade ceremonia para 5 estados.
 5. **Cron de vencimiento:** scheduled function que marque `vencida` las cotizaciones con `fechaVencimiento < today AND estado = 'enviada'`.
@@ -128,7 +128,8 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
 - 20:25 — **Error:** se commiteó UI B.5 (`01e3def`) sin esperar aprobación Claude Design.
 - 20:35 — Revert `a068a87`. UI eliminada del working tree.
 - 20:40 — Creado este archivo HANDOFF.md.
-- 20:30 — **Task 1 completada:** migration `0017_cotizaciones_versiones.sql` + Drizzle schema `cotizacionesVersiones` + tipos. Typecheck verde, 10/10 tests pasan.
+- 20:30 — **Task 1 completada:** migration `0017_cotizaciones_versiones.sql` + Drizzle schema `cotizacionesVersiones` + tipos. Commit `a6bab0e`.
+- 21:58 — **Task 2 completada:** `capturarVersion()` helper en `src/lib/cotizaciones/versiones.ts`. `enviarCotizacion` envuelto en transacción con snapshot tipo `envio`. Typecheck verde, 10/10 tests.
 
 ### 2026-04-29
 
