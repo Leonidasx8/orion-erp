@@ -4,7 +4,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { cotizaciones, cotizacionItems, clientes } from '@/lib/db/schema';
+import { cotizaciones, cotizacionItems, clientes, productos } from '@/lib/db/schema';
 import {
   cotizacionSchema,
   motivoRechazoSchema,
@@ -15,16 +15,52 @@ import { capturarVersion } from '@/lib/cotizaciones/versiones';
 
 type ActionResult<T = undefined> = { success: true; data: T } | { success: false; error: string };
 
-/**
- * Verifica que el cliente exista y pertenezca al tenant.
- * Importante porque clienteId viene del cliente del navegador.
- */
 async function validarCliente(tenantId: string, clienteId: string) {
   const [c] = await db
     .select({ id: clientes.id })
     .from(clientes)
     .where(and(eq(clientes.id, clienteId), eq(clientes.tenantId, tenantId)));
   if (!c) throw new Error('Cliente no encontrado o no pertenece a este tenant');
+}
+
+/**
+ * Para cada ítem con productoId que tenga margenMinimo definido, verifica que
+ * (precioUnitario - costoUnitario) / costoUnitario * 100 >= margenMinimo.
+ * Retorna un error si algún ítem no lo cumple.
+ */
+async function validarMargenMinimo(
+  items: CotizacionInput['items']
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const itemsConProducto = items.filter((it) => it.productoId);
+  if (itemsConProducto.length === 0) return { ok: true };
+
+  for (const item of itemsConProducto) {
+    const [producto] = await db
+      .select({
+        nombre: productos.nombre,
+        costoUnitario: productos.costoUnitario,
+        margenMinimo: productos.margenMinimo,
+      })
+      .from(productos)
+      .where(eq(productos.id, item.productoId!));
+
+    if (!producto?.margenMinimo || !producto.costoUnitario) continue;
+
+    const costo = Number(producto.costoUnitario);
+    if (costo <= 0) continue;
+
+    const margen = ((item.precioUnitario - costo) / costo) * 100;
+    const minimo = Number(producto.margenMinimo);
+
+    if (margen < minimo) {
+      return {
+        ok: false,
+        error: `Margen ${margen.toFixed(1)}% menor al mínimo ${minimo}% para "${producto.nombre}"`,
+      };
+    }
+  }
+
+  return { ok: true };
 }
 
 export async function crearCotizacion(
@@ -37,6 +73,9 @@ export async function crearCotizacion(
   const data = parsed.data;
 
   await validarCliente(tenant.id, data.clienteId);
+
+  const margenCheck = await validarMargenMinimo(data.items);
+  if (!margenCheck.ok) return { success: false, error: margenCheck.error };
 
   const totales = calcularTotales(data.items, data.descuentoGlobal);
 
@@ -126,6 +165,9 @@ export async function actualizarCotizacion(
     };
 
   await validarCliente(tenant.id, data.clienteId);
+
+  const margenCheck = await validarMargenMinimo(data.items);
+  if (!margenCheck.ok) return { success: false, error: margenCheck.error };
 
   const totales = calcularTotales(data.items, data.descuentoGlobal);
 

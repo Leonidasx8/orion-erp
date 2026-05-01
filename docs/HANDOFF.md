@@ -2,9 +2,9 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-04-30 21:58 GMT-5
+**Última actualización:** 2026-05-01 13:35 GMT-5
 **Branch activa:** `feat/B-05-cotizaciones`
-**Último commit:** pendiente (Task 2 completa — capturarVersion helper + enviarCotizacion transaccional)
+**Último commit:** pendiente (Task 3 completa — margenMinimo en productos, validación en crear/actualizar cotización)
 
 ---
 
@@ -56,7 +56,7 @@ Plan: `docs/plans/B-05-cotizaciones.md` (en repo de setup `Downloads/orion-erp-s
 | 3   | State machine xstate                        | ❌     | Las transiciones están inline en cada server action. **Decisión:** plan pide xstate v5 explícito; pendiente decidir si refactorizar o mantener (5 estados es marginal para xstate).                       |
 | 4   | Server actions CRUD                         | ✅     | 7 actions: crear, actualizar, enviar, aceptar, rechazar, duplicar, eliminar. Todas con `requirePermission()` y validación de tenant del cliente.                                                          |
 | 5   | Form líneas + DnD + cmdk                    | ⛔     | **Bloqueado por Claude Design.**                                                                                                                                                                          |
-| 6   | Selector margen mínimo                      | 🟡     | UI bloqueada. Validación backend (rechazar si `precio - costo < margen_minimo` del producto) NO implementada.                                                                                             |
+| 6   | Selector margen mínimo                      | 🟡     | UI bloqueada. Validación backend ✅: migration `0018` añade `margen_minimo` a productos; `crearCotizacion`/`actualizarCotizacion` rechazan si margen% < margenMinimo.                                     |
 | 7   | Template react-pdf                          | ⛔     | **Bloqueado por Claude Design** (layout visual).                                                                                                                                                          |
 | 8   | Server action PDF + Supabase Storage upload | ⛔     | Depende de Task 7.                                                                                                                                                                                        |
 | 9   | Conversión a OC/factura/guía                | 🟡     | UI modal bloqueada. Lógica backend depende de B.6/B.9 (downstream, no aplica aún).                                                                                                                        |
@@ -81,7 +81,7 @@ Se crearon `CotizacionForm`, `CotizacionesList`, `CotizacionAcciones` + 4 pages,
 
 1. ✅ ~~Cerrar Task 1~~ — `0017_cotizaciones_versiones.sql` + Drizzle schema creados.
 2. ✅ ~~Server action de snapshot~~ — `capturarVersion()` en `src/lib/cotizaciones/versiones.ts`. Wired en `enviarCotizacion` (tipo `envio`, dentro de transacción). Pendiente: llamar con tipo `pre_edicion` cuando se permita edición post-envío, y tipo `pdf_generado` desde B.5 Task 8.
-3. **Validación margen mínimo (Task 6 backend):** verificar si `productos` tiene columna `margen_minimo`; si no, agregar migration. Luego validar en `crearCotizacion`/`actualizarCotizacion`.
+3. ✅ ~~Validación margen mínimo~~ — migration `0018`, Drizzle schema actualizado, `validarMargenMinimo()` interno en actions. Usa `costoUnitario` directo (plan referenciaba tabla `preciosProducto` que no existe en nuestra implementación).
 4. **(Opcional) Refactor xstate:** evaluar si vale la pena. La implementación inline funciona; xstate solo añade ceremonia para 5 estados.
 5. **Cron de vencimiento:** scheduled function que marque `vencida` las cotizaciones con `fechaVencimiento < today AND estado = 'enviada'`.
 
@@ -129,7 +129,8 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
 - 20:35 — Revert `a068a87`. UI eliminada del working tree.
 - 20:40 — Creado este archivo HANDOFF.md.
 - 20:30 — **Task 1 completada:** migration `0017_cotizaciones_versiones.sql` + Drizzle schema `cotizacionesVersiones` + tipos. Commit `a6bab0e`.
-- 21:58 — **Task 2 completada:** `capturarVersion()` helper en `src/lib/cotizaciones/versiones.ts`. `enviarCotizacion` envuelto en transacción con snapshot tipo `envio`. Typecheck verde, 10/10 tests.
+- 21:58 — **Task 2 completada:** `capturarVersion()` helper en `src/lib/cotizaciones/versiones.ts`. `enviarCotizacion` envuelto en transacción con snapshot tipo `envio`. Commit `90433c8`.
+- 2026-05-01 13:35 — **Task 3 completada (margen backend):** migration `0018_productos_margen_minimo.sql`, `margenMinimo` en Drizzle schema productos, `validarMargenMinimo()` en cotizaciones actions. Typecheck verde, 10/10 tests.
 
 ### 2026-04-29
 

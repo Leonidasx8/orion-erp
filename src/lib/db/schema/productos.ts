@@ -35,6 +35,7 @@ export const productos = pgTable('productos', {
   precioUnitario: numeric('precio_unitario', { precision: 14, scale: 4 }).notNull().default('0'),
   tieneIgv: boolean('tiene_igv').notNull().default(true),
   costoUnitario: numeric('costo_unitario', { precision: 14, scale: 4 }),
+  margenMinimo: numeric('margen_minimo', { precision: 5, scale: 2 }),
 
   controlaStock: boolean('controla_stock').notNull().default(false),
   stockMinimo: numeric('stock_minimo', { precision: 14, scale: 4 }),
