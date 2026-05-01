@@ -2,9 +2,9 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-01 13:35 GMT-5
+**Última actualización:** 2026-05-01 14:23 GMT-5
 **Branch activa:** `feat/B-05-cotizaciones`
-**Último commit:** pendiente (Task 3 completa — margenMinimo en productos, validación en crear/actualizar cotización)
+**Último commit:** pendiente (Task 5 completa — cron de vencimiento de cotizaciones)
 
 ---
 
@@ -40,6 +40,7 @@
 - ⏸️ Mockups Claude Design (bloquea UI de B.5+; backend libre)
 - ⏸️ Credenciales NUBEFACT sandbox (bloquea B.8/B.9)
 - ✅ Credenciales apis.net.pe (B.3 ya las consume)
+- ⏸️ `CRON_SECRET` en Vercel env (requerido para cron de vencimiento B.5)
 
 ---
 
@@ -83,7 +84,7 @@ Se crearon `CotizacionForm`, `CotizacionesList`, `CotizacionAcciones` + 4 pages,
 2. ✅ ~~Server action de snapshot~~ — `capturarVersion()` en `src/lib/cotizaciones/versiones.ts`. Wired en `enviarCotizacion` (tipo `envio`, dentro de transacción). Pendiente: llamar con tipo `pre_edicion` cuando se permita edición post-envío, y tipo `pdf_generado` desde B.5 Task 8.
 3. ✅ ~~Validación margen mínimo~~ — migration `0018`, Drizzle schema actualizado, `validarMargenMinimo()` interno en actions. Usa `costoUnitario` directo (plan referenciaba tabla `preciosProducto` que no existe en nuestra implementación).
 4. **(Opcional) Refactor xstate:** evaluar si vale la pena. La implementación inline funciona; xstate solo añade ceremonia para 5 estados.
-5. **Cron de vencimiento:** scheduled function que marque `vencida` las cotizaciones con `fechaVencimiento < today AND estado = 'enviada'`.
+5. ✅ ~~Cron de vencimiento~~ — `GET /api/cron/cotizaciones-vencer` + `vercel.json` (cron diario 06:00 UTC). Requiere `CRON_SECRET` en env de Vercel.
 
 ---
 
@@ -130,7 +131,8 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
 - 20:40 — Creado este archivo HANDOFF.md.
 - 20:30 — **Task 1 completada:** migration `0017_cotizaciones_versiones.sql` + Drizzle schema `cotizacionesVersiones` + tipos. Commit `a6bab0e`.
 - 21:58 — **Task 2 completada:** `capturarVersion()` helper en `src/lib/cotizaciones/versiones.ts`. `enviarCotizacion` envuelto en transacción con snapshot tipo `envio`. Commit `90433c8`.
-- 2026-05-01 13:35 — **Task 3 completada (margen backend):** migration `0018_productos_margen_minimo.sql`, `margenMinimo` en Drizzle schema productos, `validarMargenMinimo()` en cotizaciones actions. Typecheck verde, 10/10 tests.
+- 2026-05-01 13:35 — **Task 3 completada (margen backend):** migration `0018_productos_margen_minimo.sql`, `margenMinimo` en Drizzle schema productos, `validarMargenMinimo()` en cotizaciones actions. Commit `9a189a2`.
+- 2026-05-01 14:23 — **Task 5 completada (cron vencimiento):** `src/app/api/cron/cotizaciones-vencer/route.ts` + `vercel.json`. Cron diario 06:00 UTC. Requiere `CRON_SECRET` en env de Vercel.
 
 ### 2026-04-29
 

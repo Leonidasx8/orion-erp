@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/cotizaciones-vencer",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}
