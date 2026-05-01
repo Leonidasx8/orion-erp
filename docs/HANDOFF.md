@@ -2,9 +2,9 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-01 14:48 GMT-5
-**Branch activa:** `feat/B-07-kardex` (sale de `feat/B-06-ordenes-compra`)
-**Último commit:** pendiente (B.7 backend — kardex schema, función registrar_movimiento_stock, 4 server actions, wire B.6→kardex)
+**Última actualización:** 2026-05-01 16:40 GMT-5
+**Branch activa:** `feat/B-07-kardex`
+**Último commit:** pendiente (refactor: extraer `calcularTotalesOrden` y `validarMargenItem` + tests unitarios; 28/28 verde)
 
 ---
 
@@ -194,7 +194,8 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
 - 2026-05-01 13:35 — **Task 3 completada (margen backend):** migration `0018_productos_margen_minimo.sql`, `margenMinimo` en Drizzle schema productos, `validarMargenMinimo()` en cotizaciones actions. Commit `9a189a2`.
 - 2026-05-01 14:23 — **Task 5 completada (cron vencimiento):** `src/app/api/cron/cotizaciones-vencer/route.ts` + `vercel.json`. Cron diario 06:00 UTC. Commit `35724a7`.
 - 2026-05-01 14:33 — **B.6 Tasks 1+3:** migrations 0019/0020, Drizzle + Zod OC, 7 server actions. Commit `22fb83a` en `feat/B-06-ordenes-compra`.
-- 2026-05-01 14:48 — **B.7 backend:** ADR 0010, migrations 0021/0022, Drizzle kardex, 4 server actions + 4 helpers internos, wire B.6→kardex en `recibirParcial`. Branch `feat/B-07-kardex` desde B.6. Tests integration escritos pero requieren `pnpm db:migrate`. Cambio a Opus 4.7.
+- 2026-05-01 14:48 — **B.7 backend:** ADR 0010, migrations 0021/0022, Drizzle kardex, 4 server actions + 4 helpers internos, wire B.6→kardex en `recibirParcial`. Commit `90471a8`. Tests integration escritos pero requieren `pnpm db:migrate`. Cambio a Opus 4.7.
+- 2026-05-01 16:40 — **Refactor + tests unit:** extraída lógica pura `calcularTotalesOrden` (B.6) → `src/lib/ordenes/calculo.ts` con 7 tests; `validarMargenItem` (B.5) → `src/lib/cotizaciones/margen.ts` con 11 tests. Total 28 tests verde. Doc Claude Design Reception podado a 226 líneas (versión completa preservada como `.full.md` en setup repo).
 
 ### 2026-04-29
 

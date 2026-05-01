@@ -12,6 +12,7 @@ import {
 } from '@/lib/schemas/cotizacion';
 import { calcularTotales, calcularItem } from '@/lib/cotizaciones/calculo';
 import { capturarVersion } from '@/lib/cotizaciones/versiones';
+import { validarMargenItem } from '@/lib/cotizaciones/margen';
 
 type ActionResult<T = undefined> = { success: true; data: T } | { success: false; error: string };
 
@@ -24,9 +25,7 @@ async function validarCliente(tenantId: string, clienteId: string) {
 }
 
 /**
- * Para cada ítem con productoId que tenga margenMinimo definido, verifica que
- * (precioUnitario - costoUnitario) / costoUnitario * 100 >= margenMinimo.
- * Retorna un error si algún ítem no lo cumple.
+ * Carga los productos de los ítems y delega la validación de margen al helper puro.
  */
 async function validarMargenMinimo(
   items: CotizacionInput['items']
@@ -44,20 +43,10 @@ async function validarMargenMinimo(
       .from(productos)
       .where(eq(productos.id, item.productoId!));
 
-    if (!producto?.margenMinimo || !producto.costoUnitario) continue;
+    if (!producto) continue;
 
-    const costo = Number(producto.costoUnitario);
-    if (costo <= 0) continue;
-
-    const margen = ((item.precioUnitario - costo) / costo) * 100;
-    const minimo = Number(producto.margenMinimo);
-
-    if (margen < minimo) {
-      return {
-        ok: false,
-        error: `Margen ${margen.toFixed(1)}% menor al mínimo ${minimo}% para "${producto.nombre}"`,
-      };
-    }
+    const r = validarMargenItem(item.precioUnitario, producto);
+    if (!r.ok) return { ok: false, error: r.error };
   }
 
   return { ok: true };

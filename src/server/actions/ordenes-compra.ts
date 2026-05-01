@@ -13,9 +13,8 @@ import {
 } from '@/lib/db/schema';
 import { ordenCompraSchema, type OrdenCompraInput } from '@/lib/schemas/orden-compra';
 import { calcularItem } from '@/lib/cotizaciones/calculo';
+import { calcularTotalesOrden } from '@/lib/ordenes/calculo';
 import { registrarEntradaPorOC } from '@/server/actions/kardex-internal';
-
-const IGV_RATE = 0.18;
 
 type ActionResult<T = undefined> = { success: true; data: T } | { success: false; error: string };
 
@@ -26,28 +25,6 @@ async function validarProveedor(tenantId: string, proveedorId: string) {
     .where(and(eq(clientes.id, proveedorId), eq(clientes.tenantId, tenantId)));
   if (!p) throw new Error('Proveedor no encontrado o no pertenece a este tenant');
   if (!p.esProveedor) throw new Error('El contacto seleccionado no está marcado como proveedor');
-}
-
-function calcularTotalesOC(lineas: OrdenCompraInput['lineas']) {
-  let subtotal = 0;
-  let igvTotal = 0;
-
-  for (const linea of lineas) {
-    const calc = calcularItem({
-      cantidad: linea.cantidad,
-      precioUnitario: linea.precioUnitario,
-      descuentoPorcentaje: 0,
-      afectaIgv: linea.afectaIgv,
-    });
-    subtotal += calc.subtotal;
-    igvTotal += calc.igv;
-  }
-
-  return {
-    subtotal: Math.round(subtotal * 100) / 100,
-    igv: Math.round(igvTotal * 100) / 100,
-    total: Math.round((subtotal + igvTotal) * 100) / 100,
-  };
 }
 
 export async function crearOrdenCompra(
@@ -65,7 +42,7 @@ export async function crearOrdenCompra(
     return { success: false, error: e instanceof Error ? e.message : 'Error de validación' };
   }
 
-  const totales = calcularTotalesOC(data.lineas);
+  const totales = calcularTotalesOrden(data.lineas);
 
   try {
     const result = await db.transaction(async (tx) => {
@@ -393,6 +370,3 @@ export async function eliminarOrden(ordenId: string): Promise<ActionResult> {
   revalidatePath(`/${tenant.slug}/ordenes`);
   return { success: true, data: undefined };
 }
-
-// Referencia de IGV para uso externo si se necesita
-export { IGV_RATE };
