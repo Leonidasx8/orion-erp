@@ -11,3 +11,7 @@ export * from './productos';
 export * from './cotizaciones';
 export * from './ordenes-compra';
 export * from './kardex';
+export * from './guias';
+export * from './facturas';
+export * from './notas-credito-debito';
+export * from './sunat-envios-log';

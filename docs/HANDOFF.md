@@ -2,9 +2,9 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-01 16:40 GMT-5
-**Branch activa:** `feat/B-07-kardex`
-**Último commit:** pendiente (refactor: extraer `calcularTotalesOrden` y `validarMargenItem` + tests unitarios; 28/28 verde)
+**Última actualización:** 2026-05-02 20:10 GMT-5
+**Branch activa:** `feat/B-08-sunat-infra` (sale de `feat/B-07-kardex`)
+**Último commit:** pendiente (B.8/B.9 infra — schema completo facturas/boletas/NC/ND/guías + cola pgmq + wrapper SUNAT stub + webhook handler)
 
 ---
 
@@ -20,20 +20,20 @@
 
 ## Roadmap general
 
-| Módulo                                     | Estado                                      | Branch / commit            |
-| ------------------------------------------ | ------------------------------------------- | -------------------------- |
-| B.0 Tenants                                | ✅ Mergeado                                 | `feat/B-00-tenants` → main |
-| B.1 Multi-empresa                          | ✅ Mergeado                                 | `feat/B-01-multiempresa`   |
-| B.2 Auth + RBAC + MFA                      | ✅ Mergeado                                 | `feat/B-02-auth-roles`     |
-| B.3 Clientes (B2B/B2C, SUNAT autocomplete) | ✅ Mergeado                                 | `feat/B-03-clientes`       |
-| B.4 Productos catálogo                     | ✅ Mergeado                                 | `feat/B-04-productos`      |
-| B.5 Cotizaciones                           | 🟡 Backend completo — UI gate               | `feat/B-05-cotizaciones`   |
-| B.6 Órdenes de compra                      | 🟡 Backend completo — UI gate               | `feat/B-06-ordenes-compra` |
-| **B.7 Kardex**                             | 🟡 **EN CURSO** — backend completo, UI gate | `feat/B-07-kardex`         |
-| B.8 Guías de remisión                      | ⏸️ Pendiente (depende NUBEFACT)             | —                          |
-| B.9 Facturación SUNAT/NUBEFACT             | ⏸️ Pendiente                                | —                          |
-| B.10 Crédito + CxC                         | ⏸️ Pendiente                                | —                          |
-| B.11 Reportes                              | ⏸️ Pendiente                                | —                          |
+| Módulo                                     | Estado                                                | Branch / commit            |
+| ------------------------------------------ | ----------------------------------------------------- | -------------------------- |
+| B.0 Tenants                                | ✅ Mergeado                                           | `feat/B-00-tenants` → main |
+| B.1 Multi-empresa                          | ✅ Mergeado                                           | `feat/B-01-multiempresa`   |
+| B.2 Auth + RBAC + MFA                      | ✅ Mergeado                                           | `feat/B-02-auth-roles`     |
+| B.3 Clientes (B2B/B2C, SUNAT autocomplete) | ✅ Mergeado                                           | `feat/B-03-clientes`       |
+| B.4 Productos catálogo                     | ✅ Mergeado                                           | `feat/B-04-productos`      |
+| B.5 Cotizaciones                           | 🟡 Backend completo — UI gate                         | `feat/B-05-cotizaciones`   |
+| B.6 Órdenes de compra                      | 🟡 Backend completo — UI gate                         | `feat/B-06-ordenes-compra` |
+| B.7 Kardex                                 | 🟡 Backend completo — UI gate                         | `feat/B-07-kardex`         |
+| **B.8 Guías de remisión**                  | 🟡 **EN CURSO** — infra lista, builders gate NUBEFACT | `feat/B-08-sunat-infra`    |
+| **B.9 Facturación SUNAT**                  | 🟡 **EN CURSO** — infra compartida con B.8            | `feat/B-08-sunat-infra`    |
+| B.10 Crédito + CxC                         | ⏸️ Pendiente                                          | —                          |
+| B.11 Reportes                              | ⏸️ Pendiente                                          | —                          |
 
 **Gates externos pendientes:**
 
@@ -41,7 +41,47 @@
 - ⏸️ Credenciales NUBEFACT sandbox (bloquea B.8/B.9)
 - ✅ Credenciales apis.net.pe (B.3 ya las consume)
 - ⏸️ `CRON_SECRET` en Vercel env (requerido para cron de vencimiento B.5)
-- ⏸️ `pnpm db:migrate` (reset DB local con migraciones 0016–0022) — necesario antes de correr `tests/integration/kardex/`
+- ⏸️ `pnpm db:migrate` (reset DB local con migraciones 0016–0027) — necesario antes de correr `tests/integration/kardex/` y validar el schema SUNAT
+- ⏸️ Credenciales NUBEFACT sandbox + `NUBEFACT_BASE_URL`, `NUBEFACT_TOKEN`, `NUBEFACT_WEBHOOK_SECRET` en env — desbloquea builders SUNAT y emisión real (B.8/B.9)
+
+---
+
+## B.8/B.9 — SUNAT Infra (Guías + Facturación): estado detallado
+
+Planes: `docs/plans/B-08-guias.md`, `docs/plans/B-09-facturacion-sunat.md`.
+
+### Lo que está hecho (sin NUBEFACT credentials, opción C)
+
+| Componente                                                                           | Estado | Comentario                                                                                                                                                |
+| ------------------------------------------------------------------------------------ | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Migrations 0023–0027                                                                 | ✅     | `reservar_correlativo()`, schemas guías/facturas/NC-ND, cola pgmq, log de envíos. Permisos definidos.                                                     |
+| `series_documentos` función `reservar_correlativo()`                                 | ✅     | UPDATE atómico ... RETURNING, lanza `serie_no_encontrada` si no existe.                                                                                   |
+| Drizzle schemas                                                                      | ✅     | `guias`, `facturas`, `notas-credito-debito`, `sunat-envios-log`.                                                                                          |
+| Catálogos SUNAT tipados                                                              | ✅     | `src/lib/sunat/catalogos.ts`: tipo doc, IGV, motivos NC/ND/traslado.                                                                                      |
+| `SunatError`, `NubefactNetworkError`, `IdempotencySkipError`, `SunatValidationError` | ✅     | + función `esTransitorio()` para distinguir errores reintentables. 12 tests unit verde.                                                                   |
+| Tipos de payload NUBEFACT                                                            | ✅     | `src/lib/sunat/types.ts`: factura, guía, NC/ND. Validar contra docs reales cuando llegue sandbox.                                                         |
+| Cola pgmq `sunat_outbox` + helpers                                                   | ✅     | `encolarEnvioSunat`, `reencolarConBackoff` (30s, 2min, 10min, 1h, 6h). Idempotencia por `(documentoTipo, documentoId)`.                                   |
+| Wrapper interface `SunatClient` (stub)                                               | ✅     | Sin credenciales lanza `SunatValidationError('credenciales_no_configuradas')`. Listo para implementación post-sandbox.                                    |
+| Webhook handler `/api/webhooks/nubefact`                                             | ✅     | POST con `Authorization: Bearer NUBEFACT_WEBHOOK_SECRET`. Actualiza `estado_sunat`, URLs CDR/XML/PDF en facturas/guías/NC-ND según `tipo_de_comprobante`. |
+
+### Lo que falta hasta tener NUBEFACT credentials
+
+- **Builders XML/JSON** (`src/lib/sunat/builders/`): convertir entidades Drizzle a `FacturaPayload`/`GuiaRemisionPayload`/etc. Crítico: SUNAT estricto con namespaces/firma/encoding. Sin sandbox no se valida.
+- **Implementación HTTP** del wrapper: reemplazar `SunatClientStub` con cliente real que llama a `https://api.nubefact.com/api/v1/<token>` y mapea errores.
+- **Edge function consumer** de la cola `sunat_outbox`: drena cada 30s, llama al wrapper, registra en `sunat_envios_log`, marca documento como `aceptada`/`rechazada`/`error_red`.
+- **Server actions de emitir**: `crearFactura`, `emitirFactura` (encola), `anularFactura` (crea NC). Lo mismo para guías.
+- **Detección automática Factura vs Boleta** según RUC/DNI del cliente.
+- **Anulación vía NC** con catálogo 09 motivos.
+- **B.9 prorrateo de descuento global** en líneas (SUNAT requirement).
+- **Tests E2E** contra sandbox NUBEFACT.
+- **UI** de emisión, listados, anulaciones (gateada también por Claude Design).
+
+### Decisiones técnicas
+
+- **Outbox + pgmq** en lugar de invocación síncrona: separa la transacción de "guardar documento" del "llamar a NUBEFACT" → respuesta UI rápida + reintentos sin bloquear.
+- **Snapshot del cliente en factura/NC** (`cliente_*_snapshot`): si el cliente cambia razón social/dirección después, el documento histórico no muta.
+- **Estado interno vs SUNAT separados**: `estado` (borrador/lista_para_emitir/emitida/anulada) refleja workflow del usuario; `estado_sunat` (sin_enviar/pendiente/aceptada/rechazada/error_red) refleja la realidad SUNAT. Permite UX clara durante el async.
+- **`emitirFactura()` falla limpio sin credenciales**: `SunatValidationError('credenciales_no_configuradas')`. Cualquier código que dependa lo nota inmediatamente; no hay calls fantasma.
 
 ---
 
@@ -195,7 +235,8 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
 - 2026-05-01 14:23 — **Task 5 completada (cron vencimiento):** `src/app/api/cron/cotizaciones-vencer/route.ts` + `vercel.json`. Cron diario 06:00 UTC. Commit `35724a7`.
 - 2026-05-01 14:33 — **B.6 Tasks 1+3:** migrations 0019/0020, Drizzle + Zod OC, 7 server actions. Commit `22fb83a` en `feat/B-06-ordenes-compra`.
 - 2026-05-01 14:48 — **B.7 backend:** ADR 0010, migrations 0021/0022, Drizzle kardex, 4 server actions + 4 helpers internos, wire B.6→kardex en `recibirParcial`. Commit `90471a8`. Tests integration escritos pero requieren `pnpm db:migrate`. Cambio a Opus 4.7.
-- 2026-05-01 16:40 — **Refactor + tests unit:** extraída lógica pura `calcularTotalesOrden` (B.6) → `src/lib/ordenes/calculo.ts` con 7 tests; `validarMargenItem` (B.5) → `src/lib/cotizaciones/margen.ts` con 11 tests. Total 28 tests verde. Doc Claude Design Reception podado a 226 líneas (versión completa preservada como `.full.md` en setup repo).
+- 2026-05-01 16:40 — **Refactor + tests unit:** extraída lógica pura `calcularTotalesOrden` (B.6) → `src/lib/ordenes/calculo.ts` con 7 tests; `validarMargenItem` (B.5) → `src/lib/cotizaciones/margen.ts` con 11 tests. Commit `b225ab0`.
+- 2026-05-02 20:10 — **B.8/B.9 infra (opción C):** 5 migrations (0023–0027), Drizzle de guías/facturas/NC-ND, lib SUNAT (catálogos/errors/types/queue/client stub), webhook handler `/api/webhooks/nubefact`. 12 tests SUNAT verde, total 40 tests. Branch `feat/B-08-sunat-infra` desde B.7.
 
 ### 2026-04-29
 
