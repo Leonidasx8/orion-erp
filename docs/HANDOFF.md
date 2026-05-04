@@ -2,9 +2,10 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-02 20:10 GMT-5
+**Última actualización:** 2026-05-04 15:42 GMT-5
 **Branch activa:** `feat/B-08-sunat-infra` (sale de `feat/B-07-kardex`)
-**Último commit:** pendiente (B.8/B.9 infra — schema completo facturas/boletas/NC/ND/guías + cola pgmq + wrapper SUNAT stub + webhook handler)
+**Último commit:** `914db79` feat(sunat): B.8/B.9 infra — schema + cola + wrapper stub + webhook
+**Estado verificado:** typecheck verde, 40/40 unit tests verde. Falta correr integration tests (requieren `pnpm db:migrate`).
 
 ---
 
@@ -236,7 +237,11 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
 - 2026-05-01 14:33 — **B.6 Tasks 1+3:** migrations 0019/0020, Drizzle + Zod OC, 7 server actions. Commit `22fb83a` en `feat/B-06-ordenes-compra`.
 - 2026-05-01 14:48 — **B.7 backend:** ADR 0010, migrations 0021/0022, Drizzle kardex, 4 server actions + 4 helpers internos, wire B.6→kardex en `recibirParcial`. Commit `90471a8`. Tests integration escritos pero requieren `pnpm db:migrate`. Cambio a Opus 4.7.
 - 2026-05-01 16:40 — **Refactor + tests unit:** extraída lógica pura `calcularTotalesOrden` (B.6) → `src/lib/ordenes/calculo.ts` con 7 tests; `validarMargenItem` (B.5) → `src/lib/cotizaciones/margen.ts` con 11 tests. Commit `b225ab0`.
-- 2026-05-02 20:10 — **B.8/B.9 infra (opción C):** 5 migrations (0023–0027), Drizzle de guías/facturas/NC-ND, lib SUNAT (catálogos/errors/types/queue/client stub), webhook handler `/api/webhooks/nubefact`. 12 tests SUNAT verde, total 40 tests. Branch `feat/B-08-sunat-infra` desde B.7.
+- 2026-05-02 20:10 — **B.8/B.9 infra (opción C):** 5 migrations (0023–0027), Drizzle de guías/facturas/NC-ND, lib SUNAT (catálogos/errors/types/queue/client stub), webhook handler `/api/webhooks/nubefact`. 12 tests SUNAT verde, total 40 tests. Branch `feat/B-08-sunat-infra` desde B.7. Commit `914db79`.
+
+### 2026-05-04
+
+- 15:42 — Verificación de estado: typecheck verde, 40/40 unit tests verde en `feat/B-08-sunat-infra`. Pending: integration tests kardex/SUNAT (requieren `pnpm db:migrate`, destructivo). Diseños Claude Design recibidos pero pendiente integrar bundle a `docs/design/` antes de UI.
 
 ### 2026-04-29
 
