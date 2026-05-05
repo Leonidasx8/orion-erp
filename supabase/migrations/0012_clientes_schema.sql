@@ -1,3 +1,16 @@
+-- Helper IMMUTABLE para usar en columnas GENERATED. El cast implícito text→regconfig
+-- de to_tsvector('spanish', ...) es STABLE y Postgres lo rechaza en STORED columns.
+CREATE OR REPLACE FUNCTION public.immutable_to_tsvector_spanish(text)
+RETURNS tsvector
+LANGUAGE plpgsql
+IMMUTABLE
+PARALLEL SAFE
+AS $$
+BEGIN
+  RETURN to_tsvector('spanish'::regconfig, $1);
+END;
+$$;
+
 -- Clientes (B2B: persona jurídica con RUC; B2C: persona natural con DNI u otro)
 CREATE TABLE clientes (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -14,9 +27,16 @@ CREATE TABLE clientes (
   apellido_paterno text,
   apellido_materno text,
 
-  -- Nombre para mostrar (calculado o manual)
+  -- Nombre para mostrar (calculado o manual). Evita CONCAT_WS por ser STABLE.
   nombre_display  text GENERATED ALWAYS AS (
-    COALESCE(razon_social, TRIM(CONCAT_WS(' ', nombres, apellido_paterno, apellido_materno)))
+    COALESCE(
+      razon_social,
+      TRIM(BOTH ' ' FROM
+        COALESCE(nombres, '') || ' ' ||
+        COALESCE(apellido_paterno, '') || ' ' ||
+        COALESCE(apellido_materno, '')
+      )
+    )
   ) STORED,
 
   -- Datos de contacto principales
@@ -44,7 +64,7 @@ CREATE TABLE clientes (
 
   -- Full-text search
   search_vector   tsvector GENERATED ALWAYS AS (
-    to_tsvector('spanish',
+    public.immutable_to_tsvector_spanish(
       COALESCE(razon_social, '') || ' ' ||
       COALESCE(nombres, '') || ' ' ||
       COALESCE(apellido_paterno, '') || ' ' ||

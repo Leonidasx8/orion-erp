@@ -2,10 +2,10 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-04 15:42 GMT-5
+**Última actualización:** 2026-05-05 11:55 GMT-5
 **Branch activa:** `feat/B-08-sunat-infra` (sale de `feat/B-07-kardex`)
-**Último commit:** `914db79` feat(sunat): B.8/B.9 infra — schema + cola + wrapper stub + webhook
-**Estado verificado:** typecheck verde, 40/40 unit tests verde. Falta correr integration tests (requieren `pnpm db:migrate`).
+**Último commit:** pendiente (fix migrations PG 15 + tests integration kardex)
+**Estado verificado:** typecheck verde, 40/40 unit tests verde, **9/9 integration tests kardex verde**, las 27 migrations aplican limpio en PG 15.8.
 
 ---
 
@@ -242,6 +242,16 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
 ### 2026-05-04
 
 - 15:42 — Verificación de estado: typecheck verde, 40/40 unit tests verde en `feat/B-08-sunat-infra`. Pending: integration tests kardex/SUNAT (requieren `pnpm db:migrate`, destructivo). Diseños Claude Design recibidos pero pendiente integrar bundle a `docs/design/` antes de UI.
+
+### 2026-05-05
+
+- 11:55 — **Fix migrations PG 15.8 + tests integration kardex.** El reset DB (`pnpm db:migrate`) fallaba en 0012 (clientes), 0015 (productos) y 0027 (sunat_outbox). Aplicados:
+  - Wrapper `public.immutable_to_tsvector_spanish(text)` en plpgsql IMMUTABLE para que las columnas `search_vector GENERATED` pasen el check de inmutabilidad estricta de PG 15.
+  - Reemplazo de `CONCAT_WS` por `||` en `nombre_display` (CONCAT_WS es STABLE, no IMMUTABLE).
+  - `SET LOCAL search_path TO public, pgmq;` antes de `pgmq.create()` en 0027.
+  - **Decisión:** PL/pgSQL en lugar de SQL para el wrapper porque SQL inmutable se inlinea y la expresión inlineada vuelve a no ser IMMUTABLE.
+  - Tests kardex (`tests/integration/kardex/concurrencia.test.ts`): nuevo helper `expectPgError()` que des-envuelve los errores que drizzle wraps con "Failed query: ..." (el RAISE EXCEPTION de PL/pgSQL queda en `err.cause.message`). `afterEach` limpia kardex_movimientos antes que productos (FK RESTRICT por diseño).
+  - **9/9 integration tests verde.** 27 migrations apply clean.
 
 ### 2026-04-29
 

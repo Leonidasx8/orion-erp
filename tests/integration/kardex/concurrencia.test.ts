@@ -75,12 +75,37 @@ async function leerCostoInventario(productoId: string) {
   return row;
 }
 
+// Drizzle envuelve los errores de postgres-js con "Failed query: ...". El mensaje
+// real (incluyendo RAISE EXCEPTION del PL/pgSQL) está en err.cause. Este helper
+// concatena ambos para que toMatch(/.../ ) pueda encontrar el patrón.
+async function expectPgError(promise: Promise<unknown>, pattern: RegExp): Promise<void> {
+  let captured: unknown;
+  try {
+    await promise;
+  } catch (err) {
+    captured = err;
+  }
+  if (!captured) {
+    throw new Error('expected promise to reject, but it resolved');
+  }
+  const e = captured as { message?: string; cause?: { message?: string; detail?: string } };
+  const combined = [e.message, e.cause?.message, e.cause?.detail].filter(Boolean).join(' | ');
+  expect(combined).toMatch(pattern);
+}
+
 beforeAll(async () => {
   tenantId = await ensureTenant();
 });
 
 afterEach(async () => {
-  // Limpia productos KDX creados (cascade limpia kardex_movimientos y costos_inventario)
+  // kardex_movimientos.producto_id es FK RESTRICT por diseño (auditabilidad).
+  // Limpiamos en orden inverso al de inserción.
+  await db.execute(sql`
+    DELETE FROM kardex_movimientos
+     WHERE producto_id IN (
+       SELECT id FROM productos WHERE codigo LIKE 'KDX-%'
+     )
+  `);
   await db.execute(
     sql`DELETE FROM productos WHERE codigo LIKE 'KDX-%' AND tenant_id = ${tenantId}::uuid`
   );
@@ -140,7 +165,8 @@ describe('registrar_movimiento_stock — concurrencia y atomicidad', () => {
 
   it('rechaza entrada sin costo unitario', async () => {
     const productoId = await crearProductoTest();
-    await expect(llamarRegistrar(productoId, 'entrada', 10, null)).rejects.toThrow(
+    await expectPgError(
+      llamarRegistrar(productoId, 'entrada', 10, null),
       /costo_unitario_required_for_entrada/
     );
   });
@@ -148,7 +174,7 @@ describe('registrar_movimiento_stock — concurrencia y atomicidad', () => {
   it('rechaza salida que dejaría stock negativo', async () => {
     const productoId = await crearProductoTest();
     await llamarRegistrar(productoId, 'entrada', 5, 10);
-    await expect(llamarRegistrar(productoId, 'salida', 10)).rejects.toThrow(/stock_negativo/);
+    await expectPgError(llamarRegistrar(productoId, 'salida', 10), /stock_negativo/);
   });
 
   it('permite stock negativo cuando el producto lo tiene habilitado', async () => {
@@ -204,10 +230,10 @@ describe('registrar_movimiento_stock — concurrencia y atomicidad', () => {
       .returning({ id: productos.id });
 
     try {
-      await expect(llamarRegistrar(otroProd.id, 'entrada', 10, 5)).rejects.toThrow(
-        /producto_not_in_tenant/
-      );
+      await expectPgError(llamarRegistrar(otroProd.id, 'entrada', 10, 5), /producto_not_in_tenant/);
     } finally {
+      // limpia primero el producto del otro tenant para no romper FK
+      await db.delete(productos).where(eq(productos.id, otroProd.id));
       await db.delete(tenants).where(eq(tenants.id, otroTenant.id));
     }
   });

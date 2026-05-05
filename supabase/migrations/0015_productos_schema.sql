@@ -68,7 +68,7 @@ CREATE TABLE productos (
 
   -- Full-text
   search_vector       tsvector GENERATED ALWAYS AS (
-    to_tsvector('spanish', COALESCE(nombre,'') || ' ' || COALESCE(codigo,'') || ' ' || COALESCE(descripcion,''))
+    public.immutable_to_tsvector_spanish(COALESCE(nombre,'') || ' ' || COALESCE(codigo,'') || ' ' || COALESCE(descripcion,''))
   ) STORED,
 
   -- Timestamps

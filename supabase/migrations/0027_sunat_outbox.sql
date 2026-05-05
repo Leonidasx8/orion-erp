@@ -7,6 +7,10 @@
 
 CREATE EXTENSION IF NOT EXISTS pgmq CASCADE;
 
+-- pgmq.create() crea tablas internas y requiere search_path explícito;
+-- algunas versiones lo dejan vacío al instalar la extensión.
+SET LOCAL search_path TO public, pgmq;
+
 -- Crea la cola; idempotente (no lanza error si ya existe)
 DO $$
 BEGIN
