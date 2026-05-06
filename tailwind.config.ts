@@ -11,6 +11,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Escala 50-900 del template (landing pública). No usar en módulos del ERP.
         primary: {
           '50': 'var(--color-primary-50)',
           '100': 'var(--color-primary-100)',
@@ -71,11 +72,81 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
+
+        // === V1 Slate — tokens canónicos del ERP ===
+        // Uso directo: bg-orion-bg, text-orion-fg-muted, border-orion-border, etc.
+        orion: {
+          bg: 'var(--orion-bg)',
+          'bg-subtle': 'var(--orion-bg-subtle)',
+          'bg-muted': 'var(--orion-bg-muted)',
+          'bg-hover': 'var(--orion-bg-hover)',
+          border: 'var(--orion-border)',
+          'border-strong': 'var(--orion-border-strong)',
+          fg: 'var(--orion-fg)',
+          'fg-muted': 'var(--orion-fg-muted)',
+          'fg-subtle': 'var(--orion-fg-subtle)',
+          'fg-faint': 'var(--orion-fg-faint)',
+        },
+
+        // Tenant accents (también accesibles via var(--accent) en CSS)
+        idex: {
+          DEFAULT: 'var(--orion-idex)',
+          soft: 'var(--orion-idex-soft)',
+          fg: 'var(--orion-idex-fg)',
+        },
+        agro: {
+          DEFAULT: 'var(--orion-agro)',
+          soft: 'var(--orion-agro-soft)',
+          fg: 'var(--orion-agro-fg)',
+        },
+        dignita: {
+          DEFAULT: 'var(--orion-dignita)',
+          soft: 'var(--orion-dignita-soft)',
+          fg: 'var(--orion-dignita-fg)',
+        },
+
+        // Semantic V1 (independiente de shadcn destructive)
+        success: {
+          DEFAULT: 'var(--orion-success)',
+          soft: 'var(--orion-success-soft)',
+          fg: 'var(--orion-success-fg)',
+        },
+        warn: {
+          DEFAULT: 'var(--orion-warn)',
+          soft: 'var(--orion-warn-soft)',
+          fg: 'var(--orion-warn-fg)',
+        },
+        danger: {
+          DEFAULT: 'var(--orion-danger)',
+          soft: 'var(--orion-danger-soft)',
+          fg: 'var(--orion-danger-fg)',
+        },
+        info: {
+          DEFAULT: 'var(--orion-info)',
+          soft: 'var(--orion-info-soft)',
+          fg: 'var(--orion-info-fg)',
+        },
+
+        // Acento dinámico de tenant (cambia según wrapper .tenant-*)
+        'tenant-accent': 'var(--accent)',
+        'tenant-accent-soft': 'var(--accent-soft)',
+        'tenant-accent-fg': 'var(--accent-fg)',
+      },
+      fontFamily: {
+        sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-jetbrains-mono)', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        sm: 'var(--orion-r-sm)',
+        md: 'var(--orion-r-md)',
+        lg: 'var(--orion-r-lg)',
+        xl: 'var(--orion-r-xl)',
+      },
+      boxShadow: {
+        'orion-1': 'var(--orion-sh-1)',
+        'orion-2': 'var(--orion-sh-2)',
+        'orion-3': 'var(--orion-sh-3)',
+        'orion-pop': 'var(--orion-sh-pop)',
       },
     },
   },

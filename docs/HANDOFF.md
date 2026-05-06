@@ -2,20 +2,20 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-05 11:55 GMT-5
-**Branch activa:** `feat/B-08-sunat-infra` (sale de `feat/B-07-kardex`)
-**Último commit:** pendiente (fix migrations PG 15 + tests integration kardex)
-**Estado verificado:** typecheck verde, 40/40 unit tests verde, **9/9 integration tests kardex verde**, las 27 migrations aplican limpio en PG 15.8.
+**Última actualización:** 2026-05-06 11:00 GMT-5
+**Branch activa:** `feat/design-system-v1` (sale de `feat/B-08-sunat-infra`)
+**Último commit:** pendiente (Fase 0 design system V1 — tokens, fuentes, tenant theming, sidebar/header rebuild, dashboard pivote)
+**Estado verificado:** typecheck verde, 40/40 unit tests verde, 9/9 integration tests kardex verde, dashboard pivote renderiza limpio en `/preview/dashboard`.
 
 ---
 
 ## Reglas de oro de este proyecto
 
-1. **Mockups Claude Design son un GATE.** Cuando Claude Design no haya aprobado el módulo en `docs/design/`, está prohibido escribir UI (components React, pages con JSX). Backend (schema, server actions, migrations, tests, integraciones) sí se puede avanzar.
+1. **Sistema de Diseño V1 Slate aprobado el 2026-05-05.** Bundle integrado en `docs/design/` con `APPROVED.md` global. UI nueva sigue tokens en `globals.css` + `tailwind.config.ts` y los `.jsx` de referencia por módulo en `docs/design/<modulo>/`. Submódulos faltantes (B.6 órdenes compra, equipo-actividad, B.11 reportes) se derivan del módulo más cercano siguiendo los patrones del DS. Para pantallas no triviales (KardexTimeline, builder cotizaciones, PDFs) se muestra screenshot/diff antes de commitear (modo "ii"). El gate antiguo "un APPROVED.md por módulo" queda **derogado**.
 2. **Español peruano.** Nunca voseo argentino ("empezá", "hacé"). Usar tú/neutro.
 3. **Sonnet por default.** Avisar al usuario antes de cambiar a Opus. Opus solo para módulos complejos: B.5/B.7/B.9 (cotizaciones, kardex, SUNAT) y debugging cross-sistema.
 4. **Revisar y probar antes de continuar.** Al terminar cada tarea: typecheck + tests + lint, en ese orden. No pasar a la siguiente sin verde.
-5. **Una branch por módulo.** `feat/B-XX-<modulo>`. No mezclar trabajo de B.5 dentro de `feat/B-04-productos`.
+5. **Una branch por módulo.** `feat/B-XX-<modulo>` o `feat/<feature>` para cross-cutting. No mezclar trabajo de B.5 dentro de `feat/B-04-productos`.
 
 ---
 
@@ -242,6 +242,21 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
 ### 2026-05-04
 
 - 15:42 — Verificación de estado: typecheck verde, 40/40 unit tests verde en `feat/B-08-sunat-infra`. Pending: integration tests kardex/SUNAT (requieren `pnpm db:migrate`, destructivo). Diseños Claude Design recibidos pero pendiente integrar bundle a `docs/design/` antes de UI.
+
+### 2026-05-06
+
+- 11:00 — **Fase 0 Sistema de Diseño V1.** Bundle Claude Design (V1 Slate) integrado en `docs/design/` con `APPROVED.md` global firmado por Lucas. Branch `feat/design-system-v1` desde `feat/B-08-sunat-infra`. Cambios:
+  - `src/app/globals.css`: tokens V1 (neutrals slate-cool, tenant accents idex/agro/dignita, semantic), shadcn HSL realineado al V1, themes legacy del bootstrap eliminados (`theme-sass*`, `theme-blue`, `theme-purple`, `theme-green`).
+  - `tailwind.config.ts`: utilities `bg-orion-*`, `bg-tenant-accent*`, `bg-{idex,agro,dignita}-*`, `text-{success,warn,danger,info}-fg`, `font-mono`, `shadow-orion-*`.
+  - `src/app/layout.tsx`: Inter + JetBrains Mono via `next/font/google` con CSS variables.
+  - `src/lib/design/tenant-theme.ts`: helper `tenantThemeClass(slug)` mapea a `tenant-idex|agro|dignita`.
+  - `TenantSidebar` rebuild: 240px, brand mark + 4 secciones nav (Operación / Facturación / Análisis / Administración) + footer user. Active state usa `bg-tenant-accent-soft text-tenant-accent-fg`.
+  - `TenantHeader` rebuild: 56px, breadcrumbs, search ⌘K, help/bell icons, user pill.
+  - `(app)/[companySlug]/layout.tsx`: grid `240px / 1fr` × `56px / 1fr`, wraps con `tenantThemeClass(slug)`.
+  - `DashboardContent` (`src/components/modules/dashboard/`): pivote del DS — KPIs de 6, sales chart, pipeline cotizaciones, listas. Mock data inline (TODO: queries reales en B.11).
+  - `src/app/preview/dashboard/page.tsx`: ruta dev-only sin auth para QA visual del DS. Middleware whitelist en NODE_ENV=development.
+  - Primitivos compartidos nuevos: `Money`, `PageHead`, `Kpi`/`KpiRow`.
+  - Screenshot pivote validado: tokens, fuentes, tenant theming, sidebar/header, KPIs, charts, tables — todo coincide con mockup V1.
 
 ### 2026-05-05
 

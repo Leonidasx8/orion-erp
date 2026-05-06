@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<title>Sistema Orión · ERP B2B multi-tenant</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+<link rel="stylesheet" href="styles.css"/>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="layout.jsx"></script>
+
+<script type="text/babel" src="screens/00-design-system.jsx"></script>
+<script type="text/babel" src="screens/00-design-system-v2.jsx"></script>
+<script type="text/babel" src="screens/00-design-system-v3.jsx"></script>
+<script type="text/babel" src="screens/00-design-system-v4.jsx"></script>
+<script type="text/babel" src="screens/00-design-system-v5.jsx"></script>
+<script type="text/babel" src="screens/00-design-system-v6.jsx"></script>
+<script type="text/babel" src="screens/01-admin.jsx"></script>
+<script type="text/babel" src="screens/02-auth.jsx"></script>
+<script type="text/babel" src="screens/03-dashboard.jsx"></script>
+<script type="text/babel" src="screens/04-clientes.jsx"></script>
+<script type="text/babel" src="screens/05-productos.jsx"></script>
+<script type="text/babel" src="screens/06-cotizaciones.jsx"></script>
+<script type="text/babel" src="screens/07-inventario-guias.jsx"></script>
+<script type="text/babel" src="screens/08-facturas.jsx"></script>
+<script type="text/babel" src="screens/09-credito-admin.jsx"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const App = () => (
+  <DesignCanvas title="Sistema Orión" subtitle="ERP B2B multi-tenant · 26 pantallas + sistema de diseño">
+
+    <DCSection id="ds-ref" title="00 · Referencias visuales del cliente">
+      <DCArtboard id="ds-references" label="Las 6 direcciones que mandó el cliente" width={1536} height={1024}>
+        <img src="screens/orion-references.png" style={{ width: 1536, height: 1024, display: 'block' }}/>
+      </DCArtboard>
+    </DCSection>
+
+    <DCSection id="ds" title="00 · Sistema de diseño · 6 propuestas">
+      <DCArtboard id="ds-overview"    label="V1 · Slate (actual) · neutral + acento por tenant" width={1280} height={1700}><DSOverview/></DCArtboard>
+      <DCArtboard id="ds-overview-v2" label="V2 · NOVA · dark · denso · eléctrico"               width={1280} height={1500}><DSOverviewV2/></DCArtboard>
+      <DCArtboard id="ds-overview-v3" label="V3 · LUMEN · light · editorial · índigo"            width={1280} height={1700}><DSOverviewV3/></DCArtboard>
+      <DCArtboard id="ds-overview-v4" label="V4 · CORE · enterprise · Carbon · sin radios"       width={1280} height={1600}><DSOverviewV4/></DCArtboard>
+      <DCArtboard id="ds-overview-v5" label="V5 · TERRA · cálido · serif editorial · terracota"  width={1280} height={1700}><DSOverviewV5/></DCArtboard>
+      <DCArtboard id="ds-overview-v6" label="V6 · TYPESET · brutalist · mono only · papel crema" width={1280} height={1700}><DSOverviewV6/></DCArtboard>
+    </DCSection>
+
+    <DCSection id="auth" title="01 · Autenticación · Dignita / Magic link + MFA">
+      <DCArtboard id="login"               label="Login · magic link"             width={1280} height={760}><Login/></DCArtboard>
+      <DCArtboard id="login-mfa"           label="Verificación MFA · 6 dígitos"   width={1280} height={760}><LoginMfa/></DCArtboard>
+      <DCArtboard id="seleccionar-empresa" label="Seleccionar empresa · multi-tenant" width={1280} height={760}><SeleccionarEmpresa/></DCArtboard>
+    </DCSection>
+
+    <DCSection id="admin" title="02 · Admin Dignita · /admin (Superadmin de plataforma)">
+      <DCArtboard id="admin-dashboard" label="Dashboard plataforma"               width={1280} height={1100}><AdminDashboard/></DCArtboard>
+      <DCArtboard id="admin-tenants"   label="Lista de tenants"                   width={1280} height={900}><AdminTenants/></DCArtboard>
+      <DCArtboard id="admin-nuevo"     label="Provisionar nuevo tenant · wizard"  width={1280} height={1050}><AdminNuevoTenant/></DCArtboard>
+    </DCSection>
+
+    <DCSection id="dashboard" title="03 · Dashboard del tenant · Idex">
+      <DCArtboard id="tenant-dashboard" label="Dashboard · KPIs + alertas + actividad" width={1280} height={1200}><TenantDashboard/></DCArtboard>
+    </DCSection>
+
+    <DCSection id="clientes" title="04 · Clientes · CRUD + RUC autocompletado">
+      <DCArtboard id="clientes-list"   label="Lista de clientes · filtros + saldo"   width={1280} height={1000}><ClientesList/></DCArtboard>
+      <DCArtboard id="cliente-nuevo"   label="Nuevo cliente · 4 estados de RUC SUNAT" width={1280} height={1100}><ClienteNuevo/></DCArtboard>
+      <DCArtboard id="cliente-detalle" label="Detalle de cliente · 360°"             width={1280} height={1200}><ClienteDetalle/></DCArtboard>
+    </DCSection>
+
+    <DCSection id="productos" title="05 · Productos · catálogo + import Excel">
+      <DCArtboard id="productos-list"   label="Catálogo · grid de productos"            width={1280} height={1100}><ProductosList/></DCArtboard>
+      <DCArtboard id="producto-detalle" label="Detalle · precios + histórico"           width={1280} height={1100}><ProductoDetalle/></DCArtboard>
+      <DCArtboard id="productos-import" label="Importar Excel · vista previa con errores" width={1280} height={1100}><ProductosImportar/></DCArtboard>
+    </DCSection>
+
+    <DCSection id="cotizaciones" title="06 · Cotizaciones · pipeline + builder">
+      <DCArtboard id="cot-list"    label="Lista · pipeline por estado"            width={1280} height={1000}><CotizacionesList/></DCArtboard>
+      <DCArtboard id="cot-nueva"   label="Nueva cotización · builder + márgenes"  width={1280} height={1300}><CotizacionNueva/></DCArtboard>
+      <DCArtboard id="cot-detalle" label="Detalle · timeline + conversiones"      width={1280} height={1300}><CotizacionDetalle/></DCArtboard>
+    </DCSection>
+
+    <DCSection id="inventario" title="07 · Inventario y guías de remisión">
+      <DCArtboard id="inv-kardex"   label="Kardex · movimientos + alerta stock"   width={1280} height={1050}><InventarioKardex/></DCArtboard>
+      <DCArtboard id="inv-ajuste"   label="Ajuste manual · acción crítica"        width={1280} height={1000}><InventarioAjuste/></DCArtboard>
+      <DCArtboard id="guia-detalle" label="Guía de remisión · SUNAT aceptada"     width={1280} height={1300}><GuiaRemision/></DCArtboard>
+    </DCSection>
+
+    <DCSection id="facturas" title="08 · Facturación electrónica · SUNAT">
+      <DCArtboard id="fac-list"    label="Lista · estado SUNAT + pagos"           width={1280} height={1050}><FacturasList/></DCArtboard>
+      <DCArtboard id="fac-nueva"   label="Nueva factura · validación previa SUNAT" width={1280} height={1300}><FacturaNueva/></DCArtboard>
+      <DCArtboard id="fac-detalle" label="Detalle · rechazada · reintento"        width={1280} height={1400}><FacturaDetalle/></DCArtboard>
+    </DCSection>
+
+    <DCSection id="credito" title="09 · Crédito + Administración del tenant">
+      <DCArtboard id="credito-cxc" label="Crédito y CxC · aging report"           width={1280} height={1000}><CreditoCxC/></DCArtboard>
+      <DCArtboard id="usuarios"    label="Usuarios del tenant"                    width={1280} height={950}><UsuariosTenant/></DCArtboard>
+      <DCArtboard id="roles"       label="Roles y permisos · matriz"              width={1280} height={1200}><RolesPermisos/></DCArtboard>
+      <DCArtboard id="config"      label="Configuración del tenant"               width={1280} height={1100}><ConfiguracionTenant/></DCArtboard>
+    </DCSection>
+
+  </DesignCanvas>
+);
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>

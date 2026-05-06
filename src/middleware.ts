@@ -3,10 +3,18 @@ import { createServerClient } from '@supabase/ssr';
 
 const PUBLIC_PATHS = ['/login', '/login/mfa', '/login/recuperar', '/login/aceptar-invitacion'];
 
+// Rutas de preview del design system. La página adentro hace su propio gate
+// con NODE_ENV !== 'development' → 404. Aquí solo evitamos el redirect a /login.
+const DEV_PUBLIC_PATHS = ['/preview'];
+
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   if (path === '/' || PUBLIC_PATHS.some((p) => path.startsWith(p))) {
+    return NextResponse.next();
+  }
+
+  if (process.env.NODE_ENV === 'development' && DEV_PUBLIC_PATHS.some((p) => path.startsWith(p))) {
     return NextResponse.next();
   }
 

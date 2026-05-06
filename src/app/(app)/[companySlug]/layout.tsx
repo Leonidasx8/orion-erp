@@ -7,6 +7,7 @@ import { tenantMembers, roles, rolPermisos } from '@/lib/db/schema';
 import { TenantHeader } from '@/components/shared/TenantHeader';
 import { TenantSidebar } from '@/components/shared/TenantSidebar';
 import { PermissionsBootstrap } from '@/components/shared/PermissionsBootstrap';
+import { tenantThemeClass } from '@/lib/design/tenant-theme';
 
 export default async function TenantLayout({
   children,
@@ -31,7 +32,15 @@ export default async function TenantLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Cargar permisos del usuario para este tenant (bootstrap del store cliente)
+  const userMember = user
+    ? await db
+        .select({ rol: tenantMembers.rol })
+        .from(tenantMembers)
+        .where(and(eq(tenantMembers.userId, user.id), eq(tenantMembers.tenantId, tenant.id)))
+        .limit(1)
+    : [];
+  const userRol = userMember[0]?.rol;
+
   const userPermisos = user
     ? await db
         .selectDistinct({ codigo: rolPermisos.permisoCodigo })
@@ -44,14 +53,19 @@ export default async function TenantLayout({
         .where(and(eq(tenantMembers.userId, user.id), eq(tenantMembers.tenantId, tenant.id)))
     : [];
 
+  const userName = (user?.user_metadata?.nombre as string | undefined) ?? user?.email ?? undefined;
+
   return (
-    <div className="flex min-h-screen">
-      <TenantSidebar tenant={tenant} />
-      <div className="flex flex-1 flex-col">
-        <TenantHeader tenant={tenant} />
-        <PermissionsBootstrap permisos={userPermisos.map((p) => p.codigo)} />
-        <main className="flex-1 p-6">{children}</main>
-      </div>
+    <div
+      className={`grid h-screen min-h-0 ${tenantThemeClass(tenant.slug)}`}
+      style={{ gridTemplateColumns: '240px 1fr', gridTemplateRows: '56px 1fr' }}
+    >
+      <TenantSidebar tenant={tenant} userName={userName} userRole={userRol} />
+      <TenantHeader tenant={tenant} userName={userName} />
+      <PermissionsBootstrap permisos={userPermisos.map((p) => p.codigo)} />
+      <main className="col-start-2 row-start-2 overflow-auto bg-orion-bg-subtle p-6">
+        {children}
+      </main>
     </div>
   );
 }
