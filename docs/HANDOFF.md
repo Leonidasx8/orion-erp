@@ -2,10 +2,10 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-06 11:00 GMT-5
-**Branch activa:** `feat/design-system-v1` (sale de `feat/B-08-sunat-infra`)
-**Último commit:** pendiente (Fase 0 design system V1 — tokens, fuentes, tenant theming, sidebar/header rebuild, dashboard pivote)
-**Estado verificado:** typecheck verde, 40/40 unit tests verde, 9/9 integration tests kardex verde, dashboard pivote renderiza limpio en `/preview/dashboard`.
+**Última actualización:** 2026-05-06 23:00 GMT-5
+**Branch activa:** `feat/B-05-cotizaciones-ui` (sale de `feat/design-system-v1`)
+**Último commit:** pendiente (B.5 UI — lista + detalle cotizaciones, EstadoBadge compartido, previews dev-only)
+**Estado verificado:** typecheck verde, lint verde en archivos nuevos, pivote detalle renderiza limpio en `/preview/cotizaciones/1`.
 
 ---
 
@@ -257,6 +257,15 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
   - `src/app/preview/dashboard/page.tsx`: ruta dev-only sin auth para QA visual del DS. Middleware whitelist en NODE_ENV=development.
   - Primitivos compartidos nuevos: `Money`, `PageHead`, `Kpi`/`KpiRow`.
   - Screenshot pivote validado: tokens, fuentes, tenant theming, sidebar/header, KPIs, charts, tables — todo coincide con mockup V1.
+
+- 23:00 — **B.5 UI cotizaciones (lista + detalle).** Branch `feat/B-05-cotizaciones-ui` desde `feat/design-system-v1`. Componentes y rutas:
+  - `src/components/shared/EstadoBadge.tsx`: badge por estado (borrador/enviada/aprobada/etc.) con tokens semánticos. Compartido con OC y otros módulos.
+  - `src/components/modules/cotizaciones/CotizacionesList.tsx`: tabla + filtros chip por estado + KPIs (total/pipeline) + paginación.
+  - `src/components/modules/cotizaciones/CotizacionDetalle.tsx`: header con número mono + acciones permission-aware (PDF/Reenviar/Duplicar/Rechazar/Aprobar), grid 3:2 con tabla de líneas + términos a la izquierda y totales + timeline + conversiones a la derecha.
+  - `src/app/(app)/[companySlug]/cotizaciones/page.tsx`: server component, fetch en paralelo (rows + counts agregados + canCreate), `clienteDisplay` razon-vs-personas, formato de fecha corto.
+  - `src/app/(app)/[companySlug]/cotizaciones/[id]/page.tsx`: tenant-scoped fetch del header + items + 4 permisos en `Promise.all`, timeline derivado de `createdAt/enviadaAt/aceptadaAt/rechazadaAt`, `vencimientoTag` calculado vs hoy. TODO: campo dedicado para términos de pago/entrega y join con tenant_members para "comercial".
+  - `src/app/preview/cotizaciones/page.tsx` y `[id]/page.tsx`: rutas dev-only con mock data + sidebar/header completos para QA visual.
+  - Screenshot pivote validado: `b5-cotizaciones-detalle-pivote.png` en repo de setup. Tipografía, badge, tag de vencimiento, tabla, totales, timeline y conversiones coinciden con DS V1.
 
 ### 2026-05-05
 
