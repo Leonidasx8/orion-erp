@@ -67,9 +67,14 @@ const isoDate = (offsetDays = 0) => {
 // ─── Borrar tenant existente ──────────────────────────────────────────────
 async function purgeTenant(): Promise<void> {
   const [existing] = await db.select().from(tenants).where(eq(tenants.slug, TENANT_SLUG));
-  if (!existing) return;
-  log(`Borrando tenant existente "${TENANT_SLUG}" (${existing.id})…`);
-  await db.delete(tenants).where(eq(tenants.id, existing.id)); // CASCADE
+  if (existing) {
+    log(`Borrando tenant existente "${TENANT_SLUG}" (${existing.id})…`);
+    await db.delete(tenants).where(eq(tenants.id, existing.id)); // CASCADE
+  }
+  // casbin no tiene FK a tenants — limpiamos manualmente todas las reglas
+  // huérfanas (de runs anteriores que apuntan a tenants ya borrados).
+  await db.execute(sql`TRUNCATE TABLE casbin RESTART IDENTITY`);
+  log('Tabla casbin truncada');
 }
 
 // ─── Crear/reusar usuario en Supabase Auth ────────────────────────────────
@@ -136,8 +141,8 @@ async function createTenant(userId: string) {
   });
   log('User vinculado como superadmin');
 
-  // Sync casbin via insert directo en casbin_rule (más robusto que el enforcer en seed)
-  // Policies: rol_id → permiso_codigo dentro del tenant
+  // El adapter casbin-pg-adapter usa la tabla `casbin` (id, ptype, rule[]),
+  // NO `casbin_rule`. Insertamos en el formato correcto.
   const rolesPerms = await db
     .select({
       rolId: roles.id,
@@ -149,12 +154,10 @@ async function createTenant(userId: string) {
     .where(eq(roles.tenantId, t.id));
 
   for (const rp of rolesPerms) {
-    await db.execute(
-      sql`INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', ${rp.rolId}, ${rp.tenantId}, ${rp.permisoCodigo})`
-    );
+    const rule = JSON.stringify([rp.rolId, rp.tenantId, rp.permisoCodigo]);
+    await db.execute(sql`INSERT INTO casbin (ptype, rule) VALUES ('p', ${rule}::jsonb)`);
   }
 
-  // Groupings: user_id → rol_id dentro del tenant
   const members = await db
     .select({
       userId: tenantMembers.userId,
@@ -168,9 +171,8 @@ async function createTenant(userId: string) {
     .where(and(eq(tenantMembers.tenantId, t.id), eq(tenantMembers.estado, 'activo')));
 
   for (const m of members) {
-    await db.execute(
-      sql`INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('g', ${m.userId}, ${m.rolId}, ${t.id})`
-    );
+    const rule = JSON.stringify([m.userId, m.rolId, t.id]);
+    await db.execute(sql`INSERT INTO casbin (ptype, rule) VALUES ('g', ${rule}::jsonb)`);
   }
 
   log(`Casbin: ${rolesPerms.length} policies + ${members.length} groupings`);
