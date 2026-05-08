@@ -15,7 +15,10 @@ export type Estado =
   | 'vencida'
   | 'anulada'
   | 'convertida'
-  | 'pagada';
+  | 'pagada'
+  | 'recibida_parcial'
+  | 'recibida_total'
+  | 'cerrada';
 
 const CFG: Record<Estado, { label: string; className: string; lineThrough?: boolean }> = {
   borrador: { label: 'Borrador', className: 'bg-orion-bg-muted text-orion-fg-muted' },
@@ -32,6 +35,9 @@ const CFG: Record<Estado, { label: string; className: string; lineThrough?: bool
     lineThrough: true,
   },
   convertida: { label: 'Convertida', className: 'bg-orion-bg-muted text-orion-fg-muted' },
+  recibida_parcial: { label: 'Recibida parcial', className: 'bg-warn-soft text-warn-fg' },
+  recibida_total: { label: 'Recibida total', className: 'bg-success-soft text-success-fg' },
+  cerrada: { label: 'Cerrada', className: 'bg-orion-bg-muted text-orion-fg-muted' },
 };
 
 export function EstadoBadge({

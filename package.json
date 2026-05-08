@@ -13,6 +13,7 @@
     "db:diff": "supabase db diff",
     "db:push": "supabase db push",
     "db:migrate": "supabase db reset",
+    "db:seed": "tsx --env-file=.env.local scripts/seed-demo.ts",
     "db:types": "supabase gen types typescript --local > src/lib/database.types.ts",
     "db:studio": "supabase studio",
     "lint:fix": "eslint . --fix",

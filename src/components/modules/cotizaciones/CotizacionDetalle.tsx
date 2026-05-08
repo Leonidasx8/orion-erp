@@ -400,6 +400,9 @@ function labelLowercase(estado: Estado): string {
     pagada: 'pagada',
     rechazada: 'rechazada',
     vencida: 'vencida',
+    recibida_parcial: 'recibida parcial',
+    recibida_total: 'recibida total',
+    cerrada: 'cerrada',
     anulada: 'anulada',
     convertida: 'convertida',
   };
