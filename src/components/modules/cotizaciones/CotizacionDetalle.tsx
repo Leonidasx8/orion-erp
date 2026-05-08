@@ -1,4 +1,5 @@
-import { Bell, Check, Clock, Copy, FileText, Inbox, Receipt, Send } from 'lucide-react';
+import Link from 'next/link';
+import { Bell, Check, Clock, Copy, FileText, Inbox, Pencil, Receipt, Send } from 'lucide-react';
 import { Money } from '@/components/shared/Money';
 import { EstadoBadge, type Estado } from '@/components/shared/EstadoBadge';
 import { cn } from '@/lib/utils';
@@ -58,7 +59,6 @@ export function CotizacionDetalle({
   data: CotizacionDetalleData;
   tenantSlug: string;
 }) {
-  void tenantSlug;
   const conversionesDisponibles = data.estado === 'aprobada';
   const puedeAprobar = data.estado === 'enviada' && data.permissions.aprobar;
   const puedeRechazar = data.estado === 'enviada' && data.permissions.rechazar;
@@ -89,6 +89,15 @@ export function CotizacionDetalle({
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <DetalleBtn icon={<FileText size={13} />} label="PDF" />
+          {esEditable && (
+            <Link
+              href={`/${tenantSlug}/cotizaciones/${data.id}/editar`}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-3 text-[13px] font-medium text-orion-fg hover:bg-orion-bg-muted"
+            >
+              <Pencil size={13} />
+              Editar
+            </Link>
+          )}
           {data.permissions.reenviar && (
             <DetalleBtn icon={<Send size={13} />} label="Reenviar email" />
           )}

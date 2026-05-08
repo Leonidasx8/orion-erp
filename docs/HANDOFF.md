@@ -2,10 +2,10 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-06 23:00 GMT-5
+**Última actualización:** 2026-05-07 19:45 GMT-5
 **Branch activa:** `feat/B-05-cotizaciones-ui` (sale de `feat/design-system-v1`)
-**Último commit:** pendiente (B.5 UI — lista + detalle cotizaciones, EstadoBadge compartido, previews dev-only)
-**Estado verificado:** typecheck verde, lint verde en archivos nuevos, pivote detalle renderiza limpio en `/preview/cotizaciones/1`.
+**Último commit:** pendiente (B.5 UI — form crear/editar cotización, useFieldArray + cálculo reactivo)
+**Estado verificado:** typecheck verde, 40/40 unit tests verde, pivotes (lista, detalle, form) renderizan limpios; cálculo reactivo verificado vía Playwright (3 × 1240 → subtotal 3,720.00 + IGV 669.60 = 4,389.60).
 
 ---
 
@@ -266,6 +266,17 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
   - `src/app/(app)/[companySlug]/cotizaciones/[id]/page.tsx`: tenant-scoped fetch del header + items + 4 permisos en `Promise.all`, timeline derivado de `createdAt/enviadaAt/aceptadaAt/rechazadaAt`, `vencimientoTag` calculado vs hoy. TODO: campo dedicado para términos de pago/entrega y join con tenant_members para "comercial".
   - `src/app/preview/cotizaciones/page.tsx` y `[id]/page.tsx`: rutas dev-only con mock data + sidebar/header completos para QA visual.
   - Screenshot pivote validado: `b5-cotizaciones-detalle-pivote.png` en repo de setup. Tipografía, badge, tag de vencimiento, tabla, totales, timeline y conversiones coinciden con DS V1.
+
+### 2026-05-07
+
+- 19:45 — **B.5 UI form crear/editar cotización.** Misma branch (`feat/B-05-cotizaciones-ui`).
+  - `src/components/modules/cotizaciones/CotizacionForm.tsx`: client component con `useForm` + `useFieldArray` para items + `useWatch` (no `watch`) para reactivar totales en tiempo real. Selector de producto autopobla código/descripción/precio/IGV. Cálculo de subtotal por línea inline + Totales card con Subtotal / IGV / Descuento global / Total.
+  - **Decisión:** `useWatch({ control, name: 'items' })` en lugar de `watch('items')`. `watch` no notificaba reactivamente cuando RHF actualizaba items vía `useFieldArray` o `setValue`. Confirmado vía Playwright: con `watch` los totales quedaban en 0; con `useWatch` se actualizan al instante. `setValue` ahora pasa `{ shouldDirty: true }` para que el cambio sea observable.
+  - `src/app/(app)/[companySlug]/cotizaciones/nueva/page.tsx`: server component, valida permiso `cotizaciones.crear`, fetch de clientes y productos activos en paralelo.
+  - `src/app/(app)/[companySlug]/cotizaciones/[id]/editar/page.tsx`: idem, además bloquea edición si estado != borrador (redirect a detalle).
+  - `src/app/preview/cotizaciones/nueva/page.tsx`: preview dev con mock data.
+  - Botón "Editar" añadido al header del detalle cuando `esEditable === true`.
+  - Verificado en Playwright: 3 × 1240 → subtotal 3,720.00 + IGV 669.60 = 4,389.60. `b5-cotizaciones-form-filled.png` en repo de setup.
 
 ### 2026-05-05
 
