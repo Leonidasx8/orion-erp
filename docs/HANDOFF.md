@@ -2,10 +2,10 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-07 19:45 GMT-5
-**Branch activa:** `feat/B-05-cotizaciones-ui` (sale de `feat/design-system-v1`)
-**Último commit:** pendiente (B.5 UI — form crear/editar cotización, useFieldArray + cálculo reactivo)
-**Estado verificado:** typecheck verde, 40/40 unit tests verde, pivotes (lista, detalle, form) renderizan limpios; cálculo reactivo verificado vía Playwright (3 × 1240 → subtotal 3,720.00 + IGV 669.60 = 4,389.60).
+**Última actualización:** 2026-05-08 12:00 GMT-5
+**Branch activa:** `feat/B-07-kardex-ui` (sale de `feat/B-06-ordenes-ui`)
+**Último commit:** feat(inventario): B.7 UI — lista stock + kardex detalle + ajuste manual
+**Estado verificado:** typecheck verde, 40/40 unit tests verde, 3 preview routes renderizan limpias (b7-inventario-lista.png, b7-kardex-detalle.png, b7-ajuste-manual.png).
 
 ---
 
@@ -30,7 +30,7 @@
 | B.4 Productos catálogo                     | ✅ Mergeado                                           | `feat/B-04-productos`      |
 | B.5 Cotizaciones                           | 🟡 Backend completo — UI gate                         | `feat/B-05-cotizaciones`   |
 | B.6 Órdenes de compra                      | 🟡 Backend completo — UI gate                         | `feat/B-06-ordenes-compra` |
-| B.7 Kardex                                 | 🟡 Backend completo — UI gate                         | `feat/B-07-kardex`         |
+| B.7 Kardex                                 | ✅ UI completa                                        | `feat/B-07-kardex-ui`      |
 | **B.8 Guías de remisión**                  | 🟡 **EN CURSO** — infra lista, builders gate NUBEFACT | `feat/B-08-sunat-infra`    |
 | **B.9 Facturación SUNAT**                  | 🟡 **EN CURSO** — infra compartida con B.8            | `feat/B-08-sunat-infra`    |
 | B.10 Crédito + CxC                         | ⏸️ Pendiente                                          | —                          |
@@ -92,19 +92,19 @@ Plan: `docs/plans/B-07-kardex.md`. ADR: `docs/DECISIONS/0010-kardex-costing-poli
 
 ### Tareas (10 total)
 
-| #   | Tarea                                                    | Estado | Comentario                                                                                                                                     |
-| --- | -------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0   | ADR política de costing                                  | ✅     | Costo promedio ponderado, stock negativo bloqueado por default, sin multi-warehouse en MVP, sin reservas.                                      |
-| 1   | Schema kardex_movimientos + costos_inventario + RLS      | ✅     | Migration `0021`. Append-only. RLS solo SELECT en kardex; INSERTs van por la función SQL.                                                      |
-| 2   | Vistas stock_actual + stock_critico                      | ✅     | Migration `0022`. `security_invoker = true` para respetar RLS. Adaptado al schema real (`codigo`, `nombre`, `stock_minimo`).                   |
-| 3   | Función registrar_movimiento_stock con SELECT FOR UPDATE | ✅     | En migration `0021` (incluida con la tabla). Lock por producto; productos diferentes corren en paralelo.                                       |
-| 4   | Server actions: ajusteManualStock, consultarKardex       | ✅     | `src/server/actions/kardex.ts`. Errores PG mapeados a mensajes de negocio.                                                                     |
-| 5   | Helpers internos kardex (B.6/B.9 wire-up)                | ✅     | `src/server/actions/kardex-internal.ts`: `registrarEntradaPorOC`, `registrarSalidaPorFactura`, `registrarSalidaPorGuia`, `reversarMovimiento`. |
-| 5b  | Wire B.6 `recibirParcial` → kardex                       | ✅     | `recibirParcial` ahora invoca `registrarEntradaPorOC` por cada línea con producto. Usa `precioUnitario` como costo.                            |
-| 6   | UI inventario + KardexTimeline                           | ⛔     | **Bloqueado por Claude Design.**                                                                                                               |
-| 7   | UI ajustes manuales                                      | ⛔     | **Bloqueado por Claude Design.**                                                                                                               |
-| 8   | Tests de concurrencia (vitest integration)               | 🟡     | Escritos en `tests/integration/kardex/concurrencia.test.ts` (9 casos). Requieren `pnpm db:migrate` para correr — pendiente.                    |
-| 9   | UI stock crítico                                         | ⛔     | **Bloqueado por Claude Design.**                                                                                                               |
+| #   | Tarea                                                    | Estado | Comentario                                                                                                                                                                                                                 |
+| --- | -------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0   | ADR política de costing                                  | ✅     | Costo promedio ponderado, stock negativo bloqueado por default, sin multi-warehouse en MVP, sin reservas.                                                                                                                  |
+| 1   | Schema kardex_movimientos + costos_inventario + RLS      | ✅     | Migration `0021`. Append-only. RLS solo SELECT en kardex; INSERTs van por la función SQL.                                                                                                                                  |
+| 2   | Vistas stock_actual + stock_critico                      | ✅     | Migration `0022`. `security_invoker = true` para respetar RLS. Adaptado al schema real (`codigo`, `nombre`, `stock_minimo`).                                                                                               |
+| 3   | Función registrar_movimiento_stock con SELECT FOR UPDATE | ✅     | En migration `0021` (incluida con la tabla). Lock por producto; productos diferentes corren en paralelo.                                                                                                                   |
+| 4   | Server actions: ajusteManualStock, consultarKardex       | ✅     | `src/server/actions/kardex.ts`. Errores PG mapeados a mensajes de negocio.                                                                                                                                                 |
+| 5   | Helpers internos kardex (B.6/B.9 wire-up)                | ✅     | `src/server/actions/kardex-internal.ts`: `registrarEntradaPorOC`, `registrarSalidaPorFactura`, `registrarSalidaPorGuia`, `reversarMovimiento`.                                                                             |
+| 5b  | Wire B.6 `recibirParcial` → kardex                       | ✅     | `recibirParcial` ahora invoca `registrarEntradaPorOC` por cada línea con producto. Usa `precioUnitario` como costo.                                                                                                        |
+| 6   | UI inventario + KardexTimeline                           | ✅     | `InventarioList` + `KardexDetalle`. Lista con chip filters (todos/sin_stock/critico/normal), alerta stock crítico, KPI strip 5 cols, tabla movimientos con colores entrada/salida/ajuste. Commit en `feat/B-07-kardex-ui`. |
+| 7   | UI ajustes manuales                                      | ✅     | `AjusteManualForm`: alerta roja acción crítica, form tipo+cantidad+motivo, preview reactivo antes/después de stock y valor, audit trail preview.                                                                           |
+| 8   | Tests de concurrencia (vitest integration)               | 🟡     | Escritos en `tests/integration/kardex/concurrencia.test.ts` (9 casos). Requieren `pnpm db:migrate` para correr — pendiente.                                                                                                |
+| 9   | UI stock crítico                                         | ✅     | Integrado en `InventarioList` (chip filter + alerta banner) y `KardexDetalle` (alerta + KPI en warn-fg).                                                                                                                   |
 
 ### Decisiones técnicas no obvias
 
@@ -287,6 +287,15 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
   - **Decisión:** PL/pgSQL en lugar de SQL para el wrapper porque SQL inmutable se inlinea y la expresión inlineada vuelve a no ser IMMUTABLE.
   - Tests kardex (`tests/integration/kardex/concurrencia.test.ts`): nuevo helper `expectPgError()` que des-envuelve los errores que drizzle wraps con "Failed query: ..." (el RAISE EXCEPTION de PL/pgSQL queda en `err.cause.message`). `afterEach` limpia kardex_movimientos antes que productos (FK RESTRICT por diseño).
   - **9/9 integration tests verde.** 27 migrations apply clean.
+
+### 2026-05-08
+
+- 12:00 — **B.7 UI inventario/kardex.** Branch `feat/B-07-kardex-ui` desde `feat/B-06-ordenes-ui`. Componentes:
+  - `src/components/modules/inventario/InventarioList.tsx`: tabla stock con chip filters (todos/sin_stock/critico/normal), alerta banner si hay productos críticos, badges de estado coloreados, link a kardex por producto.
+  - `src/components/modules/inventario/KardexDetalle.tsx`: KPI strip 5 cols (stock/mínimo/costo/valor/rotación 30d), alerta bajo mínimo + CTA "Crear orden", tabla movimientos con tipo coloreado (entrada verde/salida rojo/ajuste azul), chip filters por tipo, origenLabel para documentos.
+  - `src/components/modules/inventario/AjusteManualForm.tsx`: useForm + ajusteManualSchema, preview reactivo stock antes/después + valor antes/después, alerta roja "acción crítica", audit trail preview en monospace. Usa server action `ajusteManualStock`.
+  - Routes: `/inventario`, `/inventario/[productoId]`, `/inventario/[productoId]/ajuste`. Previews en `/preview/inventario/`.
+  - 3 screenshots pivote validados vía Playwright.
 
 ### 2026-04-29
 
