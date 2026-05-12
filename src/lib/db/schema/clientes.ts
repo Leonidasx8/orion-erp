@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, boolean, numeric } from 'drizzle-orm/pg-core';
 import { tenants } from './tenants';
 
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true });
@@ -21,6 +21,12 @@ export const clientes = pgTable('clientes', {
 
   email: text('email'),
   telefono: text('telefono'),
+
+  nombreComercial: text('nombre_comercial'),
+  lineaCredito: numeric('linea_credito', { precision: 14, scale: 2 }).notNull().default('0'),
+  plazoCredito: text('plazo_credito').notNull().default('contado'),
+  listaPrecio: text('lista_precio').notNull().default('default'),
+  comercialId: uuid('comercial_id'),
 
   condicionSunat: text('condicion_sunat'),
   estadoSunat: text('estado_sunat'),

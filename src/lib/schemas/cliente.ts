@@ -19,6 +19,11 @@ export const clienteSchema = z
     apellidoPaterno: z.string().min(2).max(100).optional(),
     apellidoMaterno: z.string().max(100).optional(),
 
+    nombreComercial: z.string().optional(),
+    lineaCredito: z.coerce.number().min(0).default(0),
+    plazoCredito: z.enum(['contado', '15dias', '30dias', '60dias']).default('contado'),
+    listaPrecio: z.string().default('default'),
+
     email: z.string().email().optional().or(z.literal('')),
     telefono: z.string().max(20).optional(),
 

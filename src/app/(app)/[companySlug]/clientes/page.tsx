@@ -24,6 +24,9 @@ export default async function ClientesPage() {
         email: clientes.email,
         telefono: clientes.telefono,
         estado: clientes.estado,
+        lineaCredito: clientes.lineaCredito,
+        plazoCredito: clientes.plazoCredito,
+        updatedAt: clientes.updatedAt,
       })
       .from(clientes)
       .where(eq(clientes.tenantId, tenant.id))

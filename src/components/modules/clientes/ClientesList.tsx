@@ -12,46 +12,64 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { ChevronDown, ChevronUp, ChevronsUpDown, Plus, Search } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronUp,
+  ChevronsUpDown,
+  Plus,
+  Search,
+  Download,
+  Upload,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { Cliente } from '@/lib/db/schema';
 
-type ClienteRow = Pick<
-  Cliente,
-  | 'id'
-  | 'tipoDocumento'
-  | 'numeroDocumento'
-  | 'razonSocial'
-  | 'nombres'
-  | 'apellidoPaterno'
-  | 'apellidoMaterno'
-  | 'email'
-  | 'telefono'
-  | 'estado'
-  | 'tipoPersona'
->;
+type ClienteRow = {
+  id: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  tipoPersona: string;
+  razonSocial: string | null;
+  nombres: string | null;
+  apellidoPaterno: string | null;
+  apellidoMaterno: string | null;
+  email: string | null;
+  telefono: string | null;
+  estado: string;
+  lineaCredito: string | null;
+  plazoCredito: string | null;
+  updatedAt: Date;
+};
 
 function nombreDisplay(c: ClienteRow) {
   if (c.tipoPersona === 'juridica') return c.razonSocial ?? '—';
   return [c.nombres, c.apellidoPaterno, c.apellidoMaterno].filter(Boolean).join(' ') || '—';
 }
 
+function fmt(val: string | null) {
+  if (!val) return '—';
+  const n = parseFloat(val);
+  if (isNaN(n)) return '—';
+  return `USD ${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
+function tiempoRelativo(date: Date) {
+  const diff = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `hace ${mins}m`;
+  const hs = Math.floor(mins / 60);
+  if (hs < 24) return `hace ${hs}h`;
+  const ds = Math.floor(hs / 24);
+  if (ds === 1) return 'ayer';
+  if (ds < 7) return `hace ${ds}d`;
+  return new Date(date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
+}
+
 const columns: ColumnDef<ClienteRow>[] = [
   {
-    accessorKey: 'numeroDocumento',
-    header: 'Documento',
-    cell: ({ row }) => (
-      <span className="font-mono text-sm">
-        <span className="mr-1 text-xs text-muted-foreground">{row.original.tipoDocumento}</span>
-        {row.original.numeroDocumento}
-      </span>
-    ),
-  },
-  {
     id: 'nombre',
-    header: 'Cliente',
+    header: 'Razón social',
     cell: ({ row }) => (
       <Link href={`clientes/${row.original.id}`} className="font-medium hover:underline">
         {nombreDisplay(row.original)}
@@ -59,30 +77,50 @@ const columns: ColumnDef<ClienteRow>[] = [
     ),
   },
   {
-    accessorKey: 'email',
-    header: 'Email',
-    cell: ({ getValue }) => <span className="text-sm">{(getValue() as string) ?? '—'}</span>,
+    accessorKey: 'numeroDocumento',
+    header: 'RUC / DNI',
+    cell: ({ row }) => (
+      <span className="font-mono text-sm text-muted-foreground">
+        {row.original.numeroDocumento}
+      </span>
+    ),
   },
   {
-    accessorKey: 'telefono',
-    header: 'Teléfono',
-    cell: ({ getValue }) => <span className="text-sm">{(getValue() as string) ?? '—'}</span>,
+    accessorKey: 'tipoPersona',
+    header: 'Tipo',
+    cell: ({ row }) => (
+      <Badge variant="secondary" className="text-xs">
+        {row.original.tipoPersona === 'juridica' ? 'Jurídico' : 'Natural'}
+      </Badge>
+    ),
   },
   {
-    accessorKey: 'estado',
-    header: 'Estado',
-    cell: ({ getValue }) => {
-      const estado = getValue() as string;
-      return (
-        <Badge
-          variant={
-            estado === 'activo' ? 'default' : estado === 'bloqueado' ? 'destructive' : 'secondary'
-          }
-        >
-          {estado}
-        </Badge>
-      );
-    },
+    accessorKey: 'lineaCredito',
+    header: () => <span className="block text-right">Línea crédito</span>,
+    cell: ({ row }) => (
+      <span className="block text-right text-sm tabular-nums">
+        {fmt(row.original.lineaCredito)}
+      </span>
+    ),
+  },
+  {
+    id: 'saldo',
+    header: () => <span className="block text-right">Saldo CxC</span>,
+    cell: () => <span className="block text-right text-sm text-muted-foreground">—</span>,
+  },
+  {
+    id: 'comercial',
+    header: 'Comercial',
+    cell: () => <span className="text-sm text-muted-foreground">—</span>,
+  },
+  {
+    id: 'ultimoDoc',
+    header: 'Último doc',
+    cell: ({ row }) => (
+      <span className="text-xs text-muted-foreground">
+        {tiempoRelativo(row.original.updatedAt)}
+      </span>
+    ),
   },
   {
     id: 'acciones',
@@ -120,26 +158,47 @@ export function ClientesList({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative max-w-sm flex-1">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-80 flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nombre, documento..."
+            placeholder="Buscar por razón social, RUC, nombre comercial…"
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="pl-8"
           />
         </div>
-        {canCreate && (
-          <Button asChild>
-            <Link href="clientes/nuevo">
-              <Plus className="mr-1.5 h-4 w-4" />
-              Nuevo cliente
-            </Link>
+        <div className="ml-auto flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Upload className="mr-1.5 h-3.5 w-3.5" />
+            Importar
           </Button>
-        )}
+          <Button variant="outline" size="sm">
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            Exportar
+          </Button>
+          {canCreate && (
+            <Button asChild size="sm">
+              <Link href="clientes/nuevo">
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Nuevo cliente
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
+      {/* Results count */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>
+          {table.getFilteredRowModel().rows.length} resultado
+          {table.getFilteredRowModel().rows.length !== 1 ? 's' : ''}
+          {globalFilter && ` · búsqueda: "${globalFilter}"`}
+        </span>
+      </div>
+
+      {/* Table */}
       <div className="rounded-lg border">
         <table className="w-full text-sm">
           <thead>
@@ -190,10 +249,10 @@ export function ClientesList({
         </table>
       </div>
 
+      {/* Pagination */}
       {table.getPageCount() > 1 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            Mostrando{' '}
             {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}–
             {Math.min(
               (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,

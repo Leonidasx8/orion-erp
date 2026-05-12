@@ -40,7 +40,12 @@ export async function crearCliente(input: ClienteInput): Promise<ActionResult<{ 
 
   const [row] = await db
     .insert(clientes)
-    .values({ ...data, tenantId: tenant.id, createdBy: user.id })
+    .values({
+      ...data,
+      lineaCredito: String(data.lineaCredito),
+      tenantId: tenant.id,
+      createdBy: user.id,
+    })
     .returning({ id: clientes.id });
 
   revalidatePath(`/${tenant.slug}/clientes`);
@@ -59,7 +64,7 @@ export async function actualizarCliente(
 
   await db
     .update(clientes)
-    .set({ ...data, updatedAt: new Date() })
+    .set({ ...data, lineaCredito: String(data.lineaCredito), updatedAt: new Date() })
     .where(and(eq(clientes.id, clienteId), eq(clientes.tenantId, tenant.id)));
 
   revalidatePath(`/${tenant.slug}/clientes`);
