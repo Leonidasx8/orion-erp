@@ -10,6 +10,7 @@ const RELOAD_TTL_MS = 30_000;
 async function buildEnforcer(): Promise<Enforcer> {
   const adapter = await PostgresAdapter.newAdapter({
     connectionString: process.env.DATABASE_URL!,
+    migrate: false,
   });
 
   return newEnforcer(path.join(process.cwd(), 'src/lib/auth/casbin/model.conf'), adapter);

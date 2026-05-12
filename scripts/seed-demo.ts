@@ -870,6 +870,34 @@ async function seedOrdenes(tenantId: string, prods: ProductoRow[], cls: ClienteR
   log(`${created} órdenes de compra creadas`);
 }
 
+// ─── Kardex inicial ────────────────────────────────────────────────────────
+async function seedKardex(
+  tenantId: string,
+  prods: { id: string; stockActual: string | null; costoUnitario: string | null }[]
+) {
+  let created = 0;
+  for (const p of prods) {
+    const stock = Number(p.stockActual ?? 0);
+    const costo = Number(p.costoUnitario ?? 0);
+    if (stock <= 0) continue;
+    await db.execute(sql`
+      SELECT registrar_movimiento_stock(
+        ${tenantId}::uuid,
+        ${p.id}::uuid,
+        'entrada',
+        ${stock}::numeric,
+        'manual',
+        NULL,
+        ${costo > 0 ? costo : 1}::numeric,
+        'Stock inicial demo',
+        NULL
+      )
+    `);
+    created++;
+  }
+  log(`${created} movimientos kardex iniciales creados`);
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────
 async function main() {
   log('Iniciando seed demo…');
@@ -883,6 +911,7 @@ async function main() {
   const cls = await seedClientes(tenant.id);
   await seedCotizaciones(tenant.id, userId, prods, cls);
   await seedOrdenes(tenant.id, prods, cls);
+  await seedKardex(tenant.id, prods);
 
   log('');
   log('=== Seed completo ===');
