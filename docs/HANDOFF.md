@@ -2,10 +2,32 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-08 12:00 GMT-5
+**Última actualización:** 2026-05-12 10:50 GMT-5
 **Branch activa:** `feat/B-07-kardex-ui` (sale de `feat/B-06-ordenes-ui`)
-**Último commit:** feat(inventario): B.7 UI — lista stock + kardex detalle + ajuste manual
-**Estado verificado:** typecheck verde, 40/40 unit tests verde, 3 preview routes renderizan limpias (b7-inventario-lista.png, b7-kardex-detalle.png, b7-ajuste-manual.png).
+**Último commit:** fix: seed kardex inicial + casbin migrate:false para demo local (d36be3d)
+**Estado verificado:** typecheck verde, 40/40 unit tests verde. Demo local FUNCIONAL — todos los módulos B.0–B.7 verificados en browser (ver DEMO-13-MAY-PRESENTACION.md).
+
+### Fixes críticos de esta sesión (2026-05-12)
+
+1. **casbin-pg-adapter race condition**: El adapter v1.4.0 usa tabla `casbin` con schema `(id serial, ptype text, rule jsonb)`, distinto a la migración 0009 que creaba `casbin_rule` con columnas v0-v5. Fix: migración `0028_casbin_jsonb.sql` crea la tabla correcta; `migrate: false` en `PostgresAdapter.newAdapter()` evita que el adapter intente recrearla. Ver `supabase/migrations/0028_casbin_jsonb.sql` y `src/lib/auth/casbin/index.ts`.
+
+2. **Inventario sin datos**: La vista `stock_actual` lee de `costos_inventario`, que solo se llena vía `registrar_movimiento_stock()`. El seed insertaba `stockActual` en `productos` pero nunca llamaba la función PG. Fix: `seedKardex()` en `scripts/seed-demo.ts` llama `registrar_movimiento_stock()` con `tipo='entrada'` por cada producto (tipo='ajuste_pos' no actualiza el costo promedio).
+
+3. **Login magic link en Playwright**: El flujo PKCE falla en callback SSR porque el code_verifier está en localStorage (browser) pero `exchangeCodeForSession` en Route Handler busca en cookies. Para testing local: usar `supabase auth admin generate_link` (non-PKCE) + `supabase.auth.setSession()` desde el browser JS. **No afecta a usuarios reales** — el flujo de magic link desde el propio browser (sin Playwright) funciona correctamente.
+
+### Estado del seed demo
+
+```
+URL:     http://localhost:3000/idex
+Login:   lucas@orion.demo / orion-demo-2026
+         (magic link → Inbucket en http://127.0.0.1:54324)
+
+Datos:   18 productos eléctricos (USD 232,604 inventario)
+         10 clientes (8 clientes + 2 proveedores)
+         9 cotizaciones (todos los estados)
+         7 órdenes de compra (todos los estados + recepción)
+         18 movimientos kardex iniciales
+```
 
 ---
 
