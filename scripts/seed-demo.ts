@@ -867,6 +867,14 @@ async function seedOrdenes(tenantId: string, prods: ProductoRow[], cls: ClienteR
       .values(itemsRows.map((r) => ({ ...r, ordenId: oc.id, tenantId })));
     created++;
   }
+
+  // Sincronizar el correlativo para que nuevas órdenes no colisionen
+  await db.execute(sql`
+    INSERT INTO correlativos_orden_compra (tenant_id, ano, ultimo_correlativo)
+    VALUES (${tenantId}::uuid, ${new Date().getFullYear()}, ${escenarios.length})
+    ON CONFLICT (tenant_id, ano) DO UPDATE SET ultimo_correlativo = EXCLUDED.ultimo_correlativo
+  `);
+
   log(`${created} órdenes de compra creadas`);
 }
 

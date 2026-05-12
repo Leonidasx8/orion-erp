@@ -11,9 +11,10 @@ import type { DatosSunat } from '@/lib/sunat/consultar-documento';
 interface Props {
   tipo: 'RUC' | 'DNI';
   onResultado: (data: DatosSunat) => void;
+  onNumeroChange?: (numero: string) => void;
 }
 
-export function DocAutocomplete({ tipo, onResultado }: Props) {
+export function DocAutocomplete({ tipo, onResultado, onNumeroChange }: Props) {
   const [numero, setNumero] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export function DocAutocomplete({ tipo, onResultado }: Props) {
     const limpio = v.replace(/\D/g, '').slice(0, maxLen);
     setNumero(limpio);
     setError(null);
+    onNumeroChange?.(limpio);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

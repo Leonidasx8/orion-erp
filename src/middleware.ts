@@ -48,8 +48,9 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // /[companySlug]/...: validar que el user pertenece al tenant
-  const slug = path.split('/').filter(Boolean)[0];
+  // Para rutas API el slug está en la segunda posición: /api/[companySlug]/...
+  const segments = path.split('/').filter(Boolean);
+  const slug = segments[0] === 'api' ? segments[1] : segments[0];
   if (!slug) return response;
 
   const { data, error } = await supabase
@@ -60,6 +61,10 @@ export async function middleware(request: NextRequest) {
     .maybeSingle();
 
   if (error || !data) {
+    // API routes → 403 JSON, frontend routes → redirect
+    if (segments[0] === 'api') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     return NextResponse.redirect(new URL('/seleccionar-empresa', request.url));
   }
 

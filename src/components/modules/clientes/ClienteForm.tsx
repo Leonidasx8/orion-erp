@@ -132,7 +132,11 @@ export function ClienteForm({ companySlug, cliente }: Props) {
         </div>
 
         {tipoDoc === 'RUC' || tipoDoc === 'DNI' ? (
-          <DocAutocomplete tipo={tipoDoc as 'RUC' | 'DNI'} onResultado={onResultadoSunat} />
+          <DocAutocomplete
+            tipo={tipoDoc as 'RUC' | 'DNI'}
+            onResultado={onResultadoSunat}
+            onNumeroChange={(n) => setValue('numeroDocumento', n)}
+          />
         ) : (
           <div className="space-y-1.5">
             <Label htmlFor="numero-doc">Número de documento</Label>

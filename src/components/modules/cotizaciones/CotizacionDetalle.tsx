@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { Bell, Check, Clock, Copy, FileText, Inbox, Pencil, Receipt, Send } from 'lucide-react';
+import { Bell, Clock, Inbox, Pencil, Receipt } from 'lucide-react';
 import { Money } from '@/components/shared/Money';
 import { EstadoBadge, type Estado } from '@/components/shared/EstadoBadge';
+import { CotizacionActions } from './CotizacionActions';
 import { cn } from '@/lib/utils';
 
 export type CotizacionDetalleItem = {
@@ -45,6 +46,7 @@ export type CotizacionDetalleData = {
   };
   timeline: TimelineEvento[];
   permissions: {
+    enviar: boolean;
     aprobar: boolean;
     rechazar: boolean;
     duplicar: boolean;
@@ -60,8 +62,6 @@ export function CotizacionDetalle({
   tenantSlug: string;
 }) {
   const conversionesDisponibles = data.estado === 'aprobada';
-  const puedeAprobar = data.estado === 'enviada' && data.permissions.aprobar;
-  const puedeRechazar = data.estado === 'enviada' && data.permissions.rechazar;
   const esEditable = data.estado === 'borrador';
 
   return (
@@ -88,7 +88,6 @@ export function CotizacionDetalle({
           </div>
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <DetalleBtn icon={<FileText size={13} />} label="PDF" />
           {esEditable && (
             <Link
               href={`/${tenantSlug}/cotizaciones/${data.id}/editar`}
@@ -98,27 +97,12 @@ export function CotizacionDetalle({
               Editar
             </Link>
           )}
-          {data.permissions.reenviar && (
-            <DetalleBtn icon={<Send size={13} />} label="Reenviar email" />
-          )}
-          {data.permissions.duplicar && <DetalleBtn icon={<Copy size={13} />} label="Duplicar" />}
-          {puedeRechazar && (
-            <button
-              type="button"
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-orion-border px-3 text-[13px] font-medium text-danger-fg hover:bg-danger-soft"
-            >
-              Rechazar
-            </button>
-          )}
-          {puedeAprobar && (
-            <button
-              type="button"
-              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-tenant-accent px-3 text-[13px] font-medium text-white hover:brightness-95"
-            >
-              <Check size={13} />
-              Aprobar
-            </button>
-          )}
+          <CotizacionActions
+            cotizacionId={data.id}
+            estado={data.estado}
+            tenantSlug={tenantSlug}
+            permissions={data.permissions}
+          />
         </div>
       </div>
 
@@ -259,18 +243,6 @@ export function CotizacionDetalle({
 }
 
 /* === Subcomponentes locales === */
-
-function DetalleBtn({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <button
-      type="button"
-      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-3 text-[13px] font-medium text-orion-fg hover:bg-orion-bg-muted"
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
 
 function Card({ children }: { children: React.ReactNode }) {
   return (

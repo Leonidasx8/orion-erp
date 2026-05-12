@@ -92,6 +92,7 @@ const MOCK: CotizacionDetalleData = {
     { id: 't3', tipo: 'done', titulo: 'PDF abierto', meta: '27 abr 2026 · 14:33' },
   ],
   permissions: {
+    enviar: true,
     aprobar: true,
     rechazar: true,
     duplicar: true,

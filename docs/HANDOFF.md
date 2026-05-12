@@ -2,12 +2,31 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-12 10:50 GMT-5
-**Branch activa:** `feat/B-07-kardex-ui` (sale de `feat/B-06-ordenes-ui`)
-**Último commit:** fix: seed kardex inicial + casbin migrate:false para demo local (d36be3d)
-**Estado verificado:** typecheck verde, 40/40 unit tests verde. Demo local FUNCIONAL — todos los módulos B.0–B.7 verificados en browser (ver DEMO-13-MAY-PRESENTACION.md).
+**Última actualización:** 2026-05-12 19:05 GMT-5
+**Branch activa:** `feat/B-07-kardex-ui`
+**Estado verificado:** Demo local FUNCIONAL — todos los botones verificados end-to-end en browser.
 
-### Fixes críticos de esta sesión (2026-05-12)
+### Fixes sesión tarde 2026-05-12 (verificación botones pre-demo)
+
+1. **PDF cotización fallaba (500 font error)**: `CotizacionPDF.tsx` usaba `fontFamily: 'Inter'` sin registrar la fuente. Fix: cambiar a `fontFamily: 'Helvetica'` (built-in `@react-pdf/renderer`). Archivos: `src/lib/pdf/CotizacionPDF.tsx` (creado), `src/app/api/[companySlug]/cotizaciones/[id]/pdf/route.ts` (creado).
+
+2. **Acciones cotización (Enviar/Aprobar/Rechazar/Duplicar) sin handler**: Los botones eran `<DetalleBtn>` sin onClick. Fix: nuevo `CotizacionActions.tsx` (client component) con todos los handlers. El layout de CotizacionDetalle se refactorizó para rendericiarlos. Archivos: `src/components/modules/cotizaciones/CotizacionActions.tsx` (creado), `CotizacionDetalle.tsx` (modificado).
+
+3. **Middleware no inyectaba x-tenant-id en rutas API**: El slug extraction usaba `segments[0]` para `/api/[companySlug]/...`, obteniendo `'api'` en lugar del slug real. Fix: `segments[0] === 'api' ? segments[1] : segments[0]`. Archivo: `src/middleware.ts`.
+
+4. **Schema cotización bloqueaba PEN sin tipo de cambio**: `z.coerce.number().positive()` convertía `""` a `0` fallando `.positive()`. Fix: `z.preprocess((v) => v === '' || v == null ? undefined : v, ...)`. Archivo: `src/lib/schemas/cotizacion.ts`.
+
+5. **DocAutocomplete bloqueaba crear cliente sin SUNAT**: El número de documento solo se propagaba a react-hook-form si el lookup SUNAT tenía éxito. Fix: nuevo prop `onNumeroChange` que actualiza el campo en cada keystroke. Archivos: `src/components/modules/clientes/DocAutocomplete.tsx`, `ClienteForm.tsx`.
+
+6. **Nueva orden fallaba con duplicate key en OC-2026-00001**: `correlativos_orden_compra` tabla no inicializada en seed. Fix: upsert al final de `seedOrdenesCompra()` + fix directo en DB local. Archivo: `scripts/seed-demo.ts`.
+
+### Placeholders documentados (no son bugs)
+
+- "Exportar kardex" — botón visual sin handler (download pendiente)
+- "Exportar" en lista cotizaciones y órdenes — botón visual sin handler
+- Filtros Mes/Trimestre/Año en Dashboard — estáticos, sin lógica de filtrado
+
+### Fixes críticos de sesión mañana 2026-05-12
 
 1. **casbin-pg-adapter race condition**: El adapter v1.4.0 usa tabla `casbin` con schema `(id serial, ptype text, rule jsonb)`, distinto a la migración 0009 que creaba `casbin_rule` con columnas v0-v5. Fix: migración `0028_casbin_jsonb.sql` crea la tabla correcta; `migrate: false` en `PostgresAdapter.newAdapter()` evita que el adapter intente recrearla. Ver `supabase/migrations/0028_casbin_jsonb.sql` y `src/lib/auth/casbin/index.ts`.
 

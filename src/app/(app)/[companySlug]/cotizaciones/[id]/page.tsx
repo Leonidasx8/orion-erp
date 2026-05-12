@@ -51,7 +51,7 @@ export default async function CotizacionDetallePage({
 
   if (!row) notFound();
 
-  const [items, canAprobar, canRechazar, canDuplicar, canReenviar] = await Promise.all([
+  const [items, canEnviar, canAprobar, canRechazar, canDuplicar, canReenviar] = await Promise.all([
     db
       .select({
         id: cotizacionItems.id,
@@ -64,6 +64,7 @@ export default async function CotizacionDetallePage({
       .from(cotizacionItems)
       .where(eq(cotizacionItems.cotizacionId, id))
       .orderBy(asc(cotizacionItems.orden)),
+    userHasPermission('cotizaciones.enviar'),
     userHasPermission('cotizaciones.aprobar'),
     userHasPermission('cotizaciones.rechazar'),
     userHasPermission('cotizaciones.crear'),
@@ -102,6 +103,7 @@ export default async function CotizacionDetallePage({
     },
     timeline: buildTimeline(row),
     permissions: {
+      enviar: canEnviar,
       aprobar: canAprobar,
       rechazar: canRechazar,
       duplicar: canDuplicar,

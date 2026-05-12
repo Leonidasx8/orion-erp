@@ -19,7 +19,10 @@ export const cotizacionSchema = z
   .object({
     clienteId: z.string().uuid('Selecciona un cliente'),
     moneda: z.enum(monedasCotizacion).default('PEN'),
-    tipoCambio: z.coerce.number().positive().optional(),
+    tipoCambio: z.preprocess(
+      (v) => (v === '' || v == null ? undefined : v),
+      z.coerce.number().positive().optional()
+    ),
     fechaEmision: z.string().min(10), // YYYY-MM-DD
     fechaVencimiento: z.string().min(10),
     descuentoGlobal: z.coerce.number().min(0).default(0),

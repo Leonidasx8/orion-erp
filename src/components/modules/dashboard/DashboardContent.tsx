@@ -15,6 +15,7 @@ import {
   Wallet,
   Zap,
 } from 'lucide-react';
+import Link from 'next/link';
 import type { Tenant } from '@/lib/db/schema';
 import { Money } from '@/components/shared/Money';
 import { PageHead } from '@/components/shared/PageHead';
@@ -47,13 +48,13 @@ export function DashboardContent({ tenant, greetName }: { tenant: Tenant; greetN
               Mes en curso
               <ChevronDown size={12} />
             </button>
-            <button
-              type="button"
+            <Link
+              href={`/${tenant.slug}/cotizaciones/nueva`}
               className="inline-flex h-8 items-center gap-1.5 rounded-md bg-tenant-accent px-3 text-[13px] font-medium text-white hover:brightness-95"
             >
               <Plus size={13} />
               Nueva cotización
-            </button>
+            </Link>
           </>
         }
       />
