@@ -278,15 +278,91 @@
         color: var(--gray-700); margin: 32px 0 14px;
       }
 
+      /* Navegador lateral */
+      .nav-dots {
+        position: fixed;
+        left: 24px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 6px;
+      }
+      .nav-dot {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        padding: 6px 8px;
+        border-radius: 8px;
+        transition: all 0.18s ease;
+      }
+      .nav-dot .bullet {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--gray-300);
+        flex-shrink: 0;
+        transition: all 0.18s ease;
+      }
+      .nav-dot .nav-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: var(--gray-500);
+        white-space: nowrap;
+        opacity: 0;
+        transform: translateX(-4px);
+        transition: all 0.18s ease;
+        pointer-events: none;
+      }
+      .nav-dot:hover .nav-label,
+      .nav-dot.active .nav-label {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      .nav-dot:hover .bullet {
+        background: var(--orange);
+        transform: scale(1.3);
+      }
+      .nav-dot.active .bullet {
+        background: var(--orange);
+        width: 22px;
+        border-radius: 4px;
+      }
+      .nav-dot.active .nav-label {
+        color: var(--black);
+        font-weight: 700;
+      }
+
       @media print {
+        .nav-dots { display: none; }
         .slide { page-break-after: always; min-height: auto; padding: 48px 56px; }
       }
     </style>
   </head>
   <body>
 
+    <!-- Navegador lateral -->
+    <nav class="nav-dots" aria-label="Slides">
+      <a class="nav-dot" href="#s1" data-target="s1"><span class="bullet"></span><span class="nav-label">01 · Inicio</span></a>
+      <a class="nav-dot" href="#s2" data-target="s2"><span class="bullet"></span><span class="nav-label">02 · Admin Orión</span></a>
+      <a class="nav-dot" href="#s3" data-target="s3"><span class="bullet"></span><span class="nav-label">03 · Wizard alta</span></a>
+      <a class="nav-dot" href="#s4" data-target="s4"><span class="bullet"></span><span class="nav-label">04 · Sistema Tenant</span></a>
+      <a class="nav-dot" href="#s5" data-target="s5"><span class="bullet"></span><span class="nav-label">05 · Operación</span></a>
+      <a class="nav-dot" href="#s6" data-target="s6"><span class="bullet"></span><span class="nav-label">06 · Facturación</span></a>
+      <a class="nav-dot" href="#s7" data-target="s7"><span class="bullet"></span><span class="nav-label">07 · Análisis + Admin</span></a>
+      <a class="nav-dot" href="#s8" data-target="s8"><span class="bullet"></span><span class="nav-label">08 · Pipeline</span></a>
+      <a class="nav-dot" href="#s9" data-target="s9"><span class="bullet"></span><span class="nav-label">09 · Stack</span></a>
+      <a class="nav-dot" href="#s10" data-target="s10"><span class="bullet"></span><span class="nav-label">10 · Base de datos</span></a>
+      <a class="nav-dot" href="#s11" data-target="s11"><span class="bullet"></span><span class="nav-label">11 · Próximos pasos</span></a>
+    </nav>
+
     <!-- 1. COVER -->
-    <section class="slide cover">
+    <section id="s1" class="slide cover">
       <span class="slide-num">01 / 11</span>
       <div class="cover-logo">
         <img src="/orion-logo.png" alt="Orión" />
@@ -309,7 +385,7 @@
     </section>
 
     <!-- 2. ADMIN ORIÓN — INTRO -->
-    <section class="slide">
+    <section id="s2" class="slide">
       <span class="slide-num">02 / 11</span>
       <div class="slide-tag">Panel de plataforma</div>
       <span class="band platform">Admin Orión · solo equipo Orión</span>
@@ -379,7 +455,7 @@
     </section>
 
     <!-- 3. WIZARD ALTA TENANT (FEATURE CLAVE DEL ADMIN) -->
-    <section class="slide" style="background: var(--gray-100)">
+    <section id="s3" class="slide" style="background: var(--gray-100)">
       <span class="slide-num">03 / 11</span>
       <div class="slide-tag">Función estrella del admin</div>
       <h2 class="slide-title">Wizard de alta de tenant en 5 pasos.</h2>
@@ -426,7 +502,7 @@
     </section>
 
     <!-- 4. SISTEMA TENANT — INTRO -->
-    <section class="slide">
+    <section id="s4" class="slide">
       <span class="slide-num">04 / 11</span>
       <div class="slide-tag">Panel del cliente</div>
       <span class="band platform" style="background: var(--orange); color: white">Sistema Tenant · cada empresa cliente</span>
@@ -465,7 +541,7 @@
     </section>
 
     <!-- 5. TENANT — MÓDULOS OPERACIÓN (LOS QUE FUNCIONAN) -->
-    <section class="slide">
+    <section id="s5" class="slide">
       <span class="slide-num">05 / 11</span>
       <div class="slide-tag">Tenant · grupo "Operación"</div>
       <span class="band ops">Operación · todo operativo</span>
@@ -478,7 +554,16 @@
             <p class="desc">6 KPIs en vivo: ventas mes, cotizaciones abiertas, CxC vencido, stock crítico, SUNAT, clientes activos. Gráfica 12 meses + pipeline de cotizaciones.</p>
             <div class="roles">
               <div class="role"><span class="who">Director / Socio</span>
-                <ul><li>¿Cómo vamos vs el mes pasado?</li><li>¿Cuánta plata tengo por cobrar atrasada?</li><li>¿Qué cotizaciones grandes están en juego?</li></ul>
+                <ul>
+                  <li>¿Cómo vamos en ventas este mes vs el pasado?</li>
+                  <li>¿Cuánta plata tengo por cobrar atrasada?</li>
+                  <li>¿Qué cotizaciones grandes están en juego?</li>
+                  <li>¿Cuántas facturas envié a SUNAT y cuántas aceptaron?</li>
+                  <li>¿Cuántos clientes activos tengo hoy?</li>
+                  <li>¿Qué productos están en stock crítico?</li>
+                  <li>¿Qué tendencia tienen mis ventas en los últimos 12 meses?</li>
+                  <li>Si arranco el día, ¿qué necesito mirar primero?</li>
+                </ul>
               </div>
             </div>
             <span class="url">/{slug}</span>
@@ -490,8 +575,28 @@
             <div class="row1"><h3>Clientes</h3><span class="pill green dot">Listo</span></div>
             <p class="desc">CRUD completo, contactos múltiples por cliente, direcciones, línea de crédito, búsqueda, importar/exportar.</p>
             <div class="roles">
-              <div class="role"><span class="who">Comercial / Socio</span>
-                <ul><li>¿Quién es el cliente, con quién hablo, dónde le envío?</li><li>¿Cuánto le di de crédito? ¿Qué saldo tiene hoy?</li><li>¿Qué le he vendido históricamente?</li></ul>
+              <div class="role"><span class="who">Comercial / Vendedor</span>
+                <ul>
+                  <li>Doy de alta un cliente nuevo con su RUC y razón social.</li>
+                  <li>Agrego varios contactos al mismo cliente (compras, gerencia, cobranzas).</li>
+                  <li>Registro la dirección de facturación y la de despacho cuando son distintas.</li>
+                  <li>Marco al cliente como "frecuente" o "ocasional".</li>
+                  <li>Busco al cliente rápido por RUC o nombre comercial.</li>
+                  <li>Edito la información de contacto cuando me la actualizan.</li>
+                  <li>Veo el historial completo de cotizaciones y ventas a ese cliente.</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Socio / Gerente comercial</span>
+                <ul>
+                  <li>¿A qué clientes les estoy vendiendo más este trimestre?</li>
+                  <li>¿Cuánto crédito le di a cada cliente y cuánto está usando?</li>
+                  <li>¿Qué saldo me debe hoy y desde cuándo?</li>
+                  <li>¿Qué clientes no compran hace más de 90 días?</li>
+                  <li>Importo la base de clientes vieja desde Excel sin perder datos.</li>
+                  <li>Exporto la lista filtrada para mandarla a marketing.</li>
+                  <li>Desactivo un cliente que ya no opera sin borrar su historial.</li>
+                  <li>¿Qué comerciales tienen asignados a qué clientes?</li>
+                </ul>
               </div>
             </div>
             <span class="url">/{slug}/clientes</span>
@@ -504,10 +609,31 @@
             <p class="desc">Catálogo con fotos, categorías, unidades de medida, stock mínimo, márgenes, código SUNAT, importar Excel masivo.</p>
             <div class="roles">
               <div class="role"><span class="who">Comercial</span>
-                <ul><li>¿A qué precio vendo este producto?</li><li>¿Hay stock disponible para cotizarlo hoy?</li><li>¿Cuál es el margen mínimo permitido?</li></ul>
+                <ul>
+                  <li>¿A qué precio vendo este producto?</li>
+                  <li>¿Hay stock disponible para cotizarlo hoy?</li>
+                  <li>¿Cuál es el margen mínimo permitido para no vender en pérdida?</li>
+                  <li>Busco el producto por SKU, nombre o categoría.</li>
+                  <li>Veo la foto del producto para confirmar con el cliente que es lo que pide.</li>
+                </ul>
               </div>
-              <div class="role"><span class="who">Almacenero</span>
-                <ul><li>¿Qué código SUNAT tiene? ¿Qué unidad de medida?</li><li>¿Cuál es el stock mínimo a mantener?</li></ul>
+              <div class="role"><span class="who">Almacenero / Compras</span>
+                <ul>
+                  <li>Doy de alta un producto nuevo con código, nombre y unidad de medida.</li>
+                  <li>Asigno el código SUNAT correcto para que SUNAT no rebote la factura.</li>
+                  <li>Defino la categoría jerárquica del producto.</li>
+                  <li>Marco el stock mínimo para que me alerte cuando hay que recomprar.</li>
+                  <li>Subo la foto del producto.</li>
+                  <li>Importo 500 productos desde Excel sin meterlos uno por uno.</li>
+                  <li>Desactivo un producto descontinuado sin borrar su historial.</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Socio / Director</span>
+                <ul>
+                  <li>¿Cuánto me cuesta este producto vs a cuánto lo vendo?</li>
+                  <li>¿Qué productos están bajo el margen mínimo aceptable?</li>
+                  <li>¿Qué tan grande es mi catálogo y cómo crece?</li>
+                </ul>
               </div>
             </div>
             <span class="url">/{slug}/productos</span>
@@ -519,8 +645,32 @@
             <div class="row1"><h3>Cotizaciones</h3><span class="pill green dot">Listo</span></div>
             <p class="desc">Items con IGV/descuento, totales en vivo, PDF server-side, workflow borrador→enviada→aprobada→convertida, edición sólo en borrador.</p>
             <div class="roles">
-              <div class="role"><span class="who">Comercial / Socio</span>
-                <ul><li>¿Qué le coticé al cliente la semana pasada?</li><li>¿Qué cotizaciones están pendientes de aprobación?</li><li>¿Cuánta plata tengo en pipeline ahora mismo?</li><li>Genero el PDF y se lo mando al cliente sin salir del sistema.</li></ul>
+              <div class="role"><span class="who">Comercial</span>
+                <ul>
+                  <li>Creo una cotización nueva eligiendo cliente y productos.</li>
+                  <li>Le aplico descuento por línea o un descuento global.</li>
+                  <li>Veo el IGV calcularse solo y el total al instante.</li>
+                  <li>Genero el PDF con el logo del tenant y lo envío al cliente.</li>
+                  <li>Marco la cotización como "enviada" cuando ya se mandó.</li>
+                  <li>Duplico una cotización vieja para no tener que rearmarla.</li>
+                  <li>Edito la cotización mientras está en borrador.</li>
+                  <li>¿Qué le coticé al cliente la semana pasada?</li>
+                  <li>¿Qué cotizaciones tengo pendientes de respuesta?</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Socio / Director</span>
+                <ul>
+                  <li>¿Cuánta plata tengo en pipeline ahora mismo?</li>
+                  <li>¿Qué comercial tiene cuántas cotizaciones abiertas?</li>
+                  <li>¿Qué cotizaciones están venciendo esta semana sin respuesta?</li>
+                  <li>¿Cuántas cotizaciones convertí a venta este mes?</li>
+                  <li>¿Por qué se rechazan las cotizaciones que se rechazan?</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Cliente del comercial (vista PDF)</span>
+                <ul>
+                  <li>Recibo el PDF y veo el detalle, IGV, total y vigencia clarísimos.</li>
+                </ul>
               </div>
             </div>
             <span class="url">/{slug}/cotizaciones</span>
@@ -532,11 +682,32 @@
             <div class="row1"><h3>Órdenes compra</h3><span class="pill green dot">Listo</span></div>
             <p class="desc">Pipeline borrador→enviada→aprobada→recibida (parcial/total)→cerrada. Cada recepción genera movimiento en kardex automáticamente.</p>
             <div class="roles">
-              <div class="role"><span class="who">Almacenero</span>
-                <ul><li>¿Qué pedidos a proveedor estoy esperando esta semana?</li><li>Llegó el camión: marco recepción parcial y el stock se actualiza solo.</li><li>¿Lo que pedí coincide con lo que llegó?</li></ul>
+              <div class="role"><span class="who">Comprador / Socio</span>
+                <ul>
+                  <li>Genero una orden de compra a proveedor con varios productos.</li>
+                  <li>Aplico precios negociados específicos para ese proveedor.</li>
+                  <li>Envío la OC al proveedor desde el sistema.</li>
+                  <li>Apruebo o rechazo una OC que me pasa el comercial.</li>
+                  <li>¿Cuánto comprometí en órdenes de compra abiertas?</li>
+                  <li>¿Qué OCs están pendientes de recepción?</li>
+                  <li>¿Qué proveedor me cumple los plazos pactados?</li>
+                </ul>
               </div>
-              <div class="role"><span class="who">Socio / Comprador</span>
-                <ul><li>¿Cuánto comprometí en órdenes de compra abiertas?</li><li>¿Qué proveedor me cumple los plazos?</li></ul>
+              <div class="role"><span class="who">Almacenero</span>
+                <ul>
+                  <li>¿Qué pedidos a proveedor estoy esperando esta semana?</li>
+                  <li>Llegó el camión: marco recepción parcial y el stock se actualiza solo en kardex.</li>
+                  <li>Recibí menos de lo pedido: registro el faltante y la OC queda "recibida parcial".</li>
+                  <li>Recibí todo: marco "recibida total" y se cierra la OC.</li>
+                  <li>¿Lo que pedí coincide con lo que llegó físicamente?</li>
+                  <li>Imprimo el comprobante de recepción para archivar.</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Contador</span>
+                <ul>
+                  <li>¿Qué OCs tienen factura asociada del proveedor pendiente?</li>
+                  <li>¿Cuáles son los compromisos de pago de los próximos 30 días?</li>
+                </ul>
               </div>
             </div>
             <span class="url">/{slug}/ordenes</span>
@@ -549,10 +720,29 @@
             <p class="desc">Stock real-time por SKU, kardex completo con motivo y trazabilidad, ajustes manuales con auditoría, alertas de stock crítico.</p>
             <div class="roles">
               <div class="role"><span class="who">Almacenero</span>
-                <ul><li>¿Cuántas unidades tengo de este producto ahora mismo?</li><li>Hice inventario físico y faltan 3 piezas: registro ajuste con motivo.</li><li>¿Qué entró y salió en los últimos 30 días por este SKU?</li><li>¿Qué productos están bajo el mínimo y necesito recomprar?</li></ul>
+                <ul>
+                  <li>¿Cuántas unidades tengo de este producto ahora mismo?</li>
+                  <li>Hice inventario físico y faltan 3 piezas: registro ajuste con motivo y queda en kardex.</li>
+                  <li>¿Qué entró y salió en los últimos 30 días por este SKU?</li>
+                  <li>¿Qué productos están bajo el mínimo y necesito recomprar?</li>
+                  <li>¿Qué productos no se mueven hace 90 días?</li>
+                  <li>¿Quién hizo el último ajuste manual y por qué motivo?</li>
+                  <li>Imprimo el kardex de un SKU para auditoría.</li>
+                  <li>Filtro stock por "sin stock", "crítico", "normal".</li>
+                </ul>
               </div>
               <div class="role"><span class="who">Comercial</span>
-                <ul><li>¿Puedo comprometerle este producto al cliente hoy o tengo que cotizarlo a 7 días?</li></ul>
+                <ul>
+                  <li>¿Puedo comprometerle este producto al cliente hoy o tengo que cotizarlo a 7 días?</li>
+                  <li>¿Qué tan rápido se mueve este SKU?</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Socio / Contador</span>
+                <ul>
+                  <li>¿Cuánta plata tengo inmovilizada en inventario?</li>
+                  <li>¿Hay diferencias entre el stock del sistema y el físico?</li>
+                  <li>¿Qué ajustes se hicieron este mes y quién los autorizó?</li>
+                </ul>
               </div>
             </div>
             <span class="url">/{slug}/inventario</span>
@@ -562,7 +752,7 @@
     </section>
 
     <!-- 6. TENANT — MÓDULOS FACTURACIÓN (PRONTO) -->
-    <section class="slide" style="background: var(--gray-100)">
+    <section id="s6" class="slide" style="background: var(--gray-100)">
       <span class="slide-num">06 / 11</span>
       <div class="slide-tag">Tenant · grupo "Facturación"</div>
       <span class="band fact">Facturación · en construcción</span>
@@ -577,6 +767,22 @@
           <div class="body">
             <div class="row1"><h3>Guías de remisión</h3><span class="pill amber dot">Backend OK · UI pendiente</span></div>
             <p class="desc">Tablas <code class="mono">guias</code>, <code class="mono">transportistas</code>, <code class="mono">vehiculos</code> creadas. Falta UI de emisión y envío SUNAT.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Almacenero / Despacho</span>
+                <ul>
+                  <li>Emito la guía de remisión para el despacho de hoy.</li>
+                  <li>Selecciono el transportista y el vehículo del catálogo.</li>
+                  <li>El stock se descuenta automáticamente al emitir la guía.</li>
+                  <li>Imprimo la guía SUNAT para que vaya con el camión.</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Contador / Socio</span>
+                <ul>
+                  <li>¿Qué guías emití esta semana y a qué destinos?</li>
+                  <li>¿Cuáles fueron aceptadas por SUNAT y cuáles tuvieron rebote?</li>
+                </ul>
+              </div>
+            </div>
             <span class="url">/{slug}/guias <span class="pill gray" style="margin-left:8px">Pronto</span></span>
           </div>
         </div>
@@ -585,6 +791,31 @@
           <div class="body">
             <div class="row1"><h3>Facturas</h3><span class="pill amber dot">Backend OK · UI pendiente</span></div>
             <p class="desc">Tabla <code class="mono">facturas</code> con FK a cotización. Falta UI emitir/listar, integración NUBEFACT, dispatch al outbox.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Comercial</span>
+                <ul>
+                  <li>Convierto una cotización aprobada en factura electrónica con un click.</li>
+                  <li>Emito factura directa sin cotización previa para venta rápida.</li>
+                  <li>Emito boleta para venta a persona natural.</li>
+                  <li>Envío el PDF de la factura al cliente por correo desde el sistema.</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Contador</span>
+                <ul>
+                  <li>¿Qué facturas tengo emitidas este mes? ¿Cuál es el total?</li>
+                  <li>Anulo una factura cuando el cliente devuelve el producto.</li>
+                  <li>Emito nota de crédito por descuento posterior.</li>
+                  <li>Reenvío manualmente a SUNAT si rebotó.</li>
+                  <li>Descargo XML + CDR para guardar en mi backup contable.</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Socio / Director</span>
+                <ul>
+                  <li>¿Cuánto facturé este mes vs el pasado?</li>
+                  <li>¿Qué porcentaje de aceptación SUNAT tengo?</li>
+                </ul>
+              </div>
+            </div>
             <span class="url">/{slug}/facturas <span class="pill gray" style="margin-left:8px">Pronto</span></span>
           </div>
         </div>
@@ -593,6 +824,29 @@
           <div class="body">
             <div class="row1"><h3>Crédito y CxC</h3><span class="pill red dot">No iniciado</span></div>
             <p class="desc">Pagos, saldos por cliente, antigüedad de deuda, recordatorios automáticos. Schema y UI por modelar.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Cobranzas</span>
+                <ul>
+                  <li>¿Qué clientes me deben más de 30 / 60 / 90 días?</li>
+                  <li>Registro un pago parcial y baja del saldo en automático.</li>
+                  <li>¿Qué facturas tiene pendiente este cliente?</li>
+                  <li>Envío recordatorio de cobranza con el detalle adjunto.</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Comercial</span>
+                <ul>
+                  <li>¿Puedo darle más crédito a este cliente o ya está al tope?</li>
+                  <li>Ese cliente quiere comprar pero tiene factura vencida: ¿bloqueo o autorizo?</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Socio</span>
+                <ul>
+                  <li>¿Cuánta plata me deben en total?</li>
+                  <li>¿Cuál es la antigüedad promedio de mi cartera?</li>
+                  <li>¿Qué cliente representa el mayor riesgo de impago?</li>
+                </ul>
+              </div>
+            </div>
             <span class="url">/{slug}/credito <span class="pill gray" style="margin-left:8px">Pronto</span></span>
           </div>
         </div>
@@ -600,7 +854,7 @@
     </section>
 
     <!-- 7. TENANT — ANÁLISIS + ADMINISTRACIÓN (PRONTO) -->
-    <section class="slide">
+    <section id="s7" class="slide">
       <span class="slide-num">07 / 11</span>
       <div class="slide-tag">Tenant · análisis y administración</div>
       <h2 class="slide-title">Análisis y administración del tenant.</h2>
@@ -612,6 +866,23 @@
           <div class="body">
             <div class="row1"><h3>Reportes</h3><span class="pill red dot">No iniciado</span></div>
             <p class="desc">Estado de cuenta, ranking productos, ventas por período, exportables a Excel/PDF. Probablemente Metabase embed.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Socio / Director</span>
+                <ul>
+                  <li>¿Cuáles son mis 10 productos más vendidos?</li>
+                  <li>¿Cuáles son mis 10 clientes más rentables?</li>
+                  <li>¿Cómo evoluciona mi margen por categoría?</li>
+                  <li>Comparo trimestres y veo la tendencia.</li>
+                  <li>Exporto el reporte a Excel para mostrar al directorio.</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Contador</span>
+                <ul>
+                  <li>Genero el estado de cuenta de un cliente al cierre de mes.</li>
+                  <li>Exporto el libro de ventas para SUNAT.</li>
+                </ul>
+              </div>
+            </div>
             <span class="url">/{slug}/reportes <span class="pill gray" style="margin-left:8px">Pronto</span></span>
           </div>
         </div>
@@ -620,6 +891,22 @@
           <div class="body">
             <div class="row1"><h3>Auditoría tenant</h3><span class="pill amber dot">Parcial</span></div>
             <p class="desc">El backend ya escribe a <code class="mono">platform_audit_log</code>. Falta una vista filtrada por tenant.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Socio / Director</span>
+                <ul>
+                  <li>¿Quién modificó esta cotización ayer a las 7pm?</li>
+                  <li>¿Quién dio descuento mayor a 15%?</li>
+                  <li>¿Quién anuló esta factura y con qué motivo?</li>
+                  <li>¿Quién ajustó el stock de ese producto la semana pasada?</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Compliance / Contador</span>
+                <ul>
+                  <li>Exporto el log completo del mes para auditoría externa.</li>
+                  <li>Filtro por usuario, fecha o tipo de acción.</li>
+                </ul>
+              </div>
+            </div>
             <span class="url">/{slug}/auditoria <span class="pill gray" style="margin-left:8px">Pronto</span></span>
           </div>
         </div>
@@ -632,6 +919,22 @@
           <div class="body">
             <div class="row1"><h3>Usuarios del tenant</h3><span class="pill amber dot">Casbin listo</span></div>
             <p class="desc">Invitar miembros, asignar rol, suspender, ver actividad. La capa Casbin ya soporta todo, falta UI.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Superadmin del tenant</span>
+                <ul>
+                  <li>Invito un usuario nuevo con su email y le asigno rol.</li>
+                  <li>Cambio el rol de un usuario que ascendió.</li>
+                  <li>Suspendo a un usuario que dejó la empresa sin borrar su historial.</li>
+                  <li>Activo MFA obligatorio para roles con permisos sensibles.</li>
+                  <li>Veo el último acceso de cada miembro.</li>
+                </ul>
+              </div>
+              <div class="role"><span class="who">Usuario invitado</span>
+                <ul>
+                  <li>Recibo el correo de invitación y entro creando mi contraseña.</li>
+                </ul>
+              </div>
+            </div>
             <span class="url">/{slug}/usuarios <span class="pill gray" style="margin-left:8px">Pronto</span></span>
           </div>
         </div>
@@ -640,6 +943,17 @@
           <div class="body">
             <div class="row1"><h3>Configuración tenant</h3><span class="pill amber dot">Wizard reutilizable</span></div>
             <p class="desc">Editar branding, series SUNAT, credenciales NUBEFACT post-alta. Se reutiliza la UI del wizard de alta.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Superadmin del tenant</span>
+                <ul>
+                  <li>Cambio el logo de la empresa sin pedir a Orión.</li>
+                  <li>Ajusto el color de marca y se aplica en sidebar + PDFs.</li>
+                  <li>Agrego una nueva serie SUNAT cuando se acaba la actual.</li>
+                  <li>Actualizo las credenciales NUBEFACT cuando cambian.</li>
+                  <li>Configuro el correo de origen para envíos automáticos.</li>
+                </ul>
+              </div>
+            </div>
             <span class="url">/{slug}/configuracion <span class="pill gray" style="margin-left:8px">Pronto</span></span>
           </div>
         </div>
@@ -647,7 +961,7 @@
     </section>
 
     <!-- 8. PIPELINE END-TO-END -->
-    <section class="slide" style="background: var(--gray-100)">
+    <section id="s8" class="slide" style="background: var(--gray-100)">
       <span class="slide-num">08 / 11</span>
       <div class="slide-tag">Pipeline de operaciones</div>
       <h2 class="slide-title">Cómo se conecta todo: del cliente al cobro.</h2>
@@ -730,7 +1044,7 @@
     </section>
 
     <!-- 9. REPORTE TÉCNICO #1 — STACK + ARQUITECTURA -->
-    <section class="slide">
+    <section id="s9" class="slide">
       <span class="slide-num">09 / 11</span>
       <div class="slide-tag">Reporte técnico 1 / 3</div>
       <h2 class="slide-title">Stack y arquitectura.</h2>
@@ -775,7 +1089,7 @@
     </section>
 
     <!-- 10. REPORTE TÉCNICO #2 — ESTADO DE LA BASE -->
-    <section class="slide" style="background: var(--gray-100)">
+    <section id="s10" class="slide" style="background: var(--gray-100)">
       <span class="slide-num">10 / 11</span>
       <div class="slide-tag">Reporte técnico 2 / 3</div>
       <h2 class="slide-title">Estado de la base.</h2>
@@ -825,7 +1139,7 @@
     </section>
 
     <!-- 11. REPORTE TÉCNICO #3 — PRÓXIMOS PASOS -->
-    <section class="slide">
+    <section id="s11" class="slide">
       <span class="slide-num">11 / 11</span>
       <div class="slide-tag">Reporte técnico 3 / 3</div>
       <h2 class="slide-title">Próximos pasos y plan de trabajo.</h2>
@@ -894,5 +1208,44 @@
       </div>
     </section>
 
+    <script>
+      // Scroll-spy: marca el dot activo según slide visible
+      (function () {
+        const dots = Array.from(document.querySelectorAll('.nav-dot'));
+        const slides = dots
+          .map((d) => document.getElementById(d.dataset.target))
+          .filter(Boolean);
+
+        const setActive = (id) => {
+          dots.forEach((d) =>
+            d.classList.toggle('active', d.dataset.target === id)
+          );
+        };
+
+        const io = new IntersectionObserver(
+          (entries) => {
+            const visible = entries
+              .filter((e) => e.isIntersecting)
+              .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+            if (visible) setActive(visible.target.id);
+          },
+          { rootMargin: '-40% 0px -40% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] }
+        );
+
+        slides.forEach((s) => io.observe(s));
+
+        // smooth scroll en click
+        dots.forEach((d) => {
+          d.addEventListener('click', (e) => {
+            e.preventDefault();
+            const t = document.getElementById(d.dataset.target);
+            if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        });
+
+        // estado inicial
+        setActive('s1');
+      })();
+    </script>
   </body>
 </html>
