@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sistema Orión — Pitch deck</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/orion-logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+    />
+    <style>
+      :root {
+        --orange: #ea580c;
+        --orange-soft: #fff7ed;
+        --orange-strong: #c2410c;
+        --black: #0a0a0a;
+        --gray-900: #171717;
+        --gray-700: #404040;
+        --gray-500: #737373;
+        --gray-300: #d4d4d4;
+        --gray-100: #f5f5f5;
+        --white: #ffffff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', system-ui, sans-serif;
+        background: var(--white);
+        color: var(--black);
+        -webkit-font-smoothing: antialiased;
+        scroll-behavior: smooth;
+      }
+      .mono {
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .orange {
+        color: var(--orange);
+      }
+
+      /* Slide layout */
+      .slide {
+        min-height: 100vh;
+        padding: 80px 96px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        border-bottom: 1px solid var(--gray-100);
+        position: relative;
+      }
+      .slide-num {
+        position: absolute;
+        top: 32px;
+        right: 48px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: var(--gray-500);
+      }
+      .slide-tag {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--orange);
+        margin-bottom: 16px;
+        font-weight: 600;
+      }
+      h1.slide-title {
+        font-size: 56px;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        line-height: 1.05;
+        margin: 0 0 24px;
+        max-width: 18ch;
+      }
+      h2.slide-title {
+        font-size: 44px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+        margin: 0 0 32px;
+        max-width: 20ch;
+      }
+      .lede {
+        font-size: 22px;
+        line-height: 1.45;
+        color: var(--gray-700);
+        max-width: 720px;
+      }
+
+      /* Cover */
+      .cover {
+        background:
+          radial-gradient(circle at 80% 20%, rgba(234, 88, 12, 0.12), transparent 50%),
+          radial-gradient(circle at 20% 80%, rgba(234, 88, 12, 0.06), transparent 50%),
+          var(--white);
+      }
+      .cover-logo {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 56px;
+      }
+      .cover-logo img {
+        width: 56px;
+        height: 56px;
+      }
+      .cover-logo-text .name {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .cover-logo-text .sub {
+        font-size: 13px;
+        color: var(--gray-500);
+        font-family: 'JetBrains Mono', monospace;
+        margin-top: 2px;
+      }
+      .cover h1 {
+        font-size: 88px;
+        line-height: 0.98;
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        margin: 0 0 24px;
+        max-width: 14ch;
+      }
+      .cover h1 .accent {
+        background: linear-gradient(135deg, var(--orange) 0%, #fb923c 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .cover .lede {
+        font-size: 26px;
+        max-width: 640px;
+      }
+      .cover .meta {
+        margin-top: 96px;
+        display: flex;
+        gap: 64px;
+        font-size: 13px;
+        color: var(--gray-500);
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .cover .meta strong {
+        display: block;
+        color: var(--black);
+        font-size: 16px;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        margin-top: 4px;
+      }
+
+      /* Two column grid */
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 64px;
+        align-items: start;
+      }
+      .three-col {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 28px;
+      }
+      .four-col {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+      }
+
+      /* Stat */
+      .stat {
+        border-left: 3px solid var(--orange);
+        padding-left: 20px;
+      }
+      .stat .num {
+        font-size: 56px;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+      .stat .label {
+        font-size: 14px;
+        color: var(--gray-500);
+        margin-top: 8px;
+      }
+
+      /* Card */
+      .card {
+        border: 1px solid var(--gray-300);
+        border-radius: 14px;
+        padding: 24px;
+        background: var(--white);
+        transition: all 0.2s;
+      }
+      .card.dark {
+        background: var(--black);
+        color: var(--white);
+        border-color: var(--black);
+      }
+      .card .icon {
+        width: 36px;
+        height: 36px;
+        background: var(--orange-soft);
+        color: var(--orange);
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 14px;
+        font-size: 18px;
+      }
+      .card .icon.dark {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--orange);
+      }
+      .card h3 {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0 0 8px;
+        letter-spacing: -0.01em;
+      }
+      .card p {
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--gray-500);
+        margin: 0;
+      }
+      .card.dark p {
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      /* Pill / Badge */
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .pill.green {
+        background: #dcfce7;
+        color: #15803d;
+      }
+      .pill.amber {
+        background: #fef3c7;
+        color: #b45309;
+      }
+      .pill.gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+      }
+      .pill.orange {
+        background: var(--orange-soft);
+        color: var(--orange-strong);
+      }
+
+      /* Table */
+      table.modules {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 15px;
+      }
+      table.modules th,
+      table.modules td {
+        text-align: left;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--gray-100);
+      }
+      table.modules th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--gray-500);
+        font-weight: 600;
+        padding-top: 0;
+      }
+      table.modules td.module-name {
+        font-weight: 600;
+      }
+
+      /* Flow diagram */
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 16px;
+        align-items: center;
+        position: relative;
+        margin-top: 40px;
+      }
+      .flow-box {
+        background: var(--white);
+        border: 2px solid var(--gray-300);
+        border-radius: 10px;
+        padding: 20px 14px;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+      }
+      .flow-box.active {
+        border-color: var(--orange);
+        background: var(--orange-soft);
+      }
+      .flow-box.pending {
+        border-style: dashed;
+        opacity: 0.6;
+      }
+      .flow-box .label {
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .flow-box .desc {
+        font-size: 10.5px;
+        color: var(--gray-500);
+        line-height: 1.35;
+      }
+      .flow-arrow {
+        color: var(--gray-300);
+        text-align: center;
+        font-size: 24px;
+      }
+
+      /* Stack list */
+      .stack {
+        display: grid;
+        grid-template-columns: 1fr;
+        font-size: 15px;
+      }
+      .stack .row {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        align-items: center;
+        gap: 16px;
+        border-bottom: 1px solid var(--gray-100);
+        padding: 12px 0;
+      }
+      .stack .row .k {
+        color: var(--gray-500);
+      }
+      .stack .row .v {
+        font-weight: 600;
+        text-align: right;
+      }
+
+      /* Q&A / Final */
+      .q-block {
+        background: var(--black);
+        color: var(--white);
+        border-radius: 18px;
+        padding: 64px 56px;
+        margin-top: 32px;
+      }
+      .q-block h2 {
+        color: var(--white);
+        margin: 0 0 12px;
+      }
+      .q-block .contact {
+        margin-top: 40px;
+        display: flex;
+        gap: 56px;
+        font-size: 14px;
+      }
+      .q-block .contact .k {
+        color: rgba(255, 255, 255, 0.5);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 4px;
+      }
+
+      /* Decorative hexagon */
+      .hex {
+        position: absolute;
+        opacity: 0.04;
+        right: -80px;
+        bottom: -80px;
+        width: 400px;
+        height: 400px;
+        pointer-events: none;
+      }
+
+      /* Status dot */
+      .dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+      .dot.live {
+        background: #16a34a;
+      }
+      .dot.partial {
+        background: #f59e0b;
+      }
+      .dot.todo {
+        background: var(--gray-300);
+      }
+
+      @media print {
+        .slide {
+          page-break-after: always;
+          min-height: auto;
+          padding: 60px 70px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SLIDE 1: COVER -->
+    <section class="slide cover">
+      <span class="slide-num">01 / 11</span>
+      <div class="cover-logo">
+        <img src="/orion-logo.png" alt="Orión" />
+        <div class="cover-logo-text">
+          <div class="name">Sistema Orión</div>
+          <div class="sub">orion.app</div>
+        </div>
+      </div>
+      <h1>
+        ERP en español para <span class="accent">PyMEs peruanas</span>, con
+        <span class="accent">SUNAT integrado</span>.
+      </h1>
+      <p class="lede">
+        Multi-tenant, hospedado en la nube, sin instalaciones, con facturación electrónica
+        certificada y operación end-to-end desde una sola plataforma.
+      </p>
+      <div class="meta">
+        <div>
+          Demo
+          <strong>13 de mayo de 2026</strong>
+        </div>
+        <div>
+          Cliente piloto
+          <strong>Grupo Idex SAC</strong>
+        </div>
+        <div>
+          Build
+          <strong>v0.1 · pre-producción</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: PROBLEMA -->
+    <section class="slide">
+      <span class="slide-num">02 / 11</span>
+      <div class="slide-tag">El problema</div>
+      <h2 class="slide-title">Las PyMEs peruanas viven entre Excel, NUBEFACT y caos contable.</h2>
+      <div class="two-col" style="margin-top: 48px">
+        <div>
+          <div class="stat">
+            <div class="num">3+</div>
+            <div class="label">
+              herramientas distintas para facturar, controlar stock y manejar cuentas por cobrar
+            </div>
+          </div>
+          <div class="stat" style="margin-top: 32px">
+            <div class="num">60h</div>
+            <div class="label">
+              al mes perdidas en exportar/importar entre planillas y emisor SUNAT
+            </div>
+          </div>
+          <div class="stat" style="margin-top: 32px">
+            <div class="num">S/8k</div>
+            <div class="label">
+              costo promedio de ERPs internacionales (SAP B1, Oracle), inviables para PyME
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="lede">
+            Los ERPs internacionales son caros e ignoran SUNAT. Los locales (Defontana, Mecsa,
+            Nubox) son rígidos, mal diseñados y no escalan más allá de un par de empresas.
+          </p>
+          <p class="lede" style="margin-top: 24px">
+            <strong>Hay un hueco</strong> entre la planilla Excel y el ERP corporativo. Orión lo
+            llena.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: SOLUCIÓN -->
+    <section class="slide" style="background: var(--gray-100)">
+      <span class="slide-num">03 / 11</span>
+      <div class="slide-tag">La solución</div>
+      <h2 class="slide-title">
+        Una plataforma multi-tenant que <span class="orange">opera todo el ciclo</span>: catálogos,
+        ventas, inventario, SUNAT, finanzas.
+      </h2>
+      <div class="four-col" style="margin-top: 48px">
+        <div class="card">
+          <div class="icon">⚡</div>
+          <h3>Onboarding en 5 min</h3>
+          <p>Wizard de 5 pasos: razón social, branding, series SUNAT y primer usuario.</p>
+        </div>
+        <div class="card">
+          <div class="icon">🏢</div>
+          <h3>Multi-tenant real</h3>
+          <p>
+            Una sola instalación atiende decenas de empresas. Datos, permisos y branding aislados
+            por completo.
+          </p>
+        </div>
+        <div class="card">
+          <div class="icon">🇵🇪</div>
+          <h3>SUNAT nativo</h3>
+          <p>
+            Series, correlativos, integración NUBEFACT, facturas/boletas/guías y notas C/D listas
+            en el flujo.
+          </p>
+        </div>
+        <div class="card">
+          <div class="icon">📐</div>
+          <h3>Diseño moderno</h3>
+          <p>UI 2026, tipografía Inter, atajos de teclado y densidad ajustable. No otro Java app.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: STACK -->
+    <section class="slide">
+      <span class="slide-num">04 / 11</span>
+      <div class="slide-tag">Stack tecnológico</div>
+      <h2 class="slide-title">Stack moderno, escalable, costo operativo mínimo.</h2>
+      <div class="two-col" style="margin-top: 48px">
+        <div>
+          <div class="stack">
+            <div class="row"><span class="k">Frontend</span><span class="v">Next.js 15</span></div>
+            <div class="row"><span class="k">Lenguaje</span><span class="v">TypeScript</span></div>
+            <div class="row">
+              <span class="k">Estilos</span><span class="v">Tailwind + shadcn/ui</span>
+            </div>
+            <div class="row"><span class="k">Bundler</span><span class="v">Turbopack</span></div>
+            <div class="row"><span class="k">Hosting</span><span class="v">Vercel</span></div>
+            <div class="row">
+              <span class="k">Base de datos</span><span class="v">PostgreSQL 15</span>
+            </div>
+            <div class="row">
+              <span class="k">Backend</span><span class="v">Supabase (auth + db)</span>
+            </div>
+            <div class="row"><span class="k">ORM</span><span class="v">Drizzle</span></div>
+            <div class="row"><span class="k">Permisos</span><span class="v">Casbin RBAC</span></div>
+            <div class="row">
+              <span class="k">Facturación</span><span class="v">NUBEFACT API</span>
+            </div>
+            <div class="row"><span class="k">PDF</span><span class="v">server-side render</span></div>
+            <div class="row">
+              <span class="k">Tests</span><span class="v">Playwright + Vitest</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="lede">
+            Misma stack que usa <strong>Vercel</strong>, <strong>Linear</strong>,
+            <strong>Cal.com</strong>. Costo operativo mensual estimado para 10 tenants:
+            <strong>USD 80–120</strong>.
+          </p>
+          <div class="card dark" style="margin-top: 32px">
+            <div class="icon dark">🔒</div>
+            <h3 style="color: white">Seguridad y compliance</h3>
+            <p>
+              MFA opcional, audit log inmutable, RLS a nivel base de datos, cookies HTTP-only,
+              cumple con la base de Ley 29733 (Protección de Datos Perú).
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: MÓDULOS LISTOS -->
+    <section class="slide">
+      <span class="slide-num">05 / 11</span>
+      <div class="slide-tag">Módulos operativos</div>
+      <h2 class="slide-title">6 módulos listos para producción.</h2>
+      <table class="modules" style="margin-top: 40px">
+        <thead>
+          <tr>
+            <th>Módulo</th>
+            <th>Funcionalidad clave</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="module-name">Clientes</td>
+            <td>CRUD, contactos múltiples, direcciones, línea de crédito</td>
+            <td><span class="pill green"><span class="dot live"></span>Producción</span></td>
+          </tr>
+          <tr>
+            <td class="module-name">Productos</td>
+            <td>Catálogo con fotos, categorías, stock mínimo, márgenes, importar Excel</td>
+            <td><span class="pill green"><span class="dot live"></span>Producción</span></td>
+          </tr>
+          <tr>
+            <td class="module-name">Cotizaciones</td>
+            <td>Items, IGV, descuentos, PDF, ciclo borrador→enviada→aceptada→convertida</td>
+            <td><span class="pill green"><span class="dot live"></span>Producción</span></td>
+          </tr>
+          <tr>
+            <td class="module-name">Órdenes de compra</td>
+            <td>Workflow completo con recepción parcial/total, alimenta kardex</td>
+            <td><span class="pill green"><span class="dot live"></span>Producción</span></td>
+          </tr>
+          <tr>
+            <td class="module-name">Inventario / Kardex</td>
+            <td>Stock real-time, movimientos auditados, ajustes manuales</td>
+            <td><span class="pill green"><span class="dot live"></span>Producción</span></td>
+          </tr>
+          <tr>
+            <td class="module-name">Admin plataforma</td>
+            <td>Alta tenant (wizard), usuarios globales, dashboard SUNAT, auditoría</td>
+            <td><span class="pill green"><span class="dot live"></span>Producción</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SLIDE 6: ROADMAP -->
+    <section class="slide" style="background: var(--gray-100)">
+      <span class="slide-num">06 / 11</span>
+      <div class="slide-tag">Roadmap próximas 6 semanas</div>
+      <h2 class="slide-title">Lo que viene en las próximas 2 fases.</h2>
+      <table class="modules" style="margin-top: 40px">
+        <thead>
+          <tr>
+            <th>Fase</th>
+            <th>Módulo</th>
+            <th>Qué entrega</th>
+            <th>Estado backend</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="pill orange">Fase 2 · 2-3 sem</span></td>
+            <td class="module-name">Facturas SUNAT</td>
+            <td>Emisión electrónica vía NUBEFACT, F/B/NC/ND</td>
+            <td><span class="pill amber"><span class="dot partial"></span>Schema listo</span></td>
+          </tr>
+          <tr>
+            <td><span class="pill orange">Fase 2 · 2-3 sem</span></td>
+            <td class="module-name">Usuarios tenant</td>
+            <td>Invitaciones, roles personalizables, MFA por usuario</td>
+            <td><span class="pill amber"><span class="dot partial"></span>Casbin listo</span></td>
+          </tr>
+          <tr>
+            <td><span class="pill orange">Fase 2 · 2-3 sem</span></td>
+            <td class="module-name">Configuración tenant</td>
+            <td>Editar branding, series, NUBEFACT post-onboarding</td>
+            <td><span class="pill amber"><span class="dot partial"></span>Wizard reutilizable</span></td>
+          </tr>
+          <tr>
+            <td><span class="pill gray">Fase 3 · 4-6 sem</span></td>
+            <td class="module-name">Crédito y CxC</td>
+            <td>Pagos, saldos, antigüedad, recordatorios automáticos</td>
+            <td><span class="pill gray"><span class="dot todo"></span>Por modelar</span></td>
+          </tr>
+          <tr>
+            <td><span class="pill gray">Fase 3 · 4-6 sem</span></td>
+            <td class="module-name">Guías de remisión</td>
+            <td>Transportistas, vehículos, envíos electrónicos SUNAT</td>
+            <td><span class="pill amber"><span class="dot partial"></span>Schema listo</span></td>
+          </tr>
+          <tr>
+            <td><span class="pill gray">Fase 3 · 4-6 sem</span></td>
+            <td class="module-name">Reportes</td>
+            <td>Estado de cuenta, ranking productos, dashboards exportables</td>
+            <td><span class="pill gray"><span class="dot todo"></span>Por modelar</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SLIDE 7: FLUJO -->
+    <section class="slide">
+      <span class="slide-num">07 / 11</span>
+      <div class="slide-tag">Flujo de operación</div>
+      <h2 class="slide-title">Del cliente al CxC en un solo sistema.</h2>
+      <div class="flow">
+        <div class="flow-box active">
+          <div class="label">Cliente + Producto</div>
+          <div class="desc">Catálogos del tenant</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box active">
+          <div class="label">Cotización</div>
+          <div class="desc">PDF + workflow estados</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box pending">
+          <div class="label">Factura</div>
+          <div class="desc">NUBEFACT + SUNAT</div>
+        </div>
+      </div>
+      <div class="flow" style="margin-top: 12px">
+        <div class="flow-box active">
+          <div class="label">Orden compra</div>
+          <div class="desc">Recepción → stock</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box active">
+          <div class="label">Inventario / Kardex</div>
+          <div class="desc">Stock real-time</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box pending">
+          <div class="label">Guía remisión</div>
+          <div class="desc">Despacho SUNAT</div>
+        </div>
+      </div>
+      <p style="margin-top: 64px; font-size: 14px; color: var(--gray-500)">
+        <span class="dot live"></span>Operativo &nbsp;&nbsp;&nbsp;
+        <span class="dot partial"></span>Backend listo, UI en construcción &nbsp;&nbsp;&nbsp;
+        <span class="dot todo"></span>Por hacer
+      </p>
+    </section>
+
+    <!-- SLIDE 8: TENANT VISTA -->
+    <section class="slide" style="background: var(--gray-100)">
+      <span class="slide-num">08 / 11</span>
+      <div class="slide-tag">Multi-tenant</div>
+      <h2 class="slide-title">Una plataforma. Múltiples empresas. Branding propio.</h2>
+      <div class="three-col" style="margin-top: 48px">
+        <div class="card">
+          <div class="icon">🎨</div>
+          <h3>Branding del tenant</h3>
+          <p>Logo, color de acento, dominio personalizado. El cliente ve <em>su</em> marca, no la nuestra.</p>
+        </div>
+        <div class="card">
+          <div class="icon">🔐</div>
+          <h3>Aislamiento de datos</h3>
+          <p>Row-Level Security a nivel Postgres + middleware verifica acceso en cada request.</p>
+        </div>
+        <div class="card">
+          <div class="icon">👥</div>
+          <h3>Permisos granulares</h3>
+          <p>54 permisos sobre 11 recursos, gestionados con Casbin. Roles predefinidos + custom.</p>
+        </div>
+      </div>
+      <div class="card dark" style="margin-top: 32px">
+        <h3 style="color: white">El selector multi-empresa</h3>
+        <p style="font-size: 16px; max-width: 80ch">
+          Un mismo usuario puede ser superadmin de Idex, comercial de Agroalves y solo lectura en
+          un tercer tenant. Cambia entre empresas con un click, sin reloguearse. La sesión
+          recuerda su última empresa al volver.
+        </p>
+      </div>
+    </section>
+
+    <!-- SLIDE 9: NÚMEROS DEL BUILD -->
+    <section class="slide">
+      <span class="slide-num">09 / 11</span>
+      <div class="slide-tag">Estado actual de la base</div>
+      <h2 class="slide-title">El producto en números, hoy.</h2>
+      <div class="four-col" style="margin-top: 48px">
+        <div class="stat">
+          <div class="num">25</div>
+          <div class="label">tablas en producción</div>
+        </div>
+        <div class="stat">
+          <div class="num">30</div>
+          <div class="label">migraciones aplicadas</div>
+        </div>
+        <div class="stat">
+          <div class="num">54</div>
+          <div class="label">permisos Casbin</div>
+        </div>
+        <div class="stat">
+          <div class="num">6</div>
+          <div class="label">módulos operativos</div>
+        </div>
+      </div>
+      <div class="four-col" style="margin-top: 56px">
+        <div class="stat">
+          <div class="num">2</div>
+          <div class="label">tenants demo (Idex + Agroalves)</div>
+        </div>
+        <div class="stat">
+          <div class="num">18</div>
+          <div class="label">productos con foto en catálogo demo</div>
+        </div>
+        <div class="stat">
+          <div class="num">9</div>
+          <div class="label">cotizaciones de ejemplo</div>
+        </div>
+        <div class="stat">
+          <div class="num">99,8%</div>
+          <div class="label">uptime NUBEFACT (testbed)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 10: HANDOFF -->
+    <section class="slide" style="background: var(--gray-100)">
+      <span class="slide-num">10 / 11</span>
+      <div class="slide-tag">Handoff técnico</div>
+      <h2 class="slide-title">Qué se entrega al equipo Manna.</h2>
+      <div class="two-col" style="margin-top: 48px">
+        <div>
+          <h3 style="font-size: 18px; margin: 0 0 16px">📁 Repositorio</h3>
+          <ul style="font-size: 15px; line-height: 1.8; color: var(--gray-700)">
+            <li>Monorepo Next.js + Drizzle + Supabase</li>
+            <li>Migraciones SQL versionadas en <code class="mono">supabase/migrations/</code></li>
+            <li>CI con type-check, lint, tests Playwright en GitHub Actions</li>
+            <li>Deploy automático a Vercel desde <code class="mono">main</code></li>
+          </ul>
+
+          <h3 style="font-size: 18px; margin: 32px 0 16px">📚 Documentación</h3>
+          <ul style="font-size: 15px; line-height: 1.8; color: var(--gray-700)">
+            <li><code class="mono">docs/HANDOFF.md</code> — bitácora cronológica</li>
+            <li><code class="mono">docs/MODULOS-ESTADO.md</code> — estado por módulo</li>
+            <li><code class="mono">docs/DEMO-MANNA.md</code> — guion de demo</li>
+            <li><code class="mono">README.md</code> — setup local en 5 comandos</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="font-size: 18px; margin: 0 0 16px">⚙️ Operación</h3>
+          <ul style="font-size: 15px; line-height: 1.8; color: var(--gray-700)">
+            <li>Supabase para auth + db (free tier hasta 500MB)</li>
+            <li>Vercel hosting (free tier hasta 100GB bandwidth)</li>
+            <li>NUBEFACT credenciales por tenant en wizard</li>
+            <li>Backups automáticos diarios (Supabase)</li>
+          </ul>
+
+          <h3 style="font-size: 18px; margin: 32px 0 16px">🚀 Roadmap próximas 6 semanas</h3>
+          <ul style="font-size: 15px; line-height: 1.8; color: var(--gray-700)">
+            <li><strong>Semana 1-3</strong>: Facturas + Usuarios + Configuración del tenant</li>
+            <li><strong>Semana 4-6</strong>: CxC, Guías, Reportes</li>
+            <li><strong>Después</strong>: Multi-idioma, app móvil, contabilidad</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 11: CIERRE -->
+    <section class="slide cover" style="justify-content: space-between">
+      <span class="slide-num">11 / 11</span>
+      <div class="cover-logo">
+        <img src="/orion-logo.png" alt="Orión" />
+        <div class="cover-logo-text">
+          <div class="name">Sistema Orión</div>
+          <div class="sub">orion.app</div>
+        </div>
+      </div>
+      <div class="q-block">
+        <div class="slide-tag" style="color: rgba(255, 255, 255, 0.5)">Preguntas</div>
+        <h2 class="slide-title" style="font-size: 64px; max-width: 100%">¿Conversamos?</h2>
+        <p class="lede" style="color: rgba(255, 255, 255, 0.7); max-width: 720px">
+          Sistema Orión está listo para piloto con Grupo Idex y para sumar 2-3 tenants más antes
+          de fin de Q2. Estamos buscando partners para escalar y feedback estructural sobre
+          módulos financieros.
+        </p>
+        <div class="contact">
+          <div>
+            <div class="k">Producto</div>
+            Leonidas Yauri
+          </div>
+          <div>
+            <div class="k">Cliente piloto</div>
+            Grupo Idex SAC · Lucas Escrivá
+          </div>
+          <div>
+            <div class="k">Demo</div>
+            orion.app/demo
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 48px; font-size: 12px; color: var(--gray-500)">
+        <span class="mono">v0.1 · build 13-may-2026</span>
+      </div>
+    </section>
+  </body>
+</html>

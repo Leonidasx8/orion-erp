@@ -32,6 +32,11 @@ type NavSection = {
   items: NavItem[];
 };
 
+const TENANT_LOGOS: Record<string, string> = {
+  idex: '/idex-logo.png',
+  agroalves: '/agroalves-logo.png',
+};
+
 const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Operación',
@@ -85,12 +90,12 @@ export function TenantSidebar({
     <aside className="row-span-2 row-start-1 flex min-h-0 w-60 flex-col border-r border-orion-border bg-orion-bg">
       {/* Brand */}
       <div className="flex h-14 items-center gap-2.5 border-b border-orion-border px-4">
-        {tenant.slug === 'idex' ? (
+        {TENANT_LOGOS[tenant.slug] ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src="/idex-logo.png"
-            alt="Grupo Idex"
-            className="h-9 w-auto max-w-[160px] object-contain"
+            src={TENANT_LOGOS[tenant.slug]}
+            alt={tenant.razonSocial}
+            className="h-10 w-auto max-w-[180px] object-contain"
           />
         ) : (
           <>
