@@ -233,6 +233,33 @@
       }
       .callout strong { color: var(--black); }
 
+      /* Role questions block */
+      .roles {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .role {
+        border-left: 2px solid var(--orange);
+        padding: 2px 0 2px 10px;
+        font-size: 12.5px;
+        line-height: 1.45;
+      }
+      .role .who {
+        font-weight: 700;
+        color: var(--orange-strong);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        display: block;
+        margin-bottom: 3px;
+      }
+      .role ul { margin: 2px 0 0; padding-left: 16px; }
+      .role ul li { color: var(--gray-700); margin: 1px 0; }
+      .role ul li::marker { color: var(--orange); }
+
       .legend {
         margin-top: 24px; display: flex; gap: 24px;
         font-size: 12px; color: var(--gray-500);
@@ -449,6 +476,11 @@
           <div class="body">
             <div class="row1"><h3>Dashboard</h3><span class="pill green dot">Listo</span></div>
             <p class="desc">6 KPIs en vivo: ventas mes, cotizaciones abiertas, CxC vencido, stock crítico, SUNAT, clientes activos. Gráfica 12 meses + pipeline de cotizaciones.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Director / Socio</span>
+                <ul><li>¿Cómo vamos vs el mes pasado?</li><li>¿Cuánta plata tengo por cobrar atrasada?</li><li>¿Qué cotizaciones grandes están en juego?</li></ul>
+              </div>
+            </div>
             <span class="url">/{slug}</span>
           </div>
         </div>
@@ -457,6 +489,11 @@
           <div class="body">
             <div class="row1"><h3>Clientes</h3><span class="pill green dot">Listo</span></div>
             <p class="desc">CRUD completo, contactos múltiples por cliente, direcciones, línea de crédito, búsqueda, importar/exportar.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Comercial / Socio</span>
+                <ul><li>¿Quién es el cliente, con quién hablo, dónde le envío?</li><li>¿Cuánto le di de crédito? ¿Qué saldo tiene hoy?</li><li>¿Qué le he vendido históricamente?</li></ul>
+              </div>
+            </div>
             <span class="url">/{slug}/clientes</span>
           </div>
         </div>
@@ -465,6 +502,14 @@
           <div class="body">
             <div class="row1"><h3>Productos</h3><span class="pill green dot">Listo</span></div>
             <p class="desc">Catálogo con fotos, categorías, unidades de medida, stock mínimo, márgenes, código SUNAT, importar Excel masivo.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Comercial</span>
+                <ul><li>¿A qué precio vendo este producto?</li><li>¿Hay stock disponible para cotizarlo hoy?</li><li>¿Cuál es el margen mínimo permitido?</li></ul>
+              </div>
+              <div class="role"><span class="who">Almacenero</span>
+                <ul><li>¿Qué código SUNAT tiene? ¿Qué unidad de medida?</li><li>¿Cuál es el stock mínimo a mantener?</li></ul>
+              </div>
+            </div>
             <span class="url">/{slug}/productos</span>
           </div>
         </div>
@@ -473,6 +518,11 @@
           <div class="body">
             <div class="row1"><h3>Cotizaciones</h3><span class="pill green dot">Listo</span></div>
             <p class="desc">Items con IGV/descuento, totales en vivo, PDF server-side, workflow borrador→enviada→aprobada→convertida, edición sólo en borrador.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Comercial / Socio</span>
+                <ul><li>¿Qué le coticé al cliente la semana pasada?</li><li>¿Qué cotizaciones están pendientes de aprobación?</li><li>¿Cuánta plata tengo en pipeline ahora mismo?</li><li>Genero el PDF y se lo mando al cliente sin salir del sistema.</li></ul>
+              </div>
+            </div>
             <span class="url">/{slug}/cotizaciones</span>
           </div>
         </div>
@@ -481,6 +531,14 @@
           <div class="body">
             <div class="row1"><h3>Órdenes compra</h3><span class="pill green dot">Listo</span></div>
             <p class="desc">Pipeline borrador→enviada→aprobada→recibida (parcial/total)→cerrada. Cada recepción genera movimiento en kardex automáticamente.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Almacenero</span>
+                <ul><li>¿Qué pedidos a proveedor estoy esperando esta semana?</li><li>Llegó el camión: marco recepción parcial y el stock se actualiza solo.</li><li>¿Lo que pedí coincide con lo que llegó?</li></ul>
+              </div>
+              <div class="role"><span class="who">Socio / Comprador</span>
+                <ul><li>¿Cuánto comprometí en órdenes de compra abiertas?</li><li>¿Qué proveedor me cumple los plazos?</li></ul>
+              </div>
+            </div>
             <span class="url">/{slug}/ordenes</span>
           </div>
         </div>
@@ -489,6 +547,14 @@
           <div class="body">
             <div class="row1"><h3>Inventario / Kardex</h3><span class="pill green dot">Listo</span></div>
             <p class="desc">Stock real-time por SKU, kardex completo con motivo y trazabilidad, ajustes manuales con auditoría, alertas de stock crítico.</p>
+            <div class="roles">
+              <div class="role"><span class="who">Almacenero</span>
+                <ul><li>¿Cuántas unidades tengo de este producto ahora mismo?</li><li>Hice inventario físico y faltan 3 piezas: registro ajuste con motivo.</li><li>¿Qué entró y salió en los últimos 30 días por este SKU?</li><li>¿Qué productos están bajo el mínimo y necesito recomprar?</li></ul>
+              </div>
+              <div class="role"><span class="who">Comercial</span>
+                <ul><li>¿Puedo comprometerle este producto al cliente hoy o tengo que cotizarlo a 7 días?</li></ul>
+              </div>
+            </div>
             <span class="url">/{slug}/inventario</span>
           </div>
         </div>

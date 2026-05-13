@@ -7,16 +7,15 @@ import { and, eq } from 'drizzle-orm';
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
-
-  if (!code) {
-    return NextResponse.redirect(new URL('/login?error=invalid', url.origin));
-  }
-
   const supabase = await createSSRClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error) {
-    return NextResponse.redirect(new URL('/login?error=session', url.origin));
+  // Si vino con ?code= (magic link / OAuth) hacemos el exchange.
+  // Si no, asumimos que la sesión ya fue establecida (ej: signInWithPassword).
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      return NextResponse.redirect(new URL('/login?error=session', url.origin));
+    }
   }
 
   const {

@@ -5,24 +5,51 @@ import { createBrowserClient } from '@supabase/ssr';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, ArrowRight, Shield, MailCheck } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Shield, MailCheck } from 'lucide-react';
+
+type Mode = 'password' | 'magic';
 
 export default function LoginPage() {
+  const [mode, setMode] = useState<Mode>('password');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const supabase = () =>
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+  const ingresarConPassword = async () => {
+    if (!email || !password) return;
+    setStatus('sending');
+    setErrorMsg(null);
+    const { error } = await supabase().auth.signInWithPassword({ email, password });
+    if (error) {
+      setStatus('error');
+      setErrorMsg(error.message);
+      return;
+    }
+    // El callback resuelve destino (admin / picker / tenant)
+    window.location.href = '/login/callback';
+  };
 
   const enviarMagicLink = async () => {
     if (!email) return;
     setStatus('sending');
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    const { error } = await supabase.auth.signInWithOtp({
+    setErrorMsg(null);
+    const { error } = await supabase().auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/login/callback` },
     });
-    setStatus(error ? 'error' : 'sent');
+    if (error) {
+      setStatus('error');
+      setErrorMsg(error.message);
+      return;
+    }
+    setStatus('sent');
   };
 
   if (status === 'sent') {
@@ -54,10 +81,12 @@ export default function LoginPage() {
         <div className="rounded-xl border bg-card p-7 shadow-sm">
           <h1 className="text-[20px] font-semibold tracking-[-0.01em]">Ingresar</h1>
           <p className="mb-5 mt-1.5 text-[13px] text-muted-foreground">
-            Te enviamos un enlace mágico al correo. No usamos contraseñas.
+            {mode === 'password'
+              ? 'Accede con tu correo corporativo y contraseña.'
+              : 'Te enviamos un enlace mágico al correo. Sin contraseñas.'}
           </p>
 
-          {/* Campo email */}
+          {/* Email */}
           <div className="space-y-1.5">
             <Label htmlFor="email" className="text-sm font-medium">
               Correo corporativo
@@ -72,37 +101,80 @@ export default function LoginPage() {
                 placeholder="tu@empresa.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && enviarMagicLink()}
                 className="pl-8"
               />
             </div>
           </div>
 
-          {/* Botón */}
+          {/* Password — solo en modo password */}
+          {mode === 'password' && (
+            <div className="mt-3 space-y-1.5">
+              <Label htmlFor="password" className="text-sm font-medium">
+                Contraseña
+              </Label>
+              <div className="relative">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
+                  <Lock size={13} />
+                </span>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && ingresarConPassword()}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* CTA */}
           <Button
-            onClick={enviarMagicLink}
-            disabled={status === 'sending' || !email}
+            onClick={mode === 'password' ? ingresarConPassword : enviarMagicLink}
+            disabled={status === 'sending' || !email || (mode === 'password' && !password)}
             className="mt-4 flex w-full items-center justify-center gap-2"
           >
-            {status === 'sending' ? 'Enviando...' : 'Enviar enlace mágico'}
+            {status === 'sending'
+              ? 'Ingresando...'
+              : mode === 'password'
+                ? 'Ingresar'
+                : 'Enviar enlace mágico'}
             {status !== 'sending' && <ArrowRight size={14} />}
           </Button>
 
           {status === 'error' && (
-            <p className="mt-3 text-sm text-destructive">Error al enviar. Intenta de nuevo.</p>
+            <p className="mt-3 text-sm text-destructive">
+              {errorMsg ?? 'Error al ingresar. Verifica tus datos.'}
+            </p>
           )}
 
           {/* Divider */}
           <div className="my-5 border-t" />
 
+          {/* Switch modo */}
+          <button
+            type="button"
+            onClick={() => {
+              setMode(mode === 'password' ? 'magic' : 'password');
+              setStatus('idle');
+              setErrorMsg(null);
+            }}
+            className="block w-full text-center text-[12px] text-muted-foreground hover:text-primary"
+          >
+            {mode === 'password'
+              ? '¿Sin contraseña? Recibe un enlace mágico al correo'
+              : '¿Tienes contraseña? Ingresar con email + contraseña'}
+          </button>
+
           {/* Footer del card */}
-          <div className="flex items-center justify-center gap-1.5 text-[12px] text-muted-foreground">
+          <div className="mt-5 flex items-center justify-center gap-1.5 text-[12px] text-muted-foreground">
             <Shield size={13} />
             <span>Conexión segura · MFA requerido para Superadmin</span>
           </div>
         </div>
 
-        {/* Texto debajo del card */}
+        {/* Texto debajo */}
         <p className="mt-4 text-center text-[11.5px] text-muted-foreground">
           ¿Problemas para ingresar? Contacta a{' '}
           <span className="text-primary">soporte@orion.app</span>
