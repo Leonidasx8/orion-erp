@@ -24,6 +24,7 @@ type NavItem = {
   label: string;
   icon: React.ComponentType<{ size?: number | string; className?: string }>;
   badge?: string | number;
+  disabled?: boolean;
 };
 
 type NavSection = {
@@ -46,23 +47,23 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Facturación',
     items: [
-      { href: '/guias', label: 'Guías remisión', icon: Truck },
-      { href: '/facturas', label: 'Facturas', icon: Receipt },
-      { href: '/credito', label: 'Crédito y CxC', icon: Wallet },
+      { href: '/guias', label: 'Guías remisión', icon: Truck, disabled: true },
+      { href: '/facturas', label: 'Facturas', icon: Receipt, disabled: true },
+      { href: '/credito', label: 'Crédito y CxC', icon: Wallet, disabled: true },
     ],
   },
   {
     label: 'Análisis',
     items: [
-      { href: '/reportes', label: 'Reportes', icon: BarChart3 },
-      { href: '/auditoria', label: 'Auditoría', icon: History },
+      { href: '/reportes', label: 'Reportes', icon: BarChart3, disabled: true },
+      { href: '/auditoria', label: 'Auditoría', icon: History, disabled: true },
     ],
   },
   {
     label: 'Administración',
     items: [
-      { href: '/usuarios', label: 'Usuarios', icon: Users },
-      { href: '/configuracion', label: 'Configuración', icon: Settings },
+      { href: '/usuarios', label: 'Usuarios', icon: Users, disabled: true },
+      { href: '/configuracion', label: 'Configuración', icon: Settings, disabled: true },
     ],
   },
 ];
@@ -84,20 +85,31 @@ export function TenantSidebar({
     <aside className="row-span-2 row-start-1 flex min-h-0 w-60 flex-col border-r border-orion-border bg-orion-bg">
       {/* Brand */}
       <div className="flex h-14 items-center gap-2.5 border-b border-orion-border px-4">
-        <span
-          className={cn(
-            'grid h-7 w-7 place-items-center rounded-md text-xs font-bold tracking-tight text-white',
-            'bg-tenant-accent'
-          )}
-        >
-          {initials}
-        </span>
-        <div className="leading-tight">
-          <div className="text-sm font-semibold tracking-tight text-orion-fg">
-            {brandName(tenant.razonSocial)}
-          </div>
-          <div className="font-mono text-[11px] text-orion-fg-faint">/{tenant.slug}</div>
-        </div>
+        {tenant.slug === 'idex' ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/idex-logo.png"
+            alt="Grupo Idex"
+            className="h-9 w-auto max-w-[160px] object-contain"
+          />
+        ) : (
+          <>
+            <span
+              className={cn(
+                'grid h-7 w-7 place-items-center rounded-md text-xs font-bold tracking-tight text-white',
+                'bg-tenant-accent'
+              )}
+            >
+              {initials}
+            </span>
+            <div className="leading-tight">
+              <div className="text-sm font-semibold tracking-tight text-orion-fg">
+                {brandName(tenant.razonSocial)}
+              </div>
+              <div className="font-mono text-[11px] text-orion-fg-faint">/{tenant.slug}</div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Navigation sections */}
@@ -111,6 +123,23 @@ export function TenantSidebar({
               const href = `${tenantBase}${item.href}`;
               const isActive = isItemActive(pathname, href, item.href === '');
               const Icon = item.icon;
+
+              if (item.disabled) {
+                return (
+                  <div
+                    key={item.href}
+                    title="Próximamente"
+                    className="my-px flex cursor-not-allowed items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium text-orion-fg-faint opacity-60"
+                  >
+                    <Icon size={16} className="text-orion-fg-faint" />
+                    <span className="flex-1 truncate">{item.label}</span>
+                    <span className="rounded-full bg-orion-bg-muted px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-orion-fg-muted">
+                      Pronto
+                    </span>
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={item.href}
