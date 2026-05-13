@@ -278,6 +278,55 @@
         color: var(--gray-700); margin: 32px 0 14px;
       }
 
+      /* Capturas */
+      .shots {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .shots.three { grid-template-columns: repeat(3, 1fr); }
+      .shots.four  { grid-template-columns: repeat(4, 1fr); }
+      .shot {
+        border: 1px solid var(--gray-200);
+        border-radius: 12px;
+        background: var(--white);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .shot img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-bottom: 1px solid var(--gray-100);
+        background: var(--gray-100);
+      }
+      .shot .cap {
+        padding: 12px 14px 14px;
+      }
+      .shot .cap-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        margin: 0 0 4px;
+        letter-spacing: -0.005em;
+      }
+      .shot .cap-desc {
+        font-size: 12px;
+        color: var(--gray-700);
+        line-height: 1.5;
+        margin: 0;
+      }
+      .shot .cap-tag {
+        display: inline-block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        color: var(--orange);
+        margin-bottom: 4px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
       /* Navegador lateral */
       .nav-dots {
         position: fixed;
@@ -351,8 +400,12 @@
       <a class="nav-dot" href="#s1" data-target="s1"><span class="bullet"></span><span class="nav-label">01 · Inicio</span></a>
       <a class="nav-dot" href="#s2" data-target="s2"><span class="bullet"></span><span class="nav-label">02 · Admin Orión</span></a>
       <a class="nav-dot" href="#s3" data-target="s3"><span class="bullet"></span><span class="nav-label">03 · Wizard alta</span></a>
+      <a class="nav-dot" href="#sw" data-target="sw"><span class="bullet"></span><span class="nav-label">⤷ Capturas wizard</span></a>
       <a class="nav-dot" href="#s4" data-target="s4"><span class="bullet"></span><span class="nav-label">04 · Sistema Tenant</span></a>
+      <a class="nav-dot" href="#sa" data-target="sa"><span class="bullet"></span><span class="nav-label">⤷ Capturas auth</span></a>
       <a class="nav-dot" href="#s5" data-target="s5"><span class="bullet"></span><span class="nav-label">05 · Operación</span></a>
+      <a class="nav-dot" href="#sop1" data-target="sop1"><span class="bullet"></span><span class="nav-label">⤷ Capturas ventas</span></a>
+      <a class="nav-dot" href="#sop2" data-target="sop2"><span class="bullet"></span><span class="nav-label">⤷ Capturas stock</span></a>
       <a class="nav-dot" href="#s6" data-target="s6"><span class="bullet"></span><span class="nav-label">06 · Facturación</span></a>
       <a class="nav-dot" href="#s7" data-target="s7"><span class="bullet"></span><span class="nav-label">07 · Análisis + Admin</span></a>
       <a class="nav-dot" href="#s8" data-target="s8"><span class="bullet"></span><span class="nav-label">08 · Pipeline</span></a>
@@ -501,6 +554,51 @@
       </div>
     </section>
 
+    <!-- CAPTURAS WIZARD -->
+    <section id="sw" class="slide" style="background: var(--gray-100)">
+      <span class="slide-num">Capturas · Wizard</span>
+      <div class="slide-tag">Capturas · Wizard de alta de tenant</div>
+      <h2 class="slide-title">El onboarding completo de una empresa en 5 pasos.</h2>
+      <p class="lede">
+        Así se ve la pantalla en cada paso. Sin tocar código, sin pasar por el
+        equipo técnico de Orión.
+      </p>
+      <div class="shots four">
+        <div class="shot">
+          <img src="/screenshots/18-wizard-step1.png" alt="Paso 1 identidad" />
+          <div class="cap">
+            <span class="cap-tag">Paso 1</span>
+            <h3 class="cap-title">Identidad</h3>
+            <p class="cap-desc">Razón social, RUC y slug (subdominio que verá el cliente).</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/19-wizard-step2-branding.png" alt="Paso 2 branding" />
+          <div class="cap">
+            <span class="cap-tag">Paso 2</span>
+            <h3 class="cap-title">Branding con preview en vivo</h3>
+            <p class="cap-desc">Color de acento + logo. Al lado se ve cómo va a verse el sidebar real.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/20-wizard-step3-fiscal.png" alt="Paso 3 fiscal" />
+          <div class="cap">
+            <span class="cap-tag">Paso 3</span>
+            <h3 class="cap-title">Datos fiscales y plan</h3>
+            <p class="cap-desc">Dirección fiscal y elección de plan (starter / pro / enterprise).</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/21-wizard-step4-series.png" alt="Paso 4 series SUNAT" />
+          <div class="cap">
+            <span class="cap-tag">Paso 4</span>
+            <h3 class="cap-title">Series SUNAT + NUBEFACT</h3>
+            <p class="cap-desc">Series F001/B001 con correlativos iniciales y credenciales de NUBEFACT.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 4. SISTEMA TENANT — INTRO -->
     <section id="s4" class="slide">
       <span class="slide-num">04 / 11</span>
@@ -536,6 +634,36 @@
         <div class="callout" style="margin: 0">
           <span class="band admin" style="margin: 0 0 8px">Administración</span>
           <p style="margin: 0; font-size: 13px">Usuarios y configuración del tenant.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CAPTURAS AUTH (login + picker) -->
+    <section id="sa" class="slide">
+      <span class="slide-num">Capturas · Acceso</span>
+      <div class="slide-tag">Capturas · Acceso al sistema</div>
+      <h2 class="slide-title">Login + selector multi-empresa.</h2>
+      <p class="lede">
+        Mismo usuario, distintas empresas. Login con contraseña o magic link
+        (toggle en el mismo form). El selector aparece cuando el usuario es
+        miembro de más de una empresa.
+      </p>
+      <div class="shots">
+        <div class="shot">
+          <img src="/screenshots/14-login.png" alt="Login" />
+          <div class="cap">
+            <span class="cap-tag">/login</span>
+            <h3 class="cap-title">Ingresar con email + contraseña</h3>
+            <p class="cap-desc">Logo Orión, form limpio. Toggle inferior cambia a magic link si el usuario no recuerda contraseña.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/15-picker.png" alt="Picker" />
+          <div class="cap">
+            <span class="cap-tag">/seleccionar-empresa</span>
+            <h3 class="cap-title">Selector de empresa</h3>
+            <p class="cap-desc">Cards con logo real de cada tenant + rol del usuario. Un click entra al ERP de esa empresa.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -746,6 +874,137 @@
               </div>
             </div>
             <span class="url">/{slug}/inventario</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CAPTURAS · VENTAS (clientes + productos + cotizaciones) -->
+    <section id="sop1" class="slide" style="background: var(--gray-100)">
+      <span class="slide-num">Capturas · Ventas</span>
+      <div class="slide-tag">Capturas · Ciclo de ventas</div>
+      <h2 class="slide-title">Del cliente al PDF de cotización.</h2>
+      <p class="lede">Las pantallas reales del flujo comercial. Hoy mismo, con datos cargados.</p>
+      <div class="shots three">
+        <div class="shot">
+          <img src="/screenshots/01-dashboard.png" alt="Dashboard tenant" />
+          <div class="cap">
+            <span class="cap-tag">/idex</span>
+            <h3 class="cap-title">Dashboard del tenant</h3>
+            <p class="cap-desc">6 KPIs en vivo: ventas mes, cotizaciones, CxC, stock crítico, SUNAT, clientes. Gráfica 12 meses + pipeline.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/02-clientes.png" alt="Clientes" />
+          <div class="cap">
+            <span class="cap-tag">/idex/clientes</span>
+            <h3 class="cap-title">Lista de clientes</h3>
+            <p class="cap-desc">Tabla con buscador, filtros, RUC, línea de crédito, comercial asignado. Botón "Nuevo cliente" arriba a la derecha.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/03-cliente-form.png" alt="Form nuevo cliente" />
+          <div class="cap">
+            <span class="cap-tag">/idex/clientes/nuevo</span>
+            <h3 class="cap-title">Crear cliente nuevo</h3>
+            <p class="cap-desc">Form de alta: RUC con validación SUNAT, contactos múltiples, direcciones, línea de crédito.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/05-productos-catalogo.png" alt="Catálogo" />
+          <div class="cap">
+            <span class="cap-tag">/idex/productos</span>
+            <h3 class="cap-title">Catálogo con fotos</h3>
+            <p class="cap-desc">Grid visual con foto, SKU, categoría, precio, stock por producto. Búsqueda + filtros por familia.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/06-producto-detalle.png" alt="Producto detalle" />
+          <div class="cap">
+            <span class="cap-tag">/idex/productos/[id]</span>
+            <h3 class="cap-title">Detalle de producto</h3>
+            <p class="cap-desc">Foto, datos generales, código SUNAT, IGV, margen, tabs de "Precios e historial", "Kardex" y "Ventas".</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/07-cotizaciones-lista.png" alt="Cotizaciones" />
+          <div class="cap">
+            <span class="cap-tag">/idex/cotizaciones</span>
+            <h3 class="cap-title">Lista de cotizaciones</h3>
+            <p class="cap-desc">Tabs por estado: borrador, enviadas, aprobadas, rechazadas, vencidas, convertidas. Total y pipeline arriba.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/09-cotizacion-form.png" alt="Form cotización" />
+          <div class="cap">
+            <span class="cap-tag">/idex/cotizaciones/[id]/editar</span>
+            <h3 class="cap-title">Crear / editar cotización</h3>
+            <p class="cap-desc">Selección de cliente, items con precio y descuento, IGV automático, totales en vivo.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/08-cotizacion-detalle.png" alt="Cotización detalle" />
+          <div class="cap">
+            <span class="cap-tag">/idex/cotizaciones/[id]</span>
+            <h3 class="cap-title">Detalle + acciones</h3>
+            <p class="cap-desc">4 botones: <strong>Editar · PDF · Enviar · Duplicar</strong>. Estado, items, totales, historia.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/10-cotizacion-pdf.png" alt="PDF" />
+          <div class="cap">
+            <span class="cap-tag">PDF generado</span>
+            <h3 class="cap-title">Generar PDF para el cliente</h3>
+            <p class="cap-desc">Un click en "PDF" genera el archivo server-side con branding del tenant. Listo para enviar.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CAPTURAS · STOCK (ordenes + inventario + admin) -->
+    <section id="sop2" class="slide">
+      <span class="slide-num">Capturas · Stock + Admin</span>
+      <div class="slide-tag">Capturas · Compras, inventario y plataforma</div>
+      <h2 class="slide-title">Reabastecimiento, stock real-time y panel admin.</h2>
+      <div class="shots three">
+        <div class="shot">
+          <img src="/screenshots/11-ordenes-lista.png" alt="Ordenes" />
+          <div class="cap">
+            <span class="cap-tag">/idex/ordenes</span>
+            <h3 class="cap-title">Órdenes de compra</h3>
+            <p class="cap-desc">Pipeline visual: borrador → enviada → aprobada → recibida parcial/total → cerrada.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/12-orden-detalle.png" alt="Orden detalle" />
+          <div class="cap">
+            <span class="cap-tag">/idex/ordenes/[id]</span>
+            <h3 class="cap-title">Detalle + recepción</h3>
+            <p class="cap-desc">Items, totales, proveedor. Botón "Recibir" abre modal para marcar recepción parcial/total.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/13-inventario.png" alt="Inventario" />
+          <div class="cap">
+            <span class="cap-tag">/idex/inventario</span>
+            <h3 class="cap-title">Stock + Kardex</h3>
+            <p class="cap-desc">SKUs por estado (sin stock / crítico / normal), kardex por producto, ajustes manuales con motivo.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/16-admin-dashboard.png" alt="Admin dashboard" />
+          <div class="cap">
+            <span class="cap-tag">/admin</span>
+            <h3 class="cap-title">Panel plataforma Orión</h3>
+            <p class="cap-desc">Vista global: tenants activos, usuarios totales, facturas SUNAT del mes, API NUBEFACT.</p>
+          </div>
+        </div>
+        <div class="shot">
+          <img src="/screenshots/17-admin-tenants.png" alt="Admin tenants" />
+          <div class="cap">
+            <span class="cap-tag">/admin/tenants</span>
+            <h3 class="cap-title">Lista de tenants</h3>
+            <p class="cap-desc">Cada empresa cliente: razón social, RUC, slug, plan, usuarios, docs del mes, estado.</p>
           </div>
         </div>
       </div>
