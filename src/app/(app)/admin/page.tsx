@@ -112,7 +112,7 @@ export default async function AdminDashboardPage() {
   const tenantNames = activeTenants.map((t) => t.razonSocial).join(' · ');
 
   return (
-    <div className="space-y-0 p-6">
+    <div className="space-y-0">
       {/* Page header */}
       <div className="mb-6 flex items-start justify-between">
         <div>

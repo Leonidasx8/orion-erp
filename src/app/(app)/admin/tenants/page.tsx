@@ -28,7 +28,7 @@ export default async function TenantsPage() {
   }));
 
   return (
-    <div className="p-6">
+    <div>
       {/* Page header */}
       <div className="mb-5 flex items-start justify-between">
         <div>
