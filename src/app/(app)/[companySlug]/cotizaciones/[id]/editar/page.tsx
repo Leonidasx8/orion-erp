@@ -21,7 +21,7 @@ export default async function EditarCotizacionPage({
   const { companySlug, id } = await params;
   const tenant = await getCurrentTenant();
 
-  const canEdit = await userHasPermission('cotizaciones.actualizar');
+  const canEdit = await userHasPermission('cotizaciones.editar');
   if (!canEdit) redirect(`/${companySlug}/cotizaciones/${id}`);
 
   const [row] = await db

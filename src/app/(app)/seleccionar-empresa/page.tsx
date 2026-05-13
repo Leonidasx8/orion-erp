@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { eq, and } from 'drizzle-orm';
 import { createSSRClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db/client';
-import { tenants, tenantMembers } from '@/lib/db/schema';
+import { tenants, tenantMembers, platformAdmins } from '@/lib/db/schema';
 import { TenantPicker } from '@/components/modules/auth/TenantPicker';
 
 export const metadata = { title: 'Seleccionar empresa — Orion ERP' };
@@ -28,6 +28,14 @@ export default async function SeleccionarEmpresaPage() {
     );
 
   if (memberships.length === 0) {
+    // Platform admins with no tenant assignments go straight to the admin panel
+    const [pa] = await db
+      .select()
+      .from(platformAdmins)
+      .where(and(eq(platformAdmins.userId, user.id), eq(platformAdmins.activo, true)))
+      .limit(1);
+    if (pa) redirect('/admin');
+
     return (
       <div className="grid min-h-screen place-items-center">
         <div className="max-w-md text-center">
@@ -44,5 +52,5 @@ export default async function SeleccionarEmpresaPage() {
     redirect(`/${memberships[0].tenant.slug}`);
   }
 
-  return <TenantPicker memberships={memberships} />;
+  return <TenantPicker memberships={memberships} user={user} />;
 }

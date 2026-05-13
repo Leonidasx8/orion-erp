@@ -6,7 +6,14 @@ import { tenants, tenantMembers, seriesDocumentos } from '@/lib/db/schema';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-export const metadata = { title: 'Detalle tenant — Dignita' };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const [t] = await db
+    .select({ razonSocial: tenants.razonSocial })
+    .from(tenants)
+    .where(eq(tenants.id, id));
+  return { title: `Detalle tenant — ${t?.razonSocial ?? 'No encontrado'}` };
+}
 
 export default async function TenantDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -64,7 +65,7 @@ export function WizardStep4Fiscal() {
         {/* Series SUNAT */}
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <FormLabel className="text-base">Series de documentos</FormLabel>
+            <Label className="text-base">Series de documentos</Label>
             <Button
               type="button"
               variant="outline"
