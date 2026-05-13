@@ -14,6 +14,11 @@ function getInitials(slug: string): string {
   return slug.slice(0, 2).toUpperCase();
 }
 
+const TENANT_LOGOS: Record<string, string> = {
+  idex: '/idex-logo.png',
+  agroalves: '/agroalves-logo.png',
+};
+
 function getUserName(user: User): string {
   const meta = user.user_metadata as Record<string, unknown> | undefined;
   if (meta?.full_name && typeof meta.full_name === 'string')
@@ -90,9 +95,18 @@ export function TenantPicker({ memberships, user }: { memberships: Membership[];
               >
                 {/* Header de la tarjeta */}
                 <div className="flex items-center">
-                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary text-[18px] font-bold text-white">
-                    {getInitials(tenant.slug)}
-                  </div>
+                  {TENANT_LOGOS[tenant.slug] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={TENANT_LOGOS[tenant.slug]}
+                      alt={tenant.razonSocial}
+                      className="h-12 w-12 shrink-0 rounded-xl border border-border bg-white object-contain p-1"
+                    />
+                  ) : (
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary text-[18px] font-bold text-white">
+                      {getInitials(tenant.slug)}
+                    </div>
+                  )}
                   <div className="ml-3 min-w-0">
                     <div className="text-[16px] font-semibold leading-tight">
                       {tenant.razonSocial.split(' ')[0]}
