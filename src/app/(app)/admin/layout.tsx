@@ -27,9 +27,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <aside className="flex w-56 shrink-0 flex-col border-r bg-muted/30">
         {/* Header */}
         <div className="flex items-center gap-2.5 border-b px-4 py-4">
-          <div className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-primary text-[10px] font-bold text-primary-foreground">
-            O
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/orion-logo.png" alt="Orión" className="h-7 w-7 shrink-0" />
           <div>
             <p className="text-sm font-semibold leading-tight">Sistema Orión</p>
             <p className="text-xs text-muted-foreground">Plataforma</p>

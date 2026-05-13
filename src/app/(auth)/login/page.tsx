@@ -45,9 +45,8 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo + nombre */}
         <div className="mb-6 flex items-center justify-center gap-2.5">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary font-bold text-white">
-            O
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/orion-logo.png" alt="Orión" className="h-9 w-9" />
           <span className="text-[18px] font-semibold tracking-[-0.01em]">Sistema Orión</span>
         </div>
 
