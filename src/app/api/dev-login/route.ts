@@ -63,6 +63,7 @@ export async function GET(request: Request) {
   const user = sess.user;
   let dest = '/seleccionar-empresa';
 
+  // forcePicker = true ignora el slug del metadata sin tocarlo
   const lastSlug = user.user_metadata?.current_tenant_slug as string | undefined;
   if (lastSlug && !forcePicker) {
     dest = `/${lastSlug}`;
