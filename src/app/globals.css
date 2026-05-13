@@ -22,9 +22,9 @@
   --orion-fg-faint: #94a3b8;
 
   /* === V1 — Tenant accents === */
-  --orion-idex: #0070f3;
-  --orion-idex-soft: #e6f0ff;
-  --orion-idex-fg: #0057c2;
+  --orion-idex: #ea580c;
+  --orion-idex-soft: #fff7ed;
+  --orion-idex-fg: #c2410c;
 
   --orion-agro: #16a34a;
   --orion-agro-soft: #dcfce7;
@@ -148,20 +148,20 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 217 100% 47%;          /* #0070f3 → tenant idex (default) */
+    --primary: 21 90% 48%;            /* #ea580c orange-600 — brand naranja Orión */
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96%;         /* #f1f5f9 (slate-100) */
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96%;             /* #f1f5f9 */
     --muted-foreground: 215 16% 47%;  /* #64748b (slate-500) */
-    --accent: 210 40% 96%;            /* shadcn token, no confundir con --accent custom de tenant */
-    --accent-foreground: 222 47% 11%;
+    --accent: 24 95% 53%;              /* #f97316 orange-500 acento */
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;         /* #dc2626 */
     --destructive-foreground: 0 0% 100%;
     --border: 214 32% 91%;            /* #e2e8f0 (slate-200) */
     --input: 214 32% 91%;
-    --ring: 217 100% 47%;             /* match primary */
-    --chart-1: 217 100% 47%;          /* idex blue */
+    --ring: 21 90% 48%;               /* match primary */
+    --chart-1: 21 90% 48%;             /* orange primary */
     --chart-2: 142 71% 36%;           /* agro green */
     --chart-3: 263 80% 57%;           /* dignita purple */
     --chart-4: 27 87% 51%;            /* warn orange */
@@ -175,8 +175,8 @@
     --card-foreground: 0 0% 98%;
     --popover: 222 47% 11%;
     --popover-foreground: 0 0% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 24 95% 53%;            /* dark mode: orange-500 */
+    --primary-foreground: 0 0% 100%;
     --secondary: 217 33% 17%;
     --secondary-foreground: 0 0% 98%;
     --muted: 217 33% 17%;

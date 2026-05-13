@@ -25,6 +25,7 @@ export default async function ProductosPage() {
         stockActual: productos.stockActual,
         activo: productos.activo,
         categoriaId: productos.categoriaId,
+        imagenUrl: productos.imagenUrl,
       })
       .from(productos)
       .where(eq(productos.tenantId, tenant.id))

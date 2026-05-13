@@ -42,6 +42,7 @@ export const productos = pgTable('productos', {
   stockActual: numeric('stock_actual', { precision: 14, scale: 4 }).notNull().default('0'),
 
   codigoSunat: text('codigo_sunat'),
+  imagenUrl: text('imagen_url'),
   activo: boolean('activo').notNull().default(true),
 
   createdAt: timestamptz('created_at').notNull().defaultNow(),

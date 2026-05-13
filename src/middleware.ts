@@ -5,7 +5,7 @@ const PUBLIC_PATHS = ['/login', '/login/mfa', '/login/recuperar', '/login/acepta
 
 // Rutas de preview del design system. La página adentro hace su propio gate
 // con NODE_ENV !== 'development' → 404. Aquí solo evitamos el redirect a /login.
-const DEV_PUBLIC_PATHS = ['/preview'];
+const DEV_PUBLIC_PATHS = ['/preview', '/api/dev-login'];
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;

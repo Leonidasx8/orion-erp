@@ -44,6 +44,7 @@ type ProductoRow = Pick<
   | 'stockActual'
   | 'activo'
   | 'categoriaId'
+  | 'imagenUrl'
 >;
 
 const STOCK_MIN_DEFAULT = 20;
@@ -388,11 +389,20 @@ export function ProductosList({
                   href={`productos/${producto.id}`}
                   className="group overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-md"
                 >
-                  {/* Image placeholder */}
-                  <div className="flex h-24 items-center justify-center border-b bg-muted">
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {producto.codigo}
-                    </span>
+                  {/* Image */}
+                  <div className="relative flex h-32 items-center justify-center overflow-hidden border-b bg-muted">
+                    {producto.imagenUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={producto.imagenUrl}
+                        alt={producto.nombre}
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    ) : (
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {producto.codigo}
+                      </span>
+                    )}
                   </div>
 
                   {/* Card body */}
