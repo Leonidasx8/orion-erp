@@ -64,10 +64,19 @@ export function ProductoDetalle({ producto, categoria, uom, companySlug, canEdit
 
       {/* Header */}
       <div className="flex items-start gap-4">
-        {/* Image placeholder */}
-        <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg border bg-muted font-mono text-xs text-muted-foreground">
-          img
-        </div>
+        {/* Image */}
+        {producto.imagenUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={producto.imagenUrl}
+            alt={producto.nombre}
+            className="h-20 w-20 flex-shrink-0 rounded-lg border bg-muted object-cover"
+          />
+        ) : (
+          <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg border bg-muted font-mono text-xs text-muted-foreground">
+            img
+          </div>
+        )}
 
         {/* Info block */}
         <div className="min-w-0 flex-1">
