@@ -24,7 +24,7 @@
    - **Pestaña A**: `http://localhost:3000/api/dev-login?email=admin@orion.demo`
      → entra a `/admin` (panel plataforma).
    - **Pestaña B**: `http://localhost:3000/api/dev-login?email=lucas@orion.demo`
-     → entra a `/agroalves` (operación de tenant).
+     → entra a `/idex` (operación de tenant).
    - **Pestaña C**: `http://localhost:3000/api/dev-login?email=lucas@orion.demo&to=picker`
      → fuerza el selector de empresas (para mostrar multi-tenant).
 
