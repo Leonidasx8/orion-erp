@@ -6,10 +6,21 @@ import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { db } from '@/lib/db/client';
 import { clientes, cotizacionItems, cotizaciones, tenants } from '@/lib/db/schema';
 import { CotizacionPDF } from '@/lib/pdf/CotizacionPDF';
+import { CotizacionPDFDesignA } from '@/lib/pdf/CotizacionPDF-A';
+import { CotizacionPDFDesignB } from '@/lib/pdf/CotizacionPDF-B';
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+const LOGOS: Record<string, string> = {
+  idex: 'http://localhost:3000/idex-logo.png',
+  agroalves: 'http://localhost:3000/agroalves-logo.png',
+};
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ companySlug: string; id: string }> }
+) {
   try {
-    const { id } = await params;
+    const { id, companySlug } = await params;
+    const design = req.nextUrl.searchParams.get('design');
     const tenant = await getCurrentTenant();
 
     const [row] = await db
@@ -88,10 +99,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       terminosCondiciones: row.terminosCondiciones,
     };
 
-    const element = createElement(CotizacionPDF, { data: pdfData }) as ReactElement<DocumentProps>;
+    const logoUrl = LOGOS[companySlug];
+    const Component =
+      design === 'a' ? CotizacionPDFDesignA : design === 'b' ? CotizacionPDFDesignB : CotizacionPDF;
+    const elementProps =
+      design === 'a' || design === 'b' ? { data: pdfData, logoUrl } : { data: pdfData };
+    const element = createElement(Component, elementProps) as ReactElement<DocumentProps>;
     const buffer = await renderToBuffer(element);
 
-    const filename = `${row.numero ?? 'cotizacion'}.pdf`;
+    const suffix = design === 'a' || design === 'b' ? `-design-${design}` : '';
+    const filename = `${row.numero ?? 'cotizacion'}${suffix}.pdf`;
     return new Response(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/pdf',
