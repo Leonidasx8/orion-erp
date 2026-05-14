@@ -195,9 +195,19 @@ export interface CotizacionPDFData {
     razonSocial: string;
     ruc: string;
     direccionFiscal: string | null;
+    web?: string | null;
+    telefono?: string | null;
+    contactoEmail?: string | null;
+    bancoNombre?: string | null;
+    bancoCuenta?: string | null;
+    bancoCci?: string | null;
+    bancoDetraccionCuenta?: string | null;
   };
   cliente: string;
   clienteRuc?: string | null;
+  contactoClienteNombre?: string | null;
+  contactoClienteCargo?: string | null;
+  contactoClienteEmail?: string | null;
   fechaEmision: string;
   fechaVencimiento: string;
   moneda: string;
@@ -214,6 +224,17 @@ export interface CotizacionPDFData {
     igv: number;
     total: number;
   };
+  condiciones?: {
+    formaPago?: string | null;
+    tiempoEntrega?: string | null;
+    lugarEntrega?: string | null;
+    incluyeIgv?: boolean;
+  };
+  comercial?: {
+    nombre: string;
+    email: string | null;
+    telefono: string | null;
+  } | null;
   notas?: string | null;
   terminosCondiciones?: string | null;
 }

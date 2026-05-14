@@ -30,6 +30,15 @@ export const tenants = pgTable('tenants', {
   fechaAlta: timestamptz('fecha_alta').notNull().defaultNow(),
   fechaBaja: timestamptz('fecha_baja'),
   createdBy: uuid('created_by'),
+  // Datos de contacto del tenant (PDF cotización)
+  web: text('web'),
+  telefono: text('telefono'),
+  contactoEmail: text('contacto_email'),
+  // Datos bancarios para pago (PDF cotización)
+  bancoNombre: text('banco_nombre'),
+  bancoCuenta: text('banco_cuenta'),
+  bancoCci: text('banco_cci'),
+  bancoDetraccionCuenta: text('banco_detraccion_cuenta'),
 });
 
 export const tenantUsageMetrics = pgTable(

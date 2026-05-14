@@ -48,6 +48,16 @@ export const cotizaciones = pgTable('cotizaciones', {
   notas: text('notas'),
   terminosCondiciones: text('terminos_condiciones'),
 
+  // Condiciones comerciales explícitas (PDF B2B)
+  formaPago: text('forma_pago'),
+  tiempoEntrega: text('tiempo_entrega'),
+  lugarEntrega: text('lugar_entrega'),
+  incluyeIgv: boolean('incluye_igv').notNull().default(true),
+  // Decisor del cliente (atención de)
+  contactoClienteNombre: text('contacto_cliente_nombre'),
+  contactoClienteCargo: text('contacto_cliente_cargo'),
+  contactoClienteEmail: text('contacto_cliente_email'),
+
   enviadaAt: timestamptz('enviada_at'),
   aceptadaAt: timestamptz('aceptada_at'),
   rechazadaAt: timestamptz('rechazada_at'),

@@ -222,6 +222,18 @@ export function CotizacionPDFDesignA({
             <Text style={s.cardLabel}>Cliente</Text>
             <Text style={s.cardValue}>{data.cliente}</Text>
             {data.clienteRuc ? <Text style={s.cardValueSub}>RUC {data.clienteRuc}</Text> : null}
+            {data.contactoClienteNombre ? (
+              <View style={{ marginTop: 8, paddingTop: 8, borderTop: `0.5 solid ${C.border}` }}>
+                <Text style={[s.cardLabel, { marginBottom: 2 }]}>Atención de</Text>
+                <Text style={[s.cardValueSub, { color: C.ink, fontWeight: 700 }]}>
+                  {data.contactoClienteNombre}
+                  {data.contactoClienteCargo ? ` · ${data.contactoClienteCargo}` : ''}
+                </Text>
+                {data.contactoClienteEmail ? (
+                  <Text style={s.cardValueSub}>{data.contactoClienteEmail}</Text>
+                ) : null}
+              </View>
+            ) : null}
           </View>
 
           <View style={s.table}>
@@ -258,8 +270,124 @@ export function CotizacionPDFDesignA({
             </View>
           </View>
 
+          {/* Condiciones comerciales */}
+          {data.condiciones &&
+          (data.condiciones.formaPago ||
+            data.condiciones.tiempoEntrega ||
+            data.condiciones.lugarEntrega) ? (
+            <View
+              style={{
+                marginTop: 16,
+                padding: 12,
+                backgroundColor: C.greenSoft,
+                borderRadius: 4,
+                borderLeft: `3 solid ${C.green}`,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 7,
+                  fontWeight: 700,
+                  color: C.green,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.7,
+                  marginBottom: 6,
+                }}
+              >
+                Condiciones comerciales
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 24, flexWrap: 'wrap' }}>
+                {data.condiciones.formaPago ? (
+                  <View style={{ minWidth: 140, marginBottom: 4 }}>
+                    <Text style={{ fontSize: 7, color: C.muted, textTransform: 'uppercase' }}>
+                      Forma de pago
+                    </Text>
+                    <Text style={{ fontSize: 8.5, color: C.ink, fontWeight: 600 }}>
+                      {data.condiciones.formaPago}
+                    </Text>
+                  </View>
+                ) : null}
+                {data.condiciones.tiempoEntrega ? (
+                  <View style={{ minWidth: 140, marginBottom: 4 }}>
+                    <Text style={{ fontSize: 7, color: C.muted, textTransform: 'uppercase' }}>
+                      Tiempo de entrega
+                    </Text>
+                    <Text style={{ fontSize: 8.5, color: C.ink, fontWeight: 600 }}>
+                      {data.condiciones.tiempoEntrega}
+                    </Text>
+                  </View>
+                ) : null}
+                {data.condiciones.lugarEntrega ? (
+                  <View style={{ minWidth: 140, marginBottom: 4 }}>
+                    <Text style={{ fontSize: 7, color: C.muted, textTransform: 'uppercase' }}>
+                      Lugar de entrega
+                    </Text>
+                    <Text style={{ fontSize: 8.5, color: C.ink, fontWeight: 600 }}>
+                      {data.condiciones.lugarEntrega}
+                    </Text>
+                  </View>
+                ) : null}
+                <View style={{ minWidth: 140 }}>
+                  <Text style={{ fontSize: 7, color: C.muted, textTransform: 'uppercase' }}>
+                    Vigencia / IGV
+                  </Text>
+                  <Text style={{ fontSize: 8.5, color: C.ink, fontWeight: 600 }}>
+                    Hasta {data.fechaVencimiento}
+                    {' · '}
+                    {data.condiciones.incluyeIgv ? 'Incluye IGV' : 'No incluye IGV'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ) : null}
+
+          {/* Datos bancarios */}
+          {data.tenant.bancoCuenta || data.tenant.bancoCci ? (
+            <View
+              style={{ marginTop: 10, padding: 10, border: `1 solid ${C.border}`, borderRadius: 4 }}
+            >
+              <Text
+                style={{
+                  fontSize: 7,
+                  fontWeight: 700,
+                  color: C.muted,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.7,
+                  marginBottom: 4,
+                }}
+              >
+                Datos para pago
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 24, flexWrap: 'wrap' }}>
+                {data.tenant.bancoNombre ? (
+                  <Text style={{ fontSize: 9, color: C.ink, fontWeight: 700 }}>
+                    {data.tenant.bancoNombre}
+                  </Text>
+                ) : null}
+                {data.tenant.bancoCuenta ? (
+                  <Text style={{ fontSize: 8.5, color: C.body }}>
+                    Cta. <Text style={{ fontFamily: 'Courier' }}>{data.tenant.bancoCuenta}</Text>
+                  </Text>
+                ) : null}
+                {data.tenant.bancoCci ? (
+                  <Text style={{ fontSize: 8.5, color: C.body }}>
+                    CCI <Text style={{ fontFamily: 'Courier' }}>{data.tenant.bancoCci}</Text>
+                  </Text>
+                ) : null}
+                {data.tenant.bancoDetraccionCuenta ? (
+                  <Text style={{ fontSize: 8.5, color: C.muted }}>
+                    Detracciones BN{' '}
+                    <Text style={{ fontFamily: 'Courier' }}>
+                      {data.tenant.bancoDetraccionCuenta}
+                    </Text>
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          ) : null}
+
           {(data.notas || data.terminosCondiciones) && (
-            <View style={s.notas}>
+            <View style={[s.notas, { marginTop: 10 }]}>
               {data.notas ? (
                 <>
                   <Text style={s.notasTitle}>Observaciones</Text>
@@ -276,6 +404,53 @@ export function CotizacionPDFDesignA({
               ) : null}
             </View>
           )}
+
+          {/* Comercial responsable */}
+          {data.comercial ? (
+            <View
+              style={{
+                marginTop: 16,
+                paddingTop: 10,
+                borderTop: `1 solid ${C.border}`,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+              }}
+            >
+              <View>
+                <Text
+                  style={{
+                    fontSize: 7,
+                    color: C.muted,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.7,
+                    marginBottom: 2,
+                  }}
+                >
+                  Atendido por
+                </Text>
+                <Text style={{ fontSize: 11, color: C.ink, fontWeight: 700 }}>
+                  {data.comercial.nombre}
+                </Text>
+                <Text style={{ fontSize: 8.5, color: C.muted }}>
+                  {data.comercial.email}
+                  {data.comercial.telefono ? ` · ${data.comercial.telefono}` : ''}
+                </Text>
+              </View>
+              {data.tenant.web || data.tenant.telefono ? (
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ fontSize: 7, color: C.muted, textTransform: 'uppercase' }}>
+                    {data.tenant.razonSocial}
+                  </Text>
+                  {data.tenant.web ? (
+                    <Text style={{ fontSize: 8.5, color: C.green }}>{data.tenant.web}</Text>
+                  ) : null}
+                  {data.tenant.telefono ? (
+                    <Text style={{ fontSize: 8.5, color: C.muted }}>{data.tenant.telefono}</Text>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </View>
 
         <Text

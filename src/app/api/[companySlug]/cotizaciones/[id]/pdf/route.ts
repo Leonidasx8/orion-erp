@@ -37,6 +37,14 @@ export async function GET(
         total: cotizaciones.total,
         notas: cotizaciones.notas,
         terminosCondiciones: cotizaciones.terminosCondiciones,
+        formaPago: cotizaciones.formaPago,
+        tiempoEntrega: cotizaciones.tiempoEntrega,
+        lugarEntrega: cotizaciones.lugarEntrega,
+        incluyeIgv: cotizaciones.incluyeIgv,
+        contactoClienteNombre: cotizaciones.contactoClienteNombre,
+        contactoClienteCargo: cotizaciones.contactoClienteCargo,
+        contactoClienteEmail: cotizaciones.contactoClienteEmail,
+        creadoPor: cotizaciones.creadoPor,
         clienteRazon: clientes.razonSocial,
         clienteRuc: clientes.numeroDocumento,
       })
@@ -64,10 +72,36 @@ export async function GET(
           razonSocial: tenants.razonSocial,
           ruc: tenants.ruc,
           direccionFiscal: tenants.direccionFiscal,
+          web: tenants.web,
+          telefono: tenants.telefono,
+          contactoEmail: tenants.contactoEmail,
+          bancoNombre: tenants.bancoNombre,
+          bancoCuenta: tenants.bancoCuenta,
+          bancoCci: tenants.bancoCci,
+          bancoDetraccionCuenta: tenants.bancoDetraccionCuenta,
         })
         .from(tenants)
         .where(eq(tenants.id, tenant.id)),
     ]);
+
+    // Datos del comercial (creado_por)
+    let comercial: { nombre: string; email: string | null; telefono: string | null } | null = null;
+    if (row.creadoPor) {
+      const { createClient } = await import('@supabase/supabase-js');
+      const admin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      const { data: userData } = await admin.auth.admin.getUserById(row.creadoPor);
+      if (userData?.user) {
+        const meta = userData.user.user_metadata as Record<string, unknown> | undefined;
+        comercial = {
+          nombre: (meta?.full_name as string) ?? userData.user.email ?? 'Comercial',
+          email: userData.user.email ?? null,
+          telefono: (meta?.telefono as string) ?? null,
+        };
+      }
+    }
 
     const pdfData = {
       numero: row.numero ?? '—',
@@ -76,9 +110,19 @@ export async function GET(
         razonSocial: tenantRow?.razonSocial ?? tenant.razonSocial,
         ruc: tenantRow?.ruc ?? tenant.ruc,
         direccionFiscal: tenantRow?.direccionFiscal ?? null,
+        web: tenantRow?.web ?? null,
+        telefono: tenantRow?.telefono ?? null,
+        contactoEmail: tenantRow?.contactoEmail ?? null,
+        bancoNombre: tenantRow?.bancoNombre ?? null,
+        bancoCuenta: tenantRow?.bancoCuenta ?? null,
+        bancoCci: tenantRow?.bancoCci ?? null,
+        bancoDetraccionCuenta: tenantRow?.bancoDetraccionCuenta ?? null,
       },
       cliente: row.clienteRazon ?? '—',
       clienteRuc: row.clienteRuc,
+      contactoClienteNombre: row.contactoClienteNombre,
+      contactoClienteCargo: row.contactoClienteCargo,
+      contactoClienteEmail: row.contactoClienteEmail,
       fechaEmision: row.fechaEmision ?? '—',
       fechaVencimiento: row.fechaVencimiento ?? '—',
       moneda: row.moneda,
@@ -95,6 +139,13 @@ export async function GET(
         igv: Number(row.igv),
         total: Number(row.total),
       },
+      condiciones: {
+        formaPago: row.formaPago,
+        tiempoEntrega: row.tiempoEntrega,
+        lugarEntrega: row.lugarEntrega,
+        incluyeIgv: row.incluyeIgv,
+      },
+      comercial,
       notas: row.notas,
       terminosCondiciones: row.terminosCondiciones,
     };
