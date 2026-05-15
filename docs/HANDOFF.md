@@ -4,35 +4,44 @@
 
 **Última actualización:** 2026-05-15 GMT-5
 **Branch activa:** `feat/B-09-sunat-nubefact`
-**Estado verificado:** TypeCheck limpio. Cliente Nubefact implementado, credenciales Idex en .env.local.
+**Estado verificado:** TypeCheck limpio. Módulo Facturas UI completo. Worker + builders + cron migration listos.
 
 ---
 
-### Sesión 2026-05-15 — Nubefact B.9
+### Sesión 2026-05-15 — Módulo Facturas UI + cron (B.9 completado)
 
-**Credenciales reales** de Lucas (del `nubefact.docx`):
+**Commit `3c61d66`** — módulo UI facturación completo:
 
-- `NUBEFACT_RUTA_IDEX=faf60424-16c9-4080-85fc-70602001e43a` → ya en `.env.local`
-- `NUBEFACT_TOKEN_IDEX=b363c3bb...870` → ya en `.env.local`
+- `src/lib/schemas/factura.ts` — zod schema `crearFacturaSchema` + `calcularLinea` + `calcularTotalesFactura`
+- `src/lib/sunat/reservar-correlativo.ts` — wrapper TS sobre función SQL atómica `reservar_correlativo()`
+- `src/server/actions/facturas.ts` — `crearFactura`, `anularFactura`, `convertirCotizacionAFactura`
+- `src/components/modules/facturas/FacturasList.tsx` — tabla + filtros por estadoSunat + paginación
+- `src/components/modules/facturas/FacturaDetalle.tsx` — ítems, box SUNAT (CDR/XML/PDF), sidebar pago
+- `src/app/(app)/[companySlug]/facturas/page.tsx` — list page con query Drizzle
+- `src/app/(app)/[companySlug]/facturas/[id]/page.tsx` — detail page
+- `src/components/shared/TenantSidebar.tsx` — link Facturas habilitado (era `disabled: true`)
+- `supabase/migrations/0032_sunat_cron.sql` — pg_cron job para worker SUNAT (cada 60s)
+
+**Credenciales reales** de Lucas (del `nubefact.docx`) — ya en `.env.local`:
+
+- `NUBEFACT_RUTA_IDEX=faf60424-16c9-4080-85fc-70602001e43a`
+- `NUBEFACT_TOKEN_IDEX=b363c3bb...870`
 - Agroalves: pendiente (Lucas aún no tiene cuenta)
 
-**Implementado en `feat/B-09-sunat-nubefact` (commit c55350f):**
+**Implementado en sesión anterior (commit c55350f):**
 
-- `src/lib/sunat/client.ts` — `NubefactHttpClient` real (reemplaza stub). Timeout 30s, idempotency 2105, retry por cola.
+- `src/lib/sunat/client.ts` — `NubefactHttpClient` real. Timeout 30s, idempotency 2105.
 - `src/lib/sunat/builders/factura.ts` — factura (01) y boleta (03)
 - `src/lib/sunat/builders/nota-credito-debito.ts` — NC (07) y ND (08)
 - `src/lib/sunat/builders/guia.ts` — guías de remisión (09/31)
-- `src/lib/sunat/helpers/numero-a-letras.ts` — monto a texto español ("CIENTO DIECIOCHO CON 00/100 SOLES")
-- `src/app/api/sunat/procesar-cola/route.ts` — worker POST que consume pgmq, ensambla payload, llama Nubefact y actualiza DB
-- Worker auth: `SUNAT_WORKER_SECRET` (en `.env.local`: `orion-sunat-worker-dev` para dev)
-- `NUBEFACT_WEBHOOK_SECRET=orion-nubefact-wh-dev` para dev
+- `src/lib/sunat/helpers/numero-a-letras.ts` — monto a texto español
+- `src/app/api/sunat/procesar-cola/route.ts` — worker POST que consume pgmq
 
 **Pendiente para completar B.9:**
 
-1. Probar emisión de factura de prueba contra la API real de Nubefact (sandbox o producción)
-2. Configurar cron para llamar al worker cada 30s (Supabase `pg_cron` o Vercel Cron)
-3. UI para emitir facturas desde el módulo de ventas (server action que encola en pgmq)
-4. Manejar destinatario en guías (actualmente el campo `destinatario` se pone vacío — la guía necesita más data del snapshot)
+1. Probar emisión de factura contra la API real de Nubefact (verificar si es sandbox o producción)
+2. Aplicar migration 0032 en Supabase y configurar `app.settings.sunat_worker_url` + `app.settings.sunat_worker_secret`
+3. Manejar destinatario en guías (actualmente se pone vacío)
 
 ---
 
