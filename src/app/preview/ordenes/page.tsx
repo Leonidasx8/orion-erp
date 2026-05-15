@@ -25,6 +25,13 @@ const MOCK_TENANT: Tenant = {
   fechaAlta: new Date(),
   fechaBaja: null,
   createdBy: null,
+  web: null,
+  telefono: null,
+  contactoEmail: null,
+  bancoNombre: null,
+  bancoCuenta: null,
+  bancoCci: null,
+  bancoDetraccionCuenta: null,
 };
 
 const MOCK_ROWS: OrdenRow[] = [

@@ -5,24 +5,16 @@ import type {
   FacturaPayload,
   GuiaRemisionPayload,
   NotaCreditoDebitoPayload,
+  NubefactErrorResponse,
   NubefactResponse,
   NubefactSuccessResponse,
 } from './types';
+import { buildFactura } from './builders/factura';
+import { buildNotaCreditoDebito } from './builders/nota-credito-debito';
+import { buildGuia } from './builders/guia';
 
-/**
- * Wrapper NUBEFACT — interface y stub.
- *
- * Hasta que lleguen las credenciales sandbox, todas las operaciones de envío
- * lanzan SunatValidationError('credenciales_no_configuradas'). Esto fuerza
- * a que cualquier código que dependa del cliente falle limpio en lugar de
- * intentar conexiones a una URL inexistente.
- *
- * Cuando lleguen credenciales:
- *  1. Implementar `emitirFactura`, `emitirGuia`, `emitirNc`, `consultarComprobante`
- *     usando fetch contra https://api.nubefact.com/api/v1/<token>.
- *  2. Mapear errores HTTP/SUNAT a `SunatError` / `NubefactNetworkError`.
- *  3. Mantener este interface estable — los call-sites no deberían cambiar.
- */
+const NUBEFACT_BASE = 'https://api.nubefact.com/api/v1';
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 export interface SunatClient {
   emitirFactura(payload: FacturaPayload): Promise<NubefactSuccessResponse>;
@@ -41,70 +33,187 @@ export interface SunatClient {
   }): Promise<NubefactSuccessResponse>;
 }
 
-export interface SunatClientConfig {
-  baseUrl: string; // ej. 'https://api.nubefact.com/api/v1'
-  token: string;
-  timeoutMs?: number;
+const TIPO_SUNAT_A_NUBEFACT: Record<string, number> = {
+  '01': 1,
+  '03': 3,
+  '07': 7,
+  '08': 8,
+  '09': 9,
+  '31': 31,
+};
+
+function formatFechaDDMMYYYY(date: Date): string {
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  return `${d}-${m}-${date.getFullYear()}`;
 }
 
-class SunatClientStub implements SunatClient {
-  constructor(private readonly config: SunatClientConfig | null) {}
+class NubefactHttpClient implements SunatClient {
+  constructor(
+    private readonly ruta: string,
+    private readonly token: string,
+    private readonly timeoutMs = DEFAULT_TIMEOUT_MS
+  ) {}
 
-  private notImplemented(payloadIgnorado: unknown): never {
-    void payloadIgnorado;
-    if (!this.config) {
+  private async post(body: Record<string, unknown>): Promise<NubefactSuccessResponse> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    let res: Response;
+    try {
+      res = await fetch(`${NUBEFACT_BASE}/${this.ruta}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.token}`,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+        cache: 'no-store',
+      });
+    } catch (err) {
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      throw new NubefactNetworkError(
+        isAbort ? 'NUBEFACT: timeout de conexión' : 'NUBEFACT: error de red',
+        err
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+
+    let json: NubefactResponse | null = null;
+    try {
+      json = (await res.json()) as NubefactResponse;
+    } catch {
+      // respuesta vacía o no-JSON
+    }
+
+    if (!res.ok) {
+      // 5xx → transitorio (reintentable)
+      if (res.status >= 500) {
+        throw new NubefactNetworkError(`NUBEFACT HTTP ${res.status}`);
+      }
+      // 4xx → error de validación/payload
+      const errBody = json as NubefactErrorResponse | null;
       throw new SunatValidationError(
-        'credenciales_no_configuradas: agregar NUBEFACT_BASE_URL y NUBEFACT_TOKEN al env',
-        'config'
+        errBody?.errors ?? `NUBEFACT HTTP ${res.status}`,
+        'nubefact_payload'
       );
     }
-    throw new SunatValidationError(
-      'wrapper_no_implementado: pendiente builders XML/JSON SUNAT (post credenciales)'
-    );
+
+    if (!json) {
+      throw new NubefactNetworkError('NUBEFACT: respuesta vacía con HTTP 2xx');
+    }
+
+    if ('errors' in json) {
+      const err = json as NubefactErrorResponse;
+      // código SUNAT 2105 = ya fue presentado → idempotency hit, no es error real
+      if (err.codigo === 2105) {
+        // Retornamos estructura mínima; el caller puede consultar para obtener CDR
+        return {
+          aceptada_por_sunat: true,
+          sunat_description: 'Ya presentado (idempotency)',
+          sunat_note: null,
+          sunat_responsecode: '2105',
+          enlace_del_pdf: '',
+          enlace_del_xml: '',
+          enlace_del_cdr: '',
+          cadena_para_codigo_qr: '',
+          codigo_hash: '',
+          serie: body['serie'] as string,
+          numero: body['numero'] as number,
+          tipo_de_comprobante: body['tipo_de_comprobante'] as number,
+        };
+      }
+      throw new SunatError(err.codigo ?? -1, err.errors, body, { transitorio: false });
+    }
+
+    return json as NubefactSuccessResponse;
   }
 
   emitirFactura(payload: FacturaPayload): Promise<NubefactSuccessResponse> {
-    return this.notImplemented(payload);
+    return this.post(buildFactura(payload));
   }
+
   emitirGuia(payload: GuiaRemisionPayload): Promise<NubefactSuccessResponse> {
-    return this.notImplemented(payload);
+    return this.post(buildGuia(payload));
   }
+
   emitirNotaCreditoDebito(payload: NotaCreditoDebitoPayload): Promise<NubefactSuccessResponse> {
-    return this.notImplemented(payload);
+    return this.post(buildNotaCreditoDebito(payload));
   }
+
   consultarComprobante(args: {
     tipoDocumento: string;
     serie: string;
     numero: number;
   }): Promise<NubefactResponse> {
-    return this.notImplemented(args);
+    return this.post({
+      operacion: 'consultar_comprobante',
+      tipo_de_comprobante: TIPO_SUNAT_A_NUBEFACT[args.tipoDocumento] ?? 1,
+      serie: args.serie,
+      numero: args.numero,
+    });
   }
+
   anularComprobante(args: {
     tipoDocumento: string;
     serie: string;
     numero: number;
     motivo: string;
   }): Promise<NubefactSuccessResponse> {
-    return this.notImplemented(args);
+    return this.post({
+      operacion: 'generar_anulacion',
+      tipo_de_comprobante: TIPO_SUNAT_A_NUBEFACT[args.tipoDocumento] ?? 1,
+      serie: args.serie,
+      numero: args.numero,
+      fecha_de_generacion: formatFechaDDMMYYYY(new Date()),
+      motivo: args.motivo,
+    });
+  }
+}
+
+class SunatClientStub implements SunatClient {
+  private fail(): never {
+    throw new SunatValidationError(
+      'credenciales_no_configuradas: agregar NUBEFACT_RUTA_<TENANT> y NUBEFACT_TOKEN_<TENANT> al env',
+      'config'
+    );
+  }
+  emitirFactura(): Promise<NubefactSuccessResponse> {
+    return this.fail();
+  }
+  emitirGuia(): Promise<NubefactSuccessResponse> {
+    return this.fail();
+  }
+  emitirNotaCreditoDebito(): Promise<NubefactSuccessResponse> {
+    return this.fail();
+  }
+  consultarComprobante(): Promise<NubefactResponse> {
+    return this.fail();
+  }
+  anularComprobante(): Promise<NubefactSuccessResponse> {
+    return this.fail();
   }
 }
 
 /**
- * Factory del cliente. Lee credenciales del env. Si no hay credenciales,
- * el cliente lanza SunatValidationError en cualquier llamada.
+ * Obtiene el cliente NUBEFACT para un tenant.
+ * Lee NUBEFACT_RUTA_<SLUG> y NUBEFACT_TOKEN_<SLUG> del entorno.
+ * El slug se normaliza a mayúsculas con guiones → guiones bajos.
  *
- * Las pruebas pueden inyectar un mock implementando `SunatClient`.
+ * Ejemplo: tenantSlug="idex" → NUBEFACT_RUTA_IDEX / NUBEFACT_TOKEN_IDEX
  */
-export function getSunatClient(): SunatClient {
-  const baseUrl = process.env.NUBEFACT_BASE_URL;
-  const token = process.env.NUBEFACT_TOKEN;
+export function getSunatClient(tenantSlug: string): SunatClient {
+  const key = tenantSlug.toUpperCase().replace(/-/g, '_');
+  const ruta = process.env[`NUBEFACT_RUTA_${key}`];
+  const token = process.env[`NUBEFACT_TOKEN_${key}`];
 
-  if (!baseUrl || !token) {
-    return new SunatClientStub(null);
+  if (!ruta || !token) {
+    return new SunatClientStub();
   }
 
-  return new SunatClientStub({ baseUrl, token });
+  return new NubefactHttpClient(ruta, token);
 }
 
-// Re-export para conveniencia
 export { NubefactNetworkError, SunatError, SunatValidationError };
