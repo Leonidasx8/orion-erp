@@ -53,7 +53,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Facturación',
     items: [
       { href: '/guias', label: 'Guías remisión', icon: Truck, disabled: true },
-      { href: '/facturas', label: 'Facturas', icon: Receipt, disabled: true },
+      { href: '/facturas', label: 'Facturas', icon: Receipt },
       { href: '/credito', label: 'Crédito y CxC', icon: Wallet, disabled: true },
     ],
   },
