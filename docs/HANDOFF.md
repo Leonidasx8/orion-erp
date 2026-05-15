@@ -2,9 +2,113 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-12 19:05 GMT-5
-**Branch activa:** `feat/B-07-kardex-ui`
-**Estado verificado:** Demo local FUNCIONAL — todos los botones verificados end-to-end en browser.
+**Última actualización:** 2026-05-15 GMT-5
+**Branch activa:** `feat/B-09-sunat-nubefact`
+**Estado verificado:** TypeCheck limpio. Cliente Nubefact implementado, credenciales Idex en .env.local.
+
+---
+
+### Sesión 2026-05-15 — Nubefact B.9
+
+**Credenciales reales** de Lucas (del `nubefact.docx`):
+
+- `NUBEFACT_RUTA_IDEX=faf60424-16c9-4080-85fc-70602001e43a` → ya en `.env.local`
+- `NUBEFACT_TOKEN_IDEX=b363c3bb...870` → ya en `.env.local`
+- Agroalves: pendiente (Lucas aún no tiene cuenta)
+
+**Implementado en `feat/B-09-sunat-nubefact` (commit c55350f):**
+
+- `src/lib/sunat/client.ts` — `NubefactHttpClient` real (reemplaza stub). Timeout 30s, idempotency 2105, retry por cola.
+- `src/lib/sunat/builders/factura.ts` — factura (01) y boleta (03)
+- `src/lib/sunat/builders/nota-credito-debito.ts` — NC (07) y ND (08)
+- `src/lib/sunat/builders/guia.ts` — guías de remisión (09/31)
+- `src/lib/sunat/helpers/numero-a-letras.ts` — monto a texto español ("CIENTO DIECIOCHO CON 00/100 SOLES")
+- `src/app/api/sunat/procesar-cola/route.ts` — worker POST que consume pgmq, ensambla payload, llama Nubefact y actualiza DB
+- Worker auth: `SUNAT_WORKER_SECRET` (en `.env.local`: `orion-sunat-worker-dev` para dev)
+- `NUBEFACT_WEBHOOK_SECRET=orion-nubefact-wh-dev` para dev
+
+**Pendiente para completar B.9:**
+
+1. Probar emisión de factura de prueba contra la API real de Nubefact (sandbox o producción)
+2. Configurar cron para llamar al worker cada 30s (Supabase `pg_cron` o Vercel Cron)
+3. UI para emitir facturas desde el módulo de ventas (server action que encola en pgmq)
+4. Manejar destinatario en guías (actualmente el campo `destinatario` se pone vacío — la guía necesita más data del snapshot)
+
+---
+
+### Sesión 2026-05-14 — Demo #1 con Lucas + cuestionario de mejoras
+
+**Contexto:** primera demo en vivo con Lucas Escrivá Di Romaní (Idex). De la conversación salieron mejoras que no estaban detalladas en el contrato. Estrategia decidida: Camino C híbrido (ver `~/.claude/projects/.../memory/project_addendum_precios_idex.md`).
+
+**Mejoras levantadas (7 en total):**
+
+1. Actualización masiva de precios con filtros (categoría/proveedor) → 🟡 addendum
+2. Historial de precios por producto (autor, fecha, valor anterior/nuevo, razón) → 🟡 addendum
+3. Campo "Solicitante" en cotizaciones y compras a proveedor → ✅ sin costo (cambio mínimo)
+4. Pipeline cotización aprobada → Comercial genera Compra al Proveedor → Lucas aprueba → factura de compra archivada → 🟢 consecuencia lógica del contrato
+5. Acciones funcionales en módulo Inventario (botón Ajuste manual visible desde lista) → 🟢 consecuencia lógica
+6. Producto con `proveedor_principal_id` → 🟢 consecuencia lógica
+7. Renombrar "Órdenes de Compra" → "Compras a Proveedores" (UI label) → ✅ sin costo
+
+**Acción tomada:** se envió a Lucas un Google Doc con 7 preguntas para terminar el análisis técnico antes de la reunión del miércoles 20-may. Deadline: lunes 18-may al mediodía.
+
+- Cuestionario: https://docs.google.com/document/d/1NZXEEiDNYm7afTsqSmugl1t6Y4LjB-nwc0m8C3Nc8PU/edit
+- Correo (en Drive listo para copiar): https://docs.google.com/document/d/1BAOl78sjYD3Rb6z8zh2Ob48oqNN-hevAQ8AVMVQvXPY/edit
+- Estrategia/pricing del addendum en memoria: `project_addendum_precios_idex.md`
+
+**Insights operativos clave descubiertos:**
+
+- Idex es greenfield (empresa nueva, 100% manual). Orion DEFINE su SOP, no lo digitaliza.
+- Idex opera físicamente desde almacén de CELSA (Alexander Fleming 454 = dirección del proveedor). Modelo de facto: dropshipping / cuasi-distribuidor.
+- CELSA da precio sugerido con ~14% margen ya incluido (475 productos). Lucas confirmó margen mínimo 5% por producto en Kickoff.
+- Contacto secundario Andrea Alvarez está en SegElectrica — sugiere que SegEléctrica es el proveedor real (no CELSA directo).
+- Solo Lucas como usuario operativo. Sin base de clientes. Multiusuario va después.
+- Lucas no sabe qué es NUBEFACT (textualmente "ME LO PODÉIS HACER, NO SE QUE ES ESO"). Acción: crearle la cuenta o tutorial.
+- Catálogo terminales tiene variantes (calibre × diámetro) — decisión pendiente Lucas (opción c sería addendum, B.4 dice "SKU único por producto").
+
+**Decisiones del Kickoff (29-abr-2026) ya tomadas — NO volver a consultar:**
+
+- Costo: promedio ponderado
+- Vender sin stock: SÍ con warning (no bloquear)
+- Almacenes: uno solo
+- Crédito default: 0 días contado
+- TC USD→PEN: fecha de emisión + mostrar AMBOS montos (USD + PEN equivalente con TC un poco más alto que BCR)
+- Validez cotización: 7 días
+- Sin descuentos comerciales
+- Comercial ve solo sus propias ventas
+- Capacitación: remota Google Meet con grabaciones
+- Productos exonerados IGV: fertilizantes Agroalves
+
+**Pendiente del addendum cotizable (Bucket B, ~US$ 380-420):**
+
+- Módulo actualización masiva de precios con filtros + preview + razón obligatoria
+- Tabla `historial_precios` dedicada con razón/tag/batch_id
+- Variantes formales en catálogo (si Lucas elige opción c en Q2 del cuestionario)
+
+**Próximos pasos cuando vuelva la sesión:**
+
+1. Recibir respuestas de Lucas al cuestionario (deadline lunes 18-may)
+2. Hacer análisis técnico de cada decisión vs scope contratado
+3. Clasificar las 7 mejoras en categorías (✅ contrato / 🟢 lógica asumida / 🟡 addendum / 🔵 v2)
+4. Cotizar el Bucket B con números concretos
+5. Presentar todo en reunión miércoles 20-may
+6. Tras aprobación: escribir spec en `docs/superpowers/specs/` y plan de implementación
+7. Rama propuesta: `feat/precios-masivos-addendum` (post-demo, si Lucas aprueba addendum)
+
+⚠️ Inconsistencia pendiente de aclarar: apellido de Lucas — el contrato y el formulario firmado dicen "de Romaní" (con "de"); el usuario indicó verbalmente "Di Romaní" (italiano). Usar "Di Romaní" en comunicaciones nuevas según indicación del usuario, confirmar en reunión.
+
+---
+
+### Fixes sesión madrugada 2026-05-13
+
+1. **Importar productos: botón "Confirmar import" no respondía + sin forma de editar filas con errores**: `ProductosImportar.tsx` era mockup estático con `MOCK_ROWS` hardcodeados y `disabled={hasErrors}` siempre activo por los 3 errores fijos. La promesa del alert ("edita las filas inline antes de continuar") nunca se implementó. Fix:
+   - `PreviewRow.precioCompra`/`precioVenta` ahora son `number` (no string), con helper `formatSoles()`.
+   - Nueva función `validateRows()` que recomputa `status`/`message` con reglas reales (SKU vacío/duplicado, precio compra ≤ 0, familia vacía, margen < 20%).
+   - `rows` se levanta a `useState` en el padre y se pasa a `Step2`.
+   - Columna acciones con icono pencil → modo edición con inputs por celda + botones guardar/cancelar; al guardar se revalida toda la tabla y los contadores del header se actualizan.
+   - Botón `Confirmar import` se habilita cuando `errorCount === 0` y nadie está editando.
+   - Sigue siendo mock (no parsea el .xlsx real). El parseo de Excel + persistencia Supabase queda pendiente para una iteración futura.
+   - Archivo: `src/components/modules/productos/ProductosImportar.tsx`.
 
 ### Fixes sesión tarde 2026-05-12 (verificación botones pre-demo)
 
