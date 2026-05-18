@@ -79,6 +79,8 @@ export async function GET(
           bancoCuenta: tenants.bancoCuenta,
           bancoCci: tenants.bancoCci,
           bancoDetraccionCuenta: tenants.bancoDetraccionCuenta,
+          comercialNombre: tenants.comercialNombre,
+          comercialTelefono: tenants.comercialTelefono,
         })
         .from(tenants)
         .where(eq(tenants.id, tenant.id)),
@@ -96,9 +98,13 @@ export async function GET(
       if (userData?.user) {
         const meta = userData.user.user_metadata as Record<string, unknown> | undefined;
         comercial = {
-          nombre: (meta?.full_name as string) ?? userData.user.email ?? 'Comercial',
+          nombre:
+            (meta?.full_name as string) ??
+            tenantRow?.comercialNombre ??
+            userData.user.email ??
+            'Comercial',
           email: userData.user.email ?? null,
-          telefono: (meta?.telefono as string) ?? null,
+          telefono: (meta?.telefono as string) ?? tenantRow?.comercialTelefono ?? null,
         };
       }
     }
@@ -152,13 +158,16 @@ export async function GET(
 
     const logoUrl = LOGOS[companySlug];
     const Component =
-      design === 'a' ? CotizacionPDFDesignA : design === 'b' ? CotizacionPDFDesignB : CotizacionPDF;
-    const elementProps =
-      design === 'a' || design === 'b' ? { data: pdfData, logoUrl } : { data: pdfData };
+      design === 'a'
+        ? CotizacionPDFDesignA
+        : design === 'legacy'
+          ? CotizacionPDF
+          : CotizacionPDFDesignB;
+    const elementProps = { data: pdfData, logoUrl };
     const element = createElement(Component, elementProps) as ReactElement<DocumentProps>;
     const buffer = await renderToBuffer(element);
 
-    const suffix = design === 'a' || design === 'b' ? `-design-${design}` : '';
+    const suffix = design === 'a' || design === 'legacy' ? `-${design}` : '';
     const filename = `${row.numero ?? 'cotizacion'}${suffix}.pdf`;
     return new Response(new Uint8Array(buffer), {
       headers: {

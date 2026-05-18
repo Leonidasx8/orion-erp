@@ -89,6 +89,13 @@ export default async function EditarCotizacionPage({
     descuentoGlobal: Number(row.descuentoGlobal),
     notas: row.notas,
     terminosCondiciones: row.terminosCondiciones,
+    formaPago: row.formaPago,
+    tiempoEntrega: row.tiempoEntrega,
+    lugarEntrega: row.lugarEntrega,
+    incluyeIgv: row.incluyeIgv,
+    contactoClienteNombre: row.contactoClienteNombre,
+    contactoClienteCargo: row.contactoClienteCargo,
+    contactoClienteEmail: row.contactoClienteEmail,
     items: items.map((it) => ({
       productoId: it.productoId,
       codigo: it.codigo,

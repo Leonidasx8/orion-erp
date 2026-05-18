@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   FileSpreadsheet,
@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -26,8 +27,8 @@ interface PreviewRow {
   descripcion: string;
   familia: string;
   calibre: string;
-  precioCompra: string;
-  precioVenta: string;
+  precioCompra: number;
+  precioVenta: number;
   status: RowStatus;
   message: string;
 }
@@ -35,18 +36,18 @@ interface PreviewRow {
 type FilterMode = 'all' | 'errors';
 
 // ---------------------------------------------------------------------------
-// Constants — mock preview data
+// Initial mock preview data
 // ---------------------------------------------------------------------------
 
-const MOCK_ROWS: PreviewRow[] = [
+const INITIAL_ROWS: PreviewRow[] = [
   {
     index: 1,
     sku: 'ACE-001',
     descripcion: 'Aceite de motor 5W-30 1L',
     familia: 'Lubricantes',
     calibre: '—',
-    precioCompra: 'S/ 32.00',
-    precioVenta: 'S/ 45.00',
+    precioCompra: 32,
+    precioVenta: 45,
     status: 'ok',
     message: '',
   },
@@ -56,8 +57,8 @@ const MOCK_ROWS: PreviewRow[] = [
     descripcion: 'Filtro de aire universal',
     familia: 'Filtros',
     calibre: 'Universal',
-    precioCompra: 'S/ 18.50',
-    precioVenta: 'S/ 28.00',
+    precioCompra: 18.5,
+    precioVenta: 28,
     status: 'ok',
     message: '',
   },
@@ -67,8 +68,8 @@ const MOCK_ROWS: PreviewRow[] = [
     descripcion: 'Batería 12V 60Ah',
     familia: 'Eléctricos',
     calibre: '60Ah',
-    precioCompra: 'S/ 210.00',
-    precioVenta: 'S/ 299.00',
+    precioCompra: 210,
+    precioVenta: 299,
     status: 'ok',
     message: '',
   },
@@ -78,10 +79,10 @@ const MOCK_ROWS: PreviewRow[] = [
     descripcion: 'Llanta radial 195/65 R15',
     familia: '',
     calibre: 'R15',
-    precioCompra: 'S/ 180.00',
-    precioVenta: 'S/ 245.00',
+    precioCompra: 180,
+    precioVenta: 245,
     status: 'warning',
-    message: "Familia vacía · se asignará 'Sin clasificar'",
+    message: '',
   },
   {
     index: 5,
@@ -89,10 +90,10 @@ const MOCK_ROWS: PreviewRow[] = [
     descripcion: 'Amortiguador delantero',
     familia: 'Suspensión',
     calibre: '—',
-    precioCompra: 'S/ 85.00',
-    precioVenta: 'S/ 112.00',
+    precioCompra: 94.85,
+    precioVenta: 112,
     status: 'warning',
-    message: 'Margen 15,3% > recomendado, verificar',
+    message: '',
   },
   {
     index: 6,
@@ -100,10 +101,10 @@ const MOCK_ROWS: PreviewRow[] = [
     descripcion: 'Pastillas de freno delantera',
     familia: '',
     calibre: '220mm',
-    precioCompra: 'S/ 55.00',
-    precioVenta: 'S/ 78.00',
+    precioCompra: 55,
+    precioVenta: 78,
     status: 'warning',
-    message: "Familia vacía · se asignará 'Sin clasificar'",
+    message: '',
   },
   {
     index: 7,
@@ -111,10 +112,10 @@ const MOCK_ROWS: PreviewRow[] = [
     descripcion: 'Correa de distribución',
     familia: 'Motor',
     calibre: '—',
-    precioCompra: 'S/ 42.00',
-    precioVenta: 'S/ 62.00',
+    precioCompra: 42,
+    precioVenta: 62,
     status: 'error',
-    message: 'SKU obligatorio',
+    message: '',
   },
   {
     index: 8,
@@ -122,10 +123,10 @@ const MOCK_ROWS: PreviewRow[] = [
     descripcion: 'Aceite de motor 10W-40 1L',
     familia: 'Lubricantes',
     calibre: '—',
-    precioCompra: 'S/ 28.00',
-    precioVenta: 'S/ 40.00',
+    precioCompra: 28,
+    precioVenta: 40,
     status: 'error',
-    message: 'SKU duplicado en fila 11',
+    message: '',
   },
   {
     index: 9,
@@ -133,14 +134,69 @@ const MOCK_ROWS: PreviewRow[] = [
     descripcion: 'Bujía NGK estándar',
     familia: 'Encendido',
     calibre: '—',
-    precioCompra: 'S/ 0.00',
-    precioVenta: 'S/ 12.00',
+    precioCompra: 0,
+    precioVenta: 12,
     status: 'error',
-    message: 'Precio compra = 0',
+    message: '',
   },
 ];
 
 const TOTAL_ROWS = 47;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatSoles(n: number): string {
+  return `S/ ${n.toFixed(2)}`;
+}
+
+function validateRows(rows: PreviewRow[]): PreviewRow[] {
+  const skuToIndices = new Map<string, number[]>();
+  for (const r of rows) {
+    const s = r.sku.trim();
+    if (!s) continue;
+    if (!skuToIndices.has(s)) skuToIndices.set(s, []);
+    skuToIndices.get(s)!.push(r.index);
+  }
+
+  return rows.map((r): PreviewRow => {
+    const sku = r.sku.trim();
+    if (!sku) {
+      return { ...r, status: 'error', message: 'SKU obligatorio' };
+    }
+    if (!Number.isFinite(r.precioCompra) || r.precioCompra <= 0) {
+      return { ...r, status: 'error', message: 'Precio compra = 0' };
+    }
+    const dups = skuToIndices.get(sku) ?? [];
+    if (dups.length > 1) {
+      const first = dups.find((i) => i !== r.index);
+      return {
+        ...r,
+        status: 'error',
+        message: `SKU duplicado en fila ${first ?? '?'}`,
+      };
+    }
+    if (!r.familia.trim()) {
+      return {
+        ...r,
+        status: 'warning',
+        message: "Familia vacía · se asignará 'Sin clasificar'",
+      };
+    }
+    if (r.precioCompra > 0 && r.precioVenta > 0) {
+      const margin = ((r.precioVenta - r.precioCompra) / r.precioVenta) * 100;
+      if (margin < 20) {
+        return {
+          ...r,
+          status: 'warning',
+          message: `Margen ${margin.toFixed(1).replace('.', ',')}% < recomendado, verificar`,
+        };
+      }
+    }
+    return { ...r, status: 'ok', message: '' };
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -197,10 +253,6 @@ function StepIndicator({ current }: StepIndicatorProps) {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Row status cell
-// ---------------------------------------------------------------------------
 
 function StatusCell({ row }: { row: PreviewRow }) {
   if (row.status === 'ok') {
@@ -337,28 +389,53 @@ function Step1({ companySlug, onNext }: Step1Props) {
 
 interface Step2Props {
   fileName: string;
+  rows: PreviewRow[];
+  setRows: (rows: PreviewRow[]) => void;
   onBack: () => void;
   onConfirm: () => void;
 }
 
-function Step2({ fileName, onBack, onConfirm }: Step2Props) {
+function Step2({ fileName, rows, setRows, onBack, onConfirm }: Step2Props) {
   const [filter, setFilter] = useState<FilterMode>('all');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [draft, setDraft] = useState<PreviewRow | null>(null);
 
-  const okCount = MOCK_ROWS.filter((r) => r.status === 'ok').length;
-  const warnCount = MOCK_ROWS.filter((r) => r.status === 'warning').length;
-  const errorCount = MOCK_ROWS.filter((r) => r.status === 'error').length;
+  const okCount = rows.filter((r) => r.status === 'ok').length;
+  const warnCount = rows.filter((r) => r.status === 'warning').length;
+  const errorCount = rows.filter((r) => r.status === 'error').length;
 
   const visibleRows =
-    filter === 'errors'
-      ? MOCK_ROWS.filter((r) => r.status === 'error' || r.status === 'warning')
-      : MOCK_ROWS;
+    filter === 'errors' ? rows.filter((r) => r.status === 'error' || r.status === 'warning') : rows;
 
   const hasErrors = errorCount > 0;
+  const importableCount = Math.max(0, TOTAL_ROWS - errorCount);
 
   function rowBg(status: RowStatus) {
     if (status === 'error') return 'bg-red-50 dark:bg-red-950/20';
     if (status === 'warning') return 'bg-amber-50 dark:bg-amber-950/20';
     return '';
+  }
+
+  function startEdit(row: PreviewRow) {
+    setEditingIndex(row.index);
+    setDraft({ ...row });
+  }
+
+  function cancelEdit() {
+    setEditingIndex(null);
+    setDraft(null);
+  }
+
+  function saveEdit() {
+    if (!draft) return;
+    const next = rows.map((r) => (r.index === draft.index ? draft : r));
+    setRows(validateRows(next));
+    setEditingIndex(null);
+    setDraft(null);
+  }
+
+  function updateDraft<K extends keyof PreviewRow>(key: K, value: PreviewRow[K]) {
+    setDraft((d) => (d ? { ...d, [key]: value } : d));
   }
 
   return (
@@ -405,27 +482,137 @@ function Step2({ fileName, onBack, onConfirm }: Step2Props) {
                 <th className="min-w-[180px] px-3 py-2.5 text-left font-medium text-muted-foreground">
                   ESTADO
                 </th>
+                <th className="w-20 px-3 py-2.5 text-right font-medium text-muted-foreground">
+                  <span className="sr-only">Acciones</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {visibleRows.map((row) => (
-                <tr key={row.index} className={rowBg(row.status)}>
-                  <td className="px-3 py-2.5 text-muted-foreground">{row.index}</td>
-                  <td className="px-3 py-2.5 font-mono text-xs">
-                    {row.sku || <span className="italic text-muted-foreground">(vacío)</span>}
-                  </td>
-                  <td className="max-w-[200px] truncate px-3 py-2.5">{row.descripcion}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">
-                    {row.familia || <span className="italic text-muted-foreground/60">—</span>}
-                  </td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{row.calibre}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{row.precioCompra}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{row.precioVenta}</td>
-                  <td className="px-3 py-2.5">
-                    <StatusCell row={row} />
-                  </td>
-                </tr>
-              ))}
+              {visibleRows.map((row) => {
+                const editing = editingIndex === row.index;
+                if (editing && draft) {
+                  return (
+                    <tr key={row.index} className="bg-primary/5">
+                      <td className="px-3 py-2 align-middle text-muted-foreground">{row.index}</td>
+                      <td className="px-2 py-2 align-middle">
+                        <input
+                          value={draft.sku}
+                          onChange={(e) => updateDraft('sku', e.target.value)}
+                          placeholder="SKU"
+                          autoFocus
+                          className="w-full rounded border bg-background px-2 py-1 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </td>
+                      <td className="px-2 py-2 align-middle">
+                        <input
+                          value={draft.descripcion}
+                          onChange={(e) => updateDraft('descripcion', e.target.value)}
+                          className="w-full rounded border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </td>
+                      <td className="px-2 py-2 align-middle">
+                        <input
+                          value={draft.familia}
+                          onChange={(e) => updateDraft('familia', e.target.value)}
+                          placeholder="Familia"
+                          className="w-full rounded border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </td>
+                      <td className="px-2 py-2 align-middle">
+                        <input
+                          value={draft.calibre === '—' ? '' : draft.calibre}
+                          onChange={(e) => updateDraft('calibre', e.target.value || '—')}
+                          placeholder="—"
+                          className="w-full rounded border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </td>
+                      <td className="px-2 py-2 align-middle">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={Number.isFinite(draft.precioCompra) ? draft.precioCompra : 0}
+                          onChange={(e) =>
+                            updateDraft('precioCompra', parseFloat(e.target.value) || 0)
+                          }
+                          className="w-24 rounded border bg-background px-2 py-1 text-right text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </td>
+                      <td className="px-2 py-2 align-middle">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={Number.isFinite(draft.precioVenta) ? draft.precioVenta : 0}
+                          onChange={(e) =>
+                            updateDraft('precioVenta', parseFloat(e.target.value) || 0)
+                          }
+                          className="w-24 rounded border bg-background px-2 py-1 text-right text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </td>
+                      <td className="px-3 py-2 align-middle">
+                        <span className="text-xs italic text-muted-foreground">Editando…</span>
+                      </td>
+                      <td className="px-2 py-2 align-middle">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 dark:hover:bg-emerald-900/40"
+                            onClick={saveEdit}
+                            aria-label="Guardar fila"
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-muted-foreground"
+                            onClick={cancelEdit}
+                            aria-label="Cancelar edición"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+                return (
+                  <tr key={row.index} className={rowBg(row.status)}>
+                    <td className="px-3 py-2.5 text-muted-foreground">{row.index}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs">
+                      {row.sku || <span className="italic text-muted-foreground">(vacío)</span>}
+                    </td>
+                    <td className="max-w-[200px] truncate px-3 py-2.5">{row.descripcion}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">
+                      {row.familia || <span className="italic text-muted-foreground/60">—</span>}
+                    </td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{row.calibre}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">
+                      {formatSoles(row.precioCompra)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">
+                      {formatSoles(row.precioVenta)}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <StatusCell row={row} />
+                    </td>
+                    <td className="px-2 py-2.5 text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                        onClick={() => startEdit(row)}
+                        aria-label={`Editar fila ${row.index}`}
+                        disabled={editingIndex !== null}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -433,7 +620,7 @@ function Step2({ fileName, onBack, onConfirm }: Step2Props) {
         {/* Table footer */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/20 px-4 py-2.5 text-xs text-muted-foreground">
           <span>
-            Filas 1–{MOCK_ROWS.length} de {TOTAL_ROWS} · {errorCount + warnCount} con problemas
+            Filas 1–{rows.length} de {TOTAL_ROWS} · {errorCount + warnCount} con problemas
           </span>
           <div className="flex items-center gap-1">
             <Button
@@ -461,10 +648,13 @@ function Step2({ fileName, onBack, onConfirm }: Step2Props) {
         <Alert variant="destructive" className="border-red-300 bg-red-50 dark:bg-red-950/30">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <span className="font-semibold">{errorCount} errores impiden la importación</span>
+            <span className="font-semibold">
+              {errorCount} error{errorCount !== 1 ? 'es' : ''} impide
+              {errorCount !== 1 ? 'n' : ''} la importación
+            </span>
             {' — '}
-            Corrige los errores en el archivo y vuelve a subirlo, o edita las filas inline antes de
-            continuar.
+            Corrige los errores con el botón de editar de cada fila, o vuelve a subir el archivo
+            corregido.
           </AlertDescription>
         </Alert>
       )}
@@ -480,8 +670,8 @@ function Step2({ fileName, onBack, onConfirm }: Step2Props) {
             <Download className="mr-1.5 h-4 w-4" />
             Descargar reporte de errores
           </Button>
-          <Button onClick={onConfirm} disabled={hasErrors}>
-            Confirmar import ({TOTAL_ROWS - errorCount})
+          <Button onClick={onConfirm} disabled={hasErrors || editingIndex !== null}>
+            Confirmar import ({importableCount})
             <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
@@ -545,10 +735,11 @@ const STEP_LABELS: Record<number, string> = {
 export function ProductosImportar({ companySlug }: ProductosImportarProps) {
   const [step, setStep] = useState(1);
   const [fileName, setFileName] = useState('');
+  const [rows, setRows] = useState<PreviewRow[]>(() => validateRows(INITIAL_ROWS));
 
-  const errorCount = MOCK_ROWS.filter((r) => r.status === 'error').length;
-  const warnCount = MOCK_ROWS.filter((r) => r.status === 'warning').length;
-  const importedCount = TOTAL_ROWS - errorCount;
+  const errorCount = rows.filter((r) => r.status === 'error').length;
+  const warnCount = rows.filter((r) => r.status === 'warning').length;
+  const importedCount = Math.max(0, TOTAL_ROWS - errorCount);
 
   return (
     <div className="space-y-6">
@@ -581,7 +772,13 @@ export function ProductosImportar({ companySlug }: ProductosImportarProps) {
           />
         )}
         {step === 2 && (
-          <Step2 fileName={fileName} onBack={() => setStep(1)} onConfirm={() => setStep(3)} />
+          <Step2
+            fileName={fileName}
+            rows={rows}
+            setRows={setRows}
+            onBack={() => setStep(1)}
+            onConfirm={() => setStep(3)}
+          />
         )}
         {step === 3 && (
           <Step3 companySlug={companySlug} importedCount={importedCount} warningCount={warnCount} />

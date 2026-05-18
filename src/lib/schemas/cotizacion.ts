@@ -28,6 +28,13 @@ export const cotizacionSchema = z
     descuentoGlobal: z.coerce.number().min(0).default(0),
     notas: z.string().max(2000).optional(),
     terminosCondiciones: z.string().max(5000).optional(),
+    formaPago: z.string().max(300).optional(),
+    tiempoEntrega: z.string().max(300).optional(),
+    lugarEntrega: z.string().max(300).optional(),
+    incluyeIgv: z.boolean().default(false),
+    contactoClienteNombre: z.string().max(200).optional(),
+    contactoClienteCargo: z.string().max(200).optional(),
+    contactoClienteEmail: z.string().max(200).optional(),
     items: z.array(cotizacionItemSchema).min(1, 'La cotización debe tener al menos un ítem'),
   })
   .refine((d) => d.moneda === 'PEN' || (d.tipoCambio != null && d.tipoCambio > 0), {

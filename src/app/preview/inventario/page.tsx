@@ -32,6 +32,11 @@ const MOCK_TENANT: Tenant = {
   bancoCuenta: null,
   bancoCci: null,
   bancoDetraccionCuenta: null,
+  bancoCuentaUsd: null,
+  bancoCciUsd: null,
+  comercialNombre: null,
+  comercialCargo: null,
+  comercialTelefono: null,
 };
 
 const MOCK_ROWS: StockRow[] = [

@@ -71,6 +71,8 @@ export async function crearOrdenCompra(
           direccionEntrega: data.direccionEntrega,
           observaciones: data.observaciones,
           compradorId: user.id,
+          compradorNombre:
+            (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Usuario',
         })
         .returning({ id: ordenesCompra.id, numero: ordenesCompra.numero });
 
@@ -154,6 +156,8 @@ export async function crearOcDesdeCotizacion(
           igv: cot.igv,
           total: cot.total,
           compradorId: user.id,
+          compradorNombre:
+            (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Usuario',
         })
         .returning({ id: ordenesCompra.id, numero: ordenesCompra.numero });
 

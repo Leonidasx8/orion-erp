@@ -39,6 +39,11 @@ export const tenants = pgTable('tenants', {
   bancoCuenta: text('banco_cuenta'),
   bancoCci: text('banco_cci'),
   bancoDetraccionCuenta: text('banco_detraccion_cuenta'),
+  bancoCuentaUsd: text('banco_cuenta_usd'),
+  bancoCciUsd: text('banco_cci_usd'),
+  comercialNombre: text('comercial_nombre'),
+  comercialCargo: text('comercial_cargo'),
+  comercialTelefono: text('comercial_telefono'),
 });
 
 export const tenantUsageMetrics = pgTable(

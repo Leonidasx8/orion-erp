@@ -67,6 +67,7 @@ export const cotizaciones = pgTable('cotizaciones', {
   facturaId: uuid('factura_id'),
 
   creadoPor: uuid('creado_por').notNull(),
+  creadoPorNombre: text('creado_por_nombre'),
   createdAt: timestamptz('created_at').notNull().defaultNow(),
   updatedAt: timestamptz('updated_at').notNull().defaultNow(),
 });

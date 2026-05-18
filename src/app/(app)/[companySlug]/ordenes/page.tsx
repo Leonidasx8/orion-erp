@@ -53,6 +53,7 @@ export default async function OrdenesPage({
         lineas: sql<number>`(SELECT COUNT(*)::int FROM ${lineasOrdenCompra} WHERE ${lineasOrdenCompra.ordenId} = ${ordenesCompra.id})`,
         cantidad: sql<number>`(SELECT COALESCE(SUM(${lineasOrdenCompra.cantidad}), 0) FROM ${lineasOrdenCompra} WHERE ${lineasOrdenCompra.ordenId} = ${ordenesCompra.id})`,
         recibida: sql<number>`(SELECT COALESCE(SUM(${lineasOrdenCompra.cantidadRecibida}), 0) FROM ${lineasOrdenCompra} WHERE ${lineasOrdenCompra.ordenId} = ${ordenesCompra.id})`,
+        compradorNombre: ordenesCompra.compradorNombre,
       })
       .from(ordenesCompra)
       .leftJoin(clientes, eq(clientes.id, ordenesCompra.proveedorId))
@@ -105,6 +106,7 @@ export default async function OrdenesPage({
       total: Number(r.total),
       moneda: r.moneda,
       recibidoPct: cant > 0 ? (recib / cant) * 100 : 0,
+      compradorNombre: r.compradorNombre ?? '—',
     };
   });
 

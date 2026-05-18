@@ -31,6 +31,13 @@ export type CotizacionFormInitial = {
   descuentoGlobal: number;
   notas: string | null;
   terminosCondiciones: string | null;
+  formaPago: string | null;
+  tiempoEntrega: string | null;
+  lugarEntrega: string | null;
+  incluyeIgv: boolean;
+  contactoClienteNombre: string | null;
+  contactoClienteCargo: string | null;
+  contactoClienteEmail: string | null;
   items: Array<{
     productoId: string | null;
     codigo: string | null;
@@ -86,6 +93,13 @@ export function CotizacionForm({ companySlug, clientes, productos, initial }: Pr
           descuentoGlobal: initial.descuentoGlobal,
           notas: initial.notas ?? undefined,
           terminosCondiciones: initial.terminosCondiciones ?? undefined,
+          formaPago: initial.formaPago ?? undefined,
+          tiempoEntrega: initial.tiempoEntrega ?? undefined,
+          lugarEntrega: initial.lugarEntrega ?? undefined,
+          incluyeIgv: initial.incluyeIgv ?? false,
+          contactoClienteNombre: initial.contactoClienteNombre ?? undefined,
+          contactoClienteCargo: initial.contactoClienteCargo ?? undefined,
+          contactoClienteEmail: initial.contactoClienteEmail ?? undefined,
           items: initial.items.map((it) => ({
             productoId: it.productoId ?? undefined,
             codigo: it.codigo ?? undefined,
@@ -101,7 +115,7 @@ export function CotizacionForm({ companySlug, clientes, productos, initial }: Pr
           clienteId: '',
           moneda: 'PEN',
           fechaEmision: todayIso(),
-          fechaVencimiento: plusDaysIso(7),
+          fechaVencimiento: plusDaysIso(3),
           descuentoGlobal: 0,
           items: [
             {
@@ -414,6 +428,79 @@ export function CotizacionForm({ companySlug, clientes, productos, initial }: Pr
           </div>
         </Card>
       </div>
+
+      {/* Condiciones comerciales */}
+      <Card>
+        <CardHead>
+          <CardTitle>Condiciones comerciales</CardTitle>
+        </CardHead>
+        <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
+          <Field label="Forma de pago">
+            <input
+              {...register('formaPago')}
+              placeholder="Ej: 50% anticipo, saldo contra entrega"
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Tiempo de entrega">
+            <input
+              {...register('tiempoEntrega')}
+              placeholder="Ej: 5 días hábiles"
+              className={inputCls}
+            />
+          </Field>
+          <div className="md:col-span-2">
+            <Field label="Lugar de entrega">
+              <input
+                {...register('lugarEntrega')}
+                placeholder="Ej: Almacén del cliente / Recojo en tienda"
+                className={inputCls}
+              />
+            </Field>
+          </div>
+          <div className="flex items-center gap-2 md:col-span-2">
+            <input
+              type="checkbox"
+              id="incluyeIgv"
+              {...register('incluyeIgv')}
+              className="h-4 w-4 cursor-pointer accent-tenant-accent"
+            />
+            <label htmlFor="incluyeIgv" className="cursor-pointer text-[13px] text-orion-fg">
+              Precio unitario incluye IGV
+            </label>
+          </div>
+        </div>
+      </Card>
+
+      {/* Atención de (contacto cliente) */}
+      <Card>
+        <CardHead>
+          <CardTitle>
+            Atención de{' '}
+            <span className="text-[11px] font-normal text-orion-fg-muted">(opcional)</span>
+          </CardTitle>
+        </CardHead>
+        <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
+          <Field label="Nombre contacto">
+            <input
+              {...register('contactoClienteNombre')}
+              placeholder="Nombre del contacto"
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Cargo">
+            <input {...register('contactoClienteCargo')} placeholder="Cargo" className={inputCls} />
+          </Field>
+          <Field label="Email">
+            <input
+              type="email"
+              {...register('contactoClienteEmail')}
+              placeholder="email@empresa.com"
+              className={inputCls}
+            />
+          </Field>
+        </div>
+      </Card>
 
       {serverError && (
         <div className="rounded-md border border-danger bg-danger-soft px-3 py-2 text-[13px] text-danger-fg">

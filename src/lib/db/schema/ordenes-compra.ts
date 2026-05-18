@@ -46,6 +46,7 @@ export const ordenesCompra = pgTable('ordenes_compra', {
   pdfUrl: text('pdf_url'),
 
   compradorId: uuid('comprador_id'),
+  compradorNombre: text('comprador_nombre'),
 
   fechaEnvio: timestamptz('fecha_envio'),
   fechaAprobacion: timestamptz('fecha_aprobacion'),

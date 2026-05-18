@@ -54,6 +54,7 @@ export default async function CotizacionesPage({
         total: cotizaciones.total,
         moneda: cotizaciones.moneda,
         items: sql<number>`(SELECT COUNT(*)::int FROM ${cotizacionItems} WHERE ${cotizacionItems.cotizacionId} = ${cotizaciones.id})`,
+        creadoPorNombre: cotizaciones.creadoPorNombre,
       })
       .from(cotizaciones)
       .leftJoin(clientes, eq(clientes.id, cotizaciones.clienteId))
@@ -102,7 +103,7 @@ export default async function CotizacionesPage({
     items: r.items ?? 0,
     total: Number(r.total),
     moneda: r.moneda,
-    comercial: '—', // TODO: join con tenant_members o auditoría cuando esté disponible
+    comercial: r.creadoPorNombre ?? '—',
   }));
 
   return (

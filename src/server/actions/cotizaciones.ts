@@ -92,7 +92,16 @@ export async function crearCotizacion(
           total: String(totales.total),
           notas: data.notas,
           terminosCondiciones: data.terminosCondiciones,
+          formaPago: data.formaPago ?? null,
+          tiempoEntrega: data.tiempoEntrega ?? null,
+          lugarEntrega: data.lugarEntrega ?? null,
+          incluyeIgv: data.incluyeIgv ?? false,
+          contactoClienteNombre: data.contactoClienteNombre ?? null,
+          contactoClienteCargo: data.contactoClienteCargo ?? null,
+          contactoClienteEmail: data.contactoClienteEmail || null,
           creadoPor: user.id,
+          creadoPorNombre:
+            (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Usuario',
         })
         .returning({ id: cotizaciones.id, numeroCompleto: cotizaciones.numeroCompleto });
 
@@ -178,6 +187,13 @@ export async function actualizarCotizacion(
           total: String(totales.total),
           notas: data.notas,
           terminosCondiciones: data.terminosCondiciones,
+          formaPago: data.formaPago ?? null,
+          tiempoEntrega: data.tiempoEntrega ?? null,
+          lugarEntrega: data.lugarEntrega ?? null,
+          incluyeIgv: data.incluyeIgv ?? false,
+          contactoClienteNombre: data.contactoClienteNombre ?? null,
+          contactoClienteCargo: data.contactoClienteCargo ?? null,
+          contactoClienteEmail: data.contactoClienteEmail || null,
           updatedAt: new Date(),
         })
         .where(eq(cotizaciones.id, cotizacionId));

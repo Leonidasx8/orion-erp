@@ -23,6 +23,7 @@ export type OrdenRow = {
   total: number;
   moneda: 'PEN' | 'USD' | string;
   recibidoPct: number; // 0..100
+  compradorNombre?: string | null;
 };
 
 export type OrdenesListProps = {
@@ -141,6 +142,7 @@ export function OrdenesList({
               <Th align="right">Líneas</Th>
               <Th>Recepción</Th>
               <Th align="right">Total</Th>
+              <Th>Creado por</Th>
               <Th>Emisión</Th>
               <Th>Entrega</Th>
               <Th />
@@ -149,7 +151,7 @@ export function OrdenesList({
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="p-10 text-center text-orion-fg-muted">
+                <td colSpan={10} className="p-10 text-center text-orion-fg-muted">
                   No hay órdenes en este filtro.
                 </td>
               </tr>
@@ -202,6 +204,7 @@ export function OrdenesList({
                 <Td align="right" className="tabular-nums text-orion-fg">
                   <Money value={r.total} ccy={r.moneda} dp={2} />
                 </Td>
+                <Td className="text-orion-fg-muted">{r.compradorNombre ?? '—'}</Td>
                 <Td className="whitespace-nowrap text-orion-fg-muted">{r.fechaEmision}</Td>
                 <Td className="whitespace-nowrap text-orion-fg-muted">{r.fechaEntrega ?? '—'}</Td>
                 <Td>
