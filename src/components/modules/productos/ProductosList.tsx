@@ -20,6 +20,7 @@ import {
   Plus,
   Upload,
   Download,
+  TrendingUp,
   X,
   LayoutGrid,
   List,
@@ -254,6 +255,12 @@ export function ProductosList({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="productos/actualizar-precios">
+              <TrendingUp className="mr-1.5 h-4 w-4" />
+              Actualizar precios
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href="productos/importar">
               <Upload className="mr-1.5 h-4 w-4" />

@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
@@ -11,8 +11,89 @@ import {
   type ProductoInput,
   type CategoriaProductoInput,
 } from '@/lib/schemas/producto';
+import { z } from 'zod';
 
 type ActionResult<T = undefined> = { success: true; data: T } | { success: false; error: string };
+
+const actualizarPreciosMasivoSchema = z.object({
+  productoIds: z.array(z.string().uuid()).min(1, 'Selecciona al menos un producto'),
+  campo: z.enum(['precio', 'costo']),
+  modo: z.enum(['porcentaje', 'fijo']),
+  valor: z.number().finite(),
+  razon: z.string().min(3, 'La razón es obligatoria (mín. 3 caracteres)'),
+});
+
+export type ActualizarPreciosMasivoInput = z.infer<typeof actualizarPreciosMasivoSchema>;
+
+export async function actualizarPreciosMasivo(
+  input: ActualizarPreciosMasivoInput
+): Promise<ActionResult<{ actualizados: number }>> {
+  const parsed = actualizarPreciosMasivoSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+
+  const { user, tenant } = await requirePermission('productos.editar');
+  const { productoIds, campo, modo, valor, razon } = parsed.data;
+
+  const rows = await db
+    .select({
+      id: productos.id,
+      precioUnitario: productos.precioUnitario,
+      costoUnitario: productos.costoUnitario,
+    })
+    .from(productos)
+    .where(and(eq(productos.tenantId, tenant.id), inArray(productos.id, productoIds)));
+
+  if (rows.length === 0) return { success: false, error: 'No se encontraron productos' };
+
+  const nombreUsuario =
+    (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Usuario';
+
+  let actualizados = 0;
+
+  for (const row of rows) {
+    const campoActual = campo === 'precio' ? row.precioUnitario : row.costoUnitario;
+    const valorActual = campoActual != null ? Number(campoActual) : null;
+    if (valorActual == null) continue;
+
+    const valorNuevo =
+      modo === 'porcentaje' ? Math.round(valorActual * (1 + valor / 100) * 10000) / 10000 : valor;
+
+    if (Math.abs(valorNuevo - valorActual) < 0.0001) continue;
+
+    const precioAnterior = Number(row.precioUnitario ?? 0);
+    const costoAnterior = row.costoUnitario != null ? Number(row.costoUnitario) : null;
+
+    const updateSet =
+      campo === 'precio'
+        ? { precioUnitario: String(valorNuevo), updatedAt: new Date() }
+        : { costoUnitario: String(valorNuevo), updatedAt: new Date() };
+
+    await db
+      .update(productos)
+      .set(updateSet)
+      .where(and(eq(productos.id, row.id), eq(productos.tenantId, tenant.id)));
+
+    const precioNuevo = campo === 'precio' ? valorNuevo : precioAnterior;
+    const costoNuevo = campo === 'costo' ? valorNuevo : costoAnterior;
+
+    await db.insert(historialPrecios).values({
+      tenantId: tenant.id,
+      productoId: row.id,
+      precioAnterior: String(precioAnterior),
+      precioNuevo: String(precioNuevo),
+      costoAnterior: costoAnterior != null ? String(costoAnterior) : null,
+      costoNuevo: costoNuevo != null ? String(costoNuevo) : null,
+      razon,
+      creadoPor: user.id,
+      creadoPorNombre: nombreUsuario,
+    });
+
+    actualizados++;
+  }
+
+  revalidatePath(`/${tenant.slug}/productos`);
+  return { success: true, data: { actualizados } };
+}
 
 export async function crearProducto(input: ProductoInput): Promise<ActionResult<{ id: string }>> {
   const parsed = productoSchema.safeParse(input);
