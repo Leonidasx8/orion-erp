@@ -61,7 +61,7 @@ export function CotizacionDetalle({
   data: CotizacionDetalleData;
   tenantSlug: string;
 }) {
-  const conversionesDisponibles = data.estado === 'aprobada';
+  const conversionesDisponibles = data.estado === 'aceptada';
   const esEditable = data.estado === 'borrador';
 
   return (
@@ -226,13 +226,13 @@ export function CotizacionDetalle({
                 icon={<Receipt size={16} />}
                 titulo="Convertir a factura"
                 disponible={conversionesDisponibles}
-                hint={conversionesDisponibles ? undefined : 'Disponible cuando esté aprobada'}
+                hint={conversionesDisponibles ? undefined : 'Disponible cuando esté aceptada'}
               />
               <ConversionItem
                 icon={<Inbox size={16} />}
                 titulo="Convertir a orden de compra"
                 disponible={conversionesDisponibles}
-                hint={conversionesDisponibles ? undefined : 'Disponible cuando esté aprobada'}
+                hint={conversionesDisponibles ? undefined : 'Disponible cuando esté aceptada'}
               />
             </div>
           </Card>

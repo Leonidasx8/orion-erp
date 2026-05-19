@@ -210,8 +210,8 @@ export async function convertirCotizacionAFactura(
       .where(and(eq(cotizaciones.id, cotizacionId), eq(cotizaciones.tenantId, tenant.id)));
 
     if (!cot) return { success: false, error: 'Cotización no encontrada' };
-    if (cot.estado !== 'aprobada') {
-      return { success: false, error: 'Solo se puede facturar cotizaciones aprobadas' };
+    if (cot.estado !== 'aceptada') {
+      return { success: false, error: 'Solo se puede facturar cotizaciones aceptadas' };
     }
 
     const items = await db

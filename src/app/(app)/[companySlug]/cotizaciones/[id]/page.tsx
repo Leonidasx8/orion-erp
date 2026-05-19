@@ -151,7 +151,7 @@ function formatDateLong(iso: string | null): string | null {
 function vencimientoTag(iso: string | null, estado: Estado): string | undefined {
   if (!iso) return undefined;
   if (
-    estado === 'aprobada' ||
+    estado === 'aceptada' ||
     estado === 'convertida' ||
     estado === 'pagada' ||
     estado === 'anulada'
