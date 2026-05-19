@@ -4,7 +4,39 @@
 
 **Última actualización:** 2026-05-19 GMT-5 (madrugada)
 **Branch activa:** `feat/B-09-sunat-nubefact`
-**Estado verificado:** TypeCheck limpio. Commit `c9648f5` — clienteId filter en cotizaciones.
+**Estado verificado:** TypeCheck limpio. Commit `406a68e`.
+
+---
+
+## ⚠️ CHECKLIST PRE-DEMO (miércoles 20-may)
+
+Ejecutar en orden antes del demo con Lucas:
+
+```bash
+# 1. Iniciar Docker Desktop (app macOS)
+
+# 2. Desde /Users/leonidasyauri/dev/orion-erp
+supabase start           # inicia Postgres local
+
+# 3. Aplicar migraciones pendientes (columna proveedorPrincipalId + tabla historial_precios)
+supabase db push         # o: pnpm db:push
+
+# 4. Poblar datos de demo
+pnpm tsx scripts/seed-demo.ts
+
+# 5. Levantar el servidor
+pnpm dev
+# → http://localhost:3000
+```
+
+**Sin pasos 1-3, estas páginas fallan:**
+
+- `/productos/[id]` → tab "Precios" (query historial_precios)
+- `/productos/actualizar-precios` → query proveedorPrincipalId
+- `/productos/nuevo` y `/editar` → insert proveedorPrincipalId
+- "Generar OC" en cotización aceptada → join productos.proveedorPrincipalId
+
+**Credenciales demo:** revisar `.env.local` para usuario admin. El seed crea tenant `idex` con usuario `lescriva@grupoidex.com.pe`.
 
 ---
 
