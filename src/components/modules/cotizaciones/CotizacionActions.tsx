@@ -123,7 +123,12 @@ export function CotizacionActions({ cotizacionId, estado, tenantSlug, permission
 
       {/* Reenviar email */}
       {permissions.reenviar && (
-        <button type="button" disabled={pending} className={btnCls}>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => toast.info('Envío de email — próximamente')}
+          className={btnCls}
+        >
           <Bell size={13} />
           Reenviar
         </button>
