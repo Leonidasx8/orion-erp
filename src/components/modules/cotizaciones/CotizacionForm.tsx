@@ -56,6 +56,7 @@ interface Props {
   clientes: ClienteOption[];
   productos: ProductoOption[];
   initial?: CotizacionFormInitial;
+  defaultClienteId?: string;
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -65,7 +66,13 @@ const plusDaysIso = (days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-export function CotizacionForm({ companySlug, clientes, productos, initial }: Props) {
+export function CotizacionForm({
+  companySlug,
+  clientes,
+  productos,
+  initial,
+  defaultClienteId,
+}: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -113,7 +120,7 @@ export function CotizacionForm({ companySlug, clientes, productos, initial }: Pr
           })),
         }
       : {
-          clienteId: '',
+          clienteId: defaultClienteId ?? '',
           moneda: 'PEN',
           fechaEmision: todayIso(),
           fechaVencimiento: plusDaysIso(3),

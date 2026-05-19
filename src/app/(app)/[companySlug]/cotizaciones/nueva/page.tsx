@@ -14,10 +14,14 @@ export const metadata = { title: 'Nueva cotización' };
 
 export default async function NuevaCotizacionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ companySlug: string }>;
+  searchParams: Promise<{ clienteId?: string }>;
 }) {
   const { companySlug } = await params;
+  const sp = await searchParams;
+  const defaultClienteId = sp.clienteId;
   const tenant = await getCurrentTenant();
 
   const canCreate = await userHasPermission('cotizaciones.crear');
@@ -73,7 +77,12 @@ export default async function NuevaCotizacionPage({
         </h1>
         <p className="text-[12px] text-orion-fg-muted">Se generará el correlativo al guardar.</p>
       </div>
-      <CotizacionForm companySlug={companySlug} clientes={clientesOpt} productos={productosOpt} />
+      <CotizacionForm
+        companySlug={companySlug}
+        clientes={clientesOpt}
+        productos={productosOpt}
+        defaultClienteId={defaultClienteId}
+      />
     </div>
   );
 }
