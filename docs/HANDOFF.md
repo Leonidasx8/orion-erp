@@ -2,9 +2,48 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-15 GMT-5
+**Última actualización:** 2026-05-18 GMT-5
 **Branch activa:** `feat/B-09-sunat-nubefact`
-**Estado verificado:** TypeCheck limpio. Módulo Facturas UI completo. Worker + builders + cron migration listos.
+**Estado verificado:** TypeCheck limpio. Commit `b1bb28d` — 6 mejoras post-demo aplicadas.
+
+---
+
+### Sesión 2026-05-18 — 6 mejoras post-demo Lucas (commit `b1bb28d`)
+
+Formulario de Lucas recibido y analizado. Respuestas clave:
+
+- **P1 (precios):** margen sobre P.AAA (precio de compra), no sobre el sugerido de CELSA. Variable por cliente.
+- **P2 (variantes):** selector al cotizar (opción b/c — scope addendum).
+- **P3 (multi-proveedor OC):** generar 1 OC por proveedor automáticamente.
+- **P4 (aprobación):** Opción A — Comercial crea → pendiente → Lucas aprueba → se envía.
+- **P5 (guías):** IDEX siempre emite.
+- **P6 (facturación):** IDEX siempre factura al cliente final.
+- **P7 (crédito):** Idex financia, no da más días que los que recibe de CELSA (60d → 30-45d cliente).
+- **Demo miércoles:** recorrido completo del sistema.
+
+**Implementado (commit `b1bb28d`, 21 archivos, typecheck ✅):**
+
+| Mejora                   | Archivos clave                                                                                                                          |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| M3 (solicitante)         | Ya conectado desde sesión anterior — `creadoPorNombre` → columna "Comercial"                                                            |
+| M7 (renombrar OC)        | `TenantSidebar`, `OrdenesList`, páginas ordenes, previews, `KardexDetalle`                                                              |
+| M5 (ajuste desde lista)  | `InventarioList.tsx` — icono `SlidersHorizontal` por fila → `/inventario/:id/ajuste`                                                    |
+| M6 (proveedor principal) | `0035_productos_proveedor_principal.sql`, `productos.ts` schema, `ProductoForm`, páginas nuevo/editar                                   |
+| M4 (pipeline cot→OC)     | `generarOCsDesdeCotizacion()` en `cotizaciones.ts`, botón en `CotizacionActions` (visible en estado `aceptada`)                         |
+| M2 (historial precios)   | `0036_historial_precios.sql`, `historialPrecios` Drizzle, tracking en `actualizarProducto`, tabla en tab "Precios" de `ProductoDetalle` |
+
+**⚠️ Migrations pendientes de aplicar en DB local/remota:**
+
+- `0035_productos_proveedor_principal.sql`
+- `0036_historial_precios.sql`
+- Docker no estaba corriendo en esta sesión → no se aplicaron aún.
+
+**Addendum Bucket B pendiente de cotizar (US$ 380-420):**
+
+- M1: Actualización masiva de precios con filtros categoría/proveedor + preview + razón obligatoria
+- Variantes en catálogo (Lucas eligió selector al cotizar — requiere diseño + schema nuevo)
+
+**Reunión miércoles 20-may con Lucas:** recorrido completo del sistema. Agenda sugerida pendiente.
 
 ---
 
