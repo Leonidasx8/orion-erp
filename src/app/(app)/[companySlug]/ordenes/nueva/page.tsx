@@ -10,7 +10,7 @@ import {
   type ProveedorOption,
 } from '@/components/modules/ordenes/OrdenForm';
 
-export const metadata = { title: 'Nueva orden de compra' };
+export const metadata = { title: 'Nueva compra a proveedor' };
 
 export default async function NuevaOrdenPage({
   params,
@@ -67,7 +67,7 @@ export default async function NuevaOrdenPage({
     <div className="flex flex-col gap-3">
       <div>
         <h1 className="font-mono text-[22px] font-semibold tracking-tight text-orion-fg">
-          Nueva orden de compra
+          Nueva compra a proveedor
         </h1>
         <p className="text-[12px] text-orion-fg-muted">Se generará el correlativo al guardar.</p>
       </div>

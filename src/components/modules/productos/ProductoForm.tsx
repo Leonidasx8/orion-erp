@@ -20,14 +20,20 @@ import {
 } from '@/components/ui/select';
 import type { Producto, CategoriaProducto, UnidadMedida } from '@/lib/db/schema';
 
+interface ProveedorOption {
+  id: string;
+  label: string;
+}
+
 interface Props {
   companySlug: string;
   producto?: Producto;
   categorias: CategoriaProducto[];
   uoms: UnidadMedida[];
+  proveedores?: ProveedorOption[];
 }
 
-export function ProductoForm({ companySlug, producto, categorias, uoms }: Props) {
+export function ProductoForm({ companySlug, producto, categorias, uoms, proveedores = [] }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -56,6 +62,7 @@ export function ProductoForm({ companySlug, producto, categorias, uoms }: Props)
           stockMinimo: producto.stockMinimo != null ? parseFloat(producto.stockMinimo) : undefined,
           codigoSunat: producto.codigoSunat ?? undefined,
           activo: producto.activo,
+          proveedorPrincipalId: producto.proveedorPrincipalId ?? null,
         }
       : {
           tipo: 'bien',
@@ -64,6 +71,7 @@ export function ProductoForm({ companySlug, producto, categorias, uoms }: Props)
           tieneIgv: true,
           controlaStock: false,
           activo: true,
+          proveedorPrincipalId: null,
         },
   });
 
@@ -253,6 +261,29 @@ export function ProductoForm({ companySlug, producto, categorias, uoms }: Props)
         <Label htmlFor="codigo-sunat">Código SUNAT / GS1</Label>
         <Input id="codigo-sunat" {...register('codigoSunat')} className="w-48 font-mono" />
       </div>
+
+      {/* Proveedor principal */}
+      {proveedores.length > 0 && (
+        <div className="space-y-1.5">
+          <Label>Proveedor principal</Label>
+          <Select
+            defaultValue={watch('proveedorPrincipalId') ?? '__none__'}
+            onValueChange={(v) => setValue('proveedorPrincipalId', v === '__none__' ? null : v)}
+          >
+            <SelectTrigger className="w-full max-w-sm">
+              <SelectValue placeholder="Sin proveedor asignado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Sin proveedor asignado</SelectItem>
+              {proveedores.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {serverError && <p className="text-sm text-destructive">{serverError}</p>}
 

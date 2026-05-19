@@ -1,7 +1,7 @@
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db/client';
-import { productos, categoriasProducto, unidadesMedida } from '@/lib/db/schema';
+import { productos, categoriasProducto, unidadesMedida, historialPrecios } from '@/lib/db/schema';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { userHasPermission } from '@/lib/auth/require-permission';
 import { ProductoDetalle } from '@/components/modules/productos/ProductoDetalle';
@@ -16,11 +16,17 @@ export default async function ProductoDetailPage({
   const { companySlug, productoId } = await params;
   const tenant = await getCurrentTenant();
 
-  const [canEdit, productoRows, categorias, uoms] = await Promise.all([
+  const [canEdit, productoRows, categorias, uoms, historial] = await Promise.all([
     userHasPermission('productos.editar'),
     db.select().from(productos).where(eq(productos.id, productoId)),
     db.select().from(categoriasProducto).where(eq(categoriasProducto.tenantId, tenant.id)),
     db.select().from(unidadesMedida),
+    db
+      .select()
+      .from(historialPrecios)
+      .where(eq(historialPrecios.productoId, productoId))
+      .orderBy(desc(historialPrecios.createdAt))
+      .limit(50),
   ]);
 
   const producto = productoRows[0];
@@ -36,6 +42,7 @@ export default async function ProductoDetailPage({
       uom={uom}
       companySlug={companySlug}
       canEdit={canEdit}
+      historialPrecios={historial}
     />
   );
 }

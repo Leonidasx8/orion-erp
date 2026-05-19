@@ -1,5 +1,6 @@
 import { pgTable, uuid, text, boolean, timestamp, numeric } from 'drizzle-orm/pg-core';
 import { tenants } from './tenants';
+import { clientes } from './clientes';
 
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true });
 
@@ -45,13 +46,36 @@ export const productos = pgTable('productos', {
   imagenUrl: text('imagen_url'),
   activo: boolean('activo').notNull().default(true),
 
+  proveedorPrincipalId: uuid('proveedor_principal_id').references(() => clientes.id, {
+    onDelete: 'set null',
+  }),
+
   createdAt: timestamptz('created_at').notNull().defaultNow(),
   updatedAt: timestamptz('updated_at').notNull().defaultNow(),
   createdBy: uuid('created_by'),
   // search_vector GENERATED ALWAYS referenciado via sql`` en queries
 });
 
+export const historialPrecios = pgTable('historial_precios', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  productoId: uuid('producto_id')
+    .notNull()
+    .references(() => productos.id, { onDelete: 'cascade' }),
+  precioAnterior: numeric('precio_anterior', { precision: 14, scale: 4 }).notNull(),
+  precioNuevo: numeric('precio_nuevo', { precision: 14, scale: 4 }).notNull(),
+  costoAnterior: numeric('costo_anterior', { precision: 14, scale: 4 }),
+  costoNuevo: numeric('costo_nuevo', { precision: 14, scale: 4 }),
+  razon: text('razon'),
+  creadoPor: uuid('creado_por'),
+  creadoPorNombre: text('creado_por_nombre'),
+  createdAt: timestamptz('created_at').notNull().defaultNow(),
+});
+
 export type UnidadMedida = typeof unidadesMedida.$inferSelect;
 export type CategoriaProducto = typeof categoriasProducto.$inferSelect;
 export type Producto = typeof productos.$inferSelect;
 export type NewProducto = typeof productos.$inferInsert;
+export type HistorialPrecio = typeof historialPrecios.$inferSelect;

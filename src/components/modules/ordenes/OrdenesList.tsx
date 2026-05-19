@@ -74,10 +74,10 @@ export function OrdenesList({
       <div className="flex items-end gap-4">
         <div>
           <h1 className="m-0 font-mono text-[22px] font-semibold tracking-tight text-orion-fg">
-            Órdenes de compra
+            Compras a Proveedores
           </h1>
           <p className="mt-1 text-[12px] text-orion-fg-muted">
-            {counts.total} órdenes · pendiente por recibir{' '}
+            {counts.total} compras · pendiente por recibir{' '}
             <Money value={pendienteUsd} ccy="USD" dp={0} />
           </p>
         </div>
@@ -95,7 +95,7 @@ export function OrdenesList({
               className="inline-flex h-8 items-center gap-1.5 rounded-md bg-tenant-accent px-3 text-[13px] font-medium text-white hover:brightness-95"
             >
               <Plus size={13} />
-              Nueva orden
+              Nueva compra
             </Link>
           )}
         </div>
@@ -152,7 +152,7 @@ export function OrdenesList({
             {rows.length === 0 && (
               <tr>
                 <td colSpan={10} className="p-10 text-center text-orion-fg-muted">
-                  No hay órdenes en este filtro.
+                  No hay compras en este filtro.
                 </td>
               </tr>
             )}

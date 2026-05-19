@@ -5,7 +5,12 @@ import { Copy, Pencil, Shield, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { Producto, CategoriaProducto, UnidadMedida } from '@/lib/db/schema/productos';
+import type {
+  Producto,
+  CategoriaProducto,
+  UnidadMedida,
+  HistorialPrecio,
+} from '@/lib/db/schema/productos';
 
 interface Props {
   producto: Producto;
@@ -13,6 +18,7 @@ interface Props {
   uom: UnidadMedida | undefined;
   companySlug: string;
   canEdit: boolean;
+  historialPrecios?: HistorialPrecio[];
 }
 
 function formatPrecio(valor: string | null | undefined): string {
@@ -39,7 +45,14 @@ function calcMargen(precio: string | null | undefined, costo: string | null | un
   return (((p - c) / c) * 100).toFixed(1);
 }
 
-export function ProductoDetalle({ producto, categoria, uom, companySlug, canEdit }: Props) {
+export function ProductoDetalle({
+  producto,
+  categoria,
+  uom,
+  companySlug,
+  canEdit,
+  historialPrecios = [],
+}: Props) {
   const stockActual = producto.stockActual ? parseFloat(producto.stockActual) : 0;
   const stockMinimo = producto.stockMinimo ? parseFloat(producto.stockMinimo) : 0;
   const hasStockWarning =
@@ -255,25 +268,49 @@ export function ProductoDetalle({ producto, categoria, uom, companySlug, canEdit
 
             {/* Right: Histórico (2fr) */}
             <div className="col-span-2 rounded-lg border p-5">
-              <h2 className="mb-4 text-sm font-semibold">Histórico de precio venta · 12 meses</h2>
-
-              {/* Sparkline placeholder */}
-              <div className="flex h-20 items-center justify-center rounded bg-gradient-to-r from-muted to-muted/40">
-                <span className="text-xs text-muted-foreground">
-                  Gráfico de historial disponible próximamente
-                </span>
-              </div>
-
-              <dl className="mt-4 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Variación 12m</dt>
-                  <dd className="font-medium">—</dd>
+              <h2 className="mb-4 text-sm font-semibold">Historial de cambios de precio</h2>
+              {historialPrecios.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Sin cambios registrados aún. Los cambios de precio se guardan automáticamente al
+                  editar el producto.
+                </p>
+              ) : (
+                <div className="space-y-0 divide-y text-[12px]">
+                  {historialPrecios.map((h) => {
+                    const pAntes = Number(h.precioAnterior);
+                    const pDespues = Number(h.precioNuevo);
+                    const diff = pDespues - pAntes;
+                    const pct = pAntes !== 0 ? ((diff / pAntes) * 100).toFixed(1) : null;
+                    return (
+                      <div key={h.id} className="flex items-start gap-3 py-2.5">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 font-mono">
+                            <span className="text-muted-foreground">
+                              {formatPrecio(h.precioAnterior)}
+                            </span>
+                            <span className="text-muted-foreground">→</span>
+                            <span className="font-semibold text-foreground">
+                              {formatPrecio(h.precioNuevo)}
+                            </span>
+                            {pct !== null && (
+                              <span className={diff >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                {diff >= 0 ? '+' : ''}
+                                {pct}%
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-muted-foreground">
+                            {h.creadoPorNombre ?? 'Usuario'} · {formatDate(h.createdAt)}
+                          </div>
+                          {h.razon && (
+                            <div className="mt-0.5 italic text-muted-foreground">{h.razon}</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Último cambio</dt>
-                  <dd className="font-medium">{formatDate(producto.createdAt)}</dd>
-                </div>
-              </dl>
+              )}
             </div>
           </div>
         </TabsContent>

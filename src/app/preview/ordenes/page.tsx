@@ -128,7 +128,7 @@ export default function PreviewOrdenesPage() {
       <TenantHeader
         tenant={tenant}
         userName="Lucas Escrivá"
-        crumbs={[{ label: 'Idex', href: `/${tenant.slug}` }, { label: 'Órdenes de compra' }]}
+        crumbs={[{ label: 'Idex', href: `/${tenant.slug}` }, { label: 'Compras a Proveedores' }]}
       />
       <main className="col-start-2 row-start-2 overflow-auto bg-orion-bg-subtle p-6">
         <OrdenesList

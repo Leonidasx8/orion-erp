@@ -4,7 +4,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { productos, categoriasProducto } from '@/lib/db/schema';
+import { productos, categoriasProducto, historialPrecios } from '@/lib/db/schema';
 import {
   productoSchema,
   categoriaProductoSchema,
@@ -37,6 +37,7 @@ export async function crearProducto(input: ProductoInput): Promise<ActionResult<
       precioUnitario: String(data.precioUnitario),
       costoUnitario: data.costoUnitario != null ? String(data.costoUnitario) : null,
       stockMinimo: data.stockMinimo != null ? String(data.stockMinimo) : null,
+      proveedorPrincipalId: data.proveedorPrincipalId ?? null,
     })
     .returning({ id: productos.id });
 
@@ -68,6 +69,24 @@ export async function actualizarProducto(
   if (codigoConflicto.length > 0)
     return { success: false, error: 'Ese código ya lo usa otro producto' };
 
+  // Leer precio/costo actuales para comparar y guardar historial si cambian
+  const [actual] = await db
+    .select({
+      precioUnitario: productos.precioUnitario,
+      costoUnitario: productos.costoUnitario,
+      createdBy: productos.createdBy,
+    })
+    .from(productos)
+    .where(and(eq(productos.id, productoId), eq(productos.tenantId, tenant.id)));
+
+  const { user } = await requirePermission('productos.editar');
+  const precioAnterior = Number(actual?.precioUnitario ?? 0);
+  const precioNuevo = data.precioUnitario;
+  const costoAnterior = actual?.costoUnitario != null ? Number(actual.costoUnitario) : null;
+  const costoNuevo = data.costoUnitario ?? null;
+  const precioChanged = precioAnterior !== precioNuevo;
+  const costoChanged = costoAnterior !== costoNuevo;
+
   await db
     .update(productos)
     .set({
@@ -76,8 +95,24 @@ export async function actualizarProducto(
       precioUnitario: String(data.precioUnitario),
       costoUnitario: data.costoUnitario != null ? String(data.costoUnitario) : null,
       stockMinimo: data.stockMinimo != null ? String(data.stockMinimo) : null,
+      proveedorPrincipalId: data.proveedorPrincipalId ?? null,
     })
     .where(and(eq(productos.id, productoId), eq(productos.tenantId, tenant.id)));
+
+  if (precioChanged || costoChanged) {
+    const nombreUsuario =
+      (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Usuario';
+    await db.insert(historialPrecios).values({
+      tenantId: tenant.id,
+      productoId,
+      precioAnterior: String(precioAnterior),
+      precioNuevo: String(precioNuevo),
+      costoAnterior: costoAnterior != null ? String(costoAnterior) : null,
+      costoNuevo: costoNuevo != null ? String(costoNuevo) : null,
+      creadoPor: user.id,
+      creadoPorNombre: nombreUsuario,
+    });
+  }
 
   revalidatePath(`/${tenant.slug}/productos`);
   revalidatePath(`/${tenant.slug}/productos/${productoId}`);

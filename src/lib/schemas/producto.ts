@@ -19,6 +19,7 @@ export const productoSchema = z.object({
 
   codigoSunat: z.string().max(30).optional(),
   activo: z.boolean().default(true),
+  proveedorPrincipalId: z.string().uuid().optional().nullable(),
 });
 
 export type ProductoInput = z.infer<typeof productoSchema>;

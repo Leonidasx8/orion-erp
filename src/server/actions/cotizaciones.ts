@@ -4,7 +4,14 @@ import { and, eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { cotizaciones, cotizacionItems, clientes, productos } from '@/lib/db/schema';
+import {
+  cotizaciones,
+  cotizacionItems,
+  clientes,
+  productos,
+  ordenesCompra,
+  lineasOrdenCompra,
+} from '@/lib/db/schema';
 import {
   cotizacionSchema,
   motivoRechazoSchema,
@@ -13,6 +20,7 @@ import {
 import { calcularTotales, calcularItem } from '@/lib/cotizaciones/calculo';
 import { capturarVersion } from '@/lib/cotizaciones/versiones';
 import { validarMargenItem } from '@/lib/cotizaciones/margen';
+import { calcularTotalesOrden } from '@/lib/ordenes/calculo';
 
 type ActionResult<T = undefined> = { success: true; data: T } | { success: false; error: string };
 
@@ -434,4 +442,179 @@ export async function eliminarCotizacion(cotizacionId: string): Promise<ActionRe
 
   revalidatePath(`/${tenant.slug}/cotizaciones`);
   return { success: true, data: undefined };
+}
+
+/**
+ * Genera una OC en estado borrador por cada proveedor principal distinto
+ * entre los ítems de la cotización.
+ *
+ * El schema actual de `productos` no tiene `proveedor_principal_id`, por lo que
+ * todos los ítems caen en un único grupo "sin proveedor asignado".
+ * Cuando esa columna exista, solo habrá que añadir el LEFT JOIN y ajustar
+ * `proveedorKey` — el resto del pipeline no cambia.
+ *
+ * Estrategia para la FK NOT NULL `proveedor_id` en `ordenes_compra`:
+ *   - Si el grupo tiene un proveedorId real → se usa directamente.
+ *   - Si el grupo es "sin proveedor" → se busca el primer contacto marcado como
+ *     proveedor del tenant como placeholder; si no existe ninguno, se omite el
+ *     grupo y se devuelve error descriptivo.
+ *
+ * La cotización NO cambia de estado — permanece en `aceptada`.
+ */
+export async function generarOCsDesdeCotizacion(
+  cotizacionId: string
+): Promise<ActionResult<{ ordenesCreadas: number }>> {
+  const { user, tenant } = await requirePermission('cotizaciones.ver');
+
+  // 1. Verificar cotización
+  const [cot] = await db
+    .select({
+      id: cotizaciones.id,
+      estado: cotizaciones.estado,
+      moneda: cotizaciones.moneda,
+      tipoCambio: cotizaciones.tipoCambio,
+    })
+    .from(cotizaciones)
+    .where(and(eq(cotizaciones.id, cotizacionId), eq(cotizaciones.tenantId, tenant.id)));
+
+  if (!cot) return { success: false, error: 'Cotización no encontrada' };
+  if (cot.estado !== 'aceptada')
+    return {
+      success: false,
+      error: `Solo se pueden generar compras desde una cotización aceptada (estado actual: ${cot.estado})`,
+    };
+
+  // 2. Fetch ítems + proveedorPrincipalId del producto via LEFT JOIN
+  const items = await db
+    .select({
+      productoId: cotizacionItems.productoId,
+      codigo: cotizacionItems.codigo,
+      descripcion: cotizacionItems.descripcion,
+      cantidad: cotizacionItems.cantidad,
+      precioUnitario: cotizacionItems.precioUnitario,
+      afectaIgv: cotizacionItems.afectaIgv,
+      orden: cotizacionItems.orden,
+      proveedorPrincipalId: productos.proveedorPrincipalId,
+    })
+    .from(cotizacionItems)
+    .leftJoin(productos, eq(productos.id, cotizacionItems.productoId))
+    .where(eq(cotizacionItems.cotizacionId, cotizacionId));
+
+  if (items.length === 0) return { success: false, error: 'La cotización no tiene ítems' };
+
+  // 3. Agrupar por proveedorPrincipalId (null → una sola OC con todos los ítems sin proveedor)
+  type ItemRow = (typeof items)[number];
+  const grupos = new Map<string | null, ItemRow[]>();
+  for (const item of items) {
+    const key = item.proveedorPrincipalId ?? null;
+    const grupo = grupos.get(key) ?? [];
+    grupo.push(item);
+    grupos.set(key, grupo);
+  }
+
+  const compradorNombre =
+    (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Usuario';
+  const hoy = new Date().toISOString().slice(0, 10);
+
+  try {
+    let ordenesCreadas = 0;
+
+    await db.transaction(async (tx) => {
+      for (const [proveedorKey, grupoItems] of grupos.entries()) {
+        // Resolver proveedorId para este grupo
+        let proveedorId: string;
+        if (proveedorKey !== null) {
+          proveedorId = proveedorKey;
+        } else {
+          // Sin proveedor asignado: usar primer proveedor registrado como placeholder
+          const [placeholder] = await tx
+            .select({ id: clientes.id })
+            .from(clientes)
+            .where(and(eq(clientes.tenantId, tenant.id), eq(clientes.esProveedor, true)))
+            .limit(1);
+
+          if (!placeholder) {
+            throw new Error(
+              'No hay proveedores registrados en el sistema. Crea al menos un proveedor antes de generar compras.'
+            );
+          }
+          proveedorId = placeholder.id;
+        }
+
+        // Calcular totales del grupo
+        const totales = calcularTotalesOrden(
+          grupoItems.map((it) => ({
+            cantidad: Number(it.cantidad),
+            precioUnitario: Number(it.precioUnitario),
+            afectaIgv: it.afectaIgv,
+          }))
+        );
+
+        // Generar número correlativo de OC
+        const [{ numero }] = await tx.execute<{ numero: string }>(
+          `SELECT generar_numero_orden_compra('${tenant.id}') AS numero`
+        );
+
+        const observaciones =
+          proveedorKey === null
+            ? `Generada desde cotización ${cotizacionId} — sin proveedor asignado`
+            : `Generada desde cotización ${cotizacionId} — proveedor ${proveedorKey}`;
+
+        const [orden] = await tx
+          .insert(ordenesCompra)
+          .values({
+            tenantId: tenant.id,
+            numero,
+            proveedorId,
+            cotizacionOrigenId: cotizacionId,
+            moneda: cot.moneda,
+            tipoCambio: cot.tipoCambio,
+            fechaEmision: hoy,
+            subtotal: String(totales.subtotal),
+            igv: String(totales.igv),
+            total: String(totales.total),
+            observaciones,
+            compradorId: user.id,
+            compradorNombre,
+            // estado: 'borrador' — default en el schema, no hace falta especificarlo
+          })
+          .returning({ id: ordenesCompra.id });
+
+        await tx.insert(lineasOrdenCompra).values(
+          grupoItems.map((item, idx) => {
+            const calc = calcularItem({
+              cantidad: Number(item.cantidad),
+              precioUnitario: Number(item.precioUnitario),
+              descuentoPorcentaje: 0,
+              afectaIgv: item.afectaIgv,
+            });
+            return {
+              ordenId: orden.id,
+              tenantId: tenant.id,
+              productoId: item.productoId ?? null,
+              skuSnapshot: item.codigo ?? item.descripcion.slice(0, 100),
+              descripcion: item.descripcion,
+              cantidad: item.cantidad,
+              precioUnitario: item.precioUnitario,
+              afectaIgv: item.afectaIgv,
+              subtotal: String(calc.subtotal),
+              igv: String(calc.igv),
+              total: String(calc.total),
+              orden: idx,
+            };
+          })
+        );
+
+        ordenesCreadas++;
+      }
+    });
+
+    revalidatePath(`/${tenant.slug}/ordenes`);
+    return { success: true, data: { ordenesCreadas } };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : 'Error al generar órdenes de compra',
+    };
+  }
 }

@@ -1,8 +1,8 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/db/client';
-import { productos, categoriasProducto, unidadesMedida } from '@/lib/db/schema';
+import { productos, categoriasProducto, unidadesMedida, clientes } from '@/lib/db/schema';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { userHasPermission } from '@/lib/auth/require-permission';
 import { ProductoForm } from '@/components/modules/productos/ProductoForm';
@@ -19,11 +19,30 @@ export default async function EditarProductoPage({
   const canEdit = await userHasPermission('productos.editar');
   if (!canEdit) notFound();
 
-  const [productoRows, categorias, uoms] = await Promise.all([
+  const [productoRows, categorias, uoms, proveedoresRows] = await Promise.all([
     db.select().from(productos).where(eq(productos.id, productoId)),
     db.select().from(categoriasProducto).where(eq(categoriasProducto.tenantId, tenant.id)),
     db.select().from(unidadesMedida),
+    db
+      .select({
+        id: clientes.id,
+        razonSocial: clientes.razonSocial,
+        nombreComercial: clientes.nombreComercial,
+        nombres: clientes.nombres,
+        apellidoPaterno: clientes.apellidoPaterno,
+      })
+      .from(clientes)
+      .where(and(eq(clientes.tenantId, tenant.id), eq(clientes.esProveedor, true))),
   ]);
+
+  const proveedores = proveedoresRows.map((p) => ({
+    id: p.id,
+    label:
+      p.nombreComercial ??
+      p.razonSocial ??
+      [p.nombres, p.apellidoPaterno].filter(Boolean).join(' ') ??
+      p.id,
+  }));
 
   const producto = productoRows[0];
   if (!producto || producto.tenantId !== tenant.id) notFound();
@@ -48,6 +67,7 @@ export default async function EditarProductoPage({
         producto={producto}
         categorias={categorias}
         uoms={uoms}
+        proveedores={proveedores}
       />
     </div>
   );

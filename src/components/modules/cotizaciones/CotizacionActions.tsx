@@ -2,12 +2,14 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Check, Copy, FileText, Send, X } from 'lucide-react';
+import { Bell, Check, Copy, FileText, Send, ShoppingCart, X } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   enviarCotizacion,
   aceptarCotizacion,
   rechazarCotizacion,
   duplicarCotizacion,
+  generarOCsDesdeCotizacion,
 } from '@/server/actions/cotizaciones';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +23,7 @@ interface Props {
     rechazar: boolean;
     duplicar: boolean;
     reenviar: boolean;
+    generarOC?: boolean;
   };
 }
 
@@ -33,9 +36,11 @@ export function CotizacionActions({ cotizacionId, estado, tenantSlug, permission
 
   const esBorrador = estado === 'borrador';
   const esEnviada = estado === 'enviada';
+  const esAceptada = estado === 'aceptada';
   const puedeEnviar = esBorrador && permissions.enviar;
   const puedeAprobar = esEnviada && permissions.aprobar;
   const puedeRechazar = esEnviada && permissions.rechazar;
+  const puedeGenerarOC = esAceptada && (permissions.generarOC ?? true);
 
   const handleEnviar = () => {
     setError(null);
@@ -87,6 +92,21 @@ export function CotizacionActions({ cotizacionId, estado, tenantSlug, permission
     });
   };
 
+  const handleGenerarOC = () => {
+    startTransition(async () => {
+      const res = await generarOCsDesdeCotizacion(cotizacionId);
+      if (!res.success) {
+        toast.error(res.error);
+        return;
+      }
+      const n = res.data.ordenesCreadas;
+      toast.success(
+        n === 1 ? 'Se creó 1 compra a proveedor' : `Se crearon ${n} compras a proveedor`
+      );
+      router.push(`/${tenantSlug}/ordenes`);
+    });
+  };
+
   return (
     <>
       {error && <span className="text-[12px] text-danger-fg">{error}</span>}
@@ -130,6 +150,22 @@ export function CotizacionActions({ cotizacionId, estado, tenantSlug, permission
         <button type="button" onClick={handleDuplicar} disabled={pending} className={btnCls}>
           <Copy size={13} />
           Duplicar
+        </button>
+      )}
+
+      {/* Generar OC (cuando aceptada) */}
+      {puedeGenerarOC && (
+        <button
+          type="button"
+          onClick={handleGenerarOC}
+          disabled={pending}
+          className={cn(
+            btnCls,
+            'border-transparent bg-tenant-accent text-white hover:brightness-95'
+          )}
+        >
+          <ShoppingCart size={13} />
+          {pending ? 'Generando…' : 'Generar OC'}
         </button>
       )}
 

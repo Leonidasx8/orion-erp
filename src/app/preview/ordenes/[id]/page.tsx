@@ -121,7 +121,7 @@ export default function PreviewOrdenDetallePage() {
         userName="Lucas Escrivá"
         crumbs={[
           { label: 'Idex', href: `/${tenant.slug}` },
-          { label: 'Órdenes de compra', href: `/${tenant.slug}/ordenes` },
+          { label: 'Compras a Proveedores', href: `/${tenant.slug}/ordenes` },
           { label: MOCK.numero },
         ]}
       />

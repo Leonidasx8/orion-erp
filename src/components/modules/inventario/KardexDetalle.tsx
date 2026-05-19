@@ -184,7 +184,7 @@ export function KardexDetalle({
             href={`/${tenantSlug}/ordenes/nueva`}
             className="border-warn-border ml-auto inline-flex h-7 shrink-0 items-center gap-1 rounded-md border bg-warn-soft px-2.5 text-[11.5px] font-medium"
           >
-            Crear orden
+            Nueva compra
           </Link>
         </div>
       )}

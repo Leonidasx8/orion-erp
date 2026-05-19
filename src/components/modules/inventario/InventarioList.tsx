@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { AlertTriangle, ArrowUpRight, Package, Search } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, Package, Search, SlidersHorizontal } from 'lucide-react';
 import { Money } from '@/components/shared/Money';
 import { cn } from '@/lib/utils';
 
@@ -44,6 +44,7 @@ export function InventarioList({
   counts,
   valorTotalInventario,
   filtroActivo,
+  canAjustar,
 }: InventarioListProps) {
   const base = `/${tenantSlug}/inventario`;
 
@@ -79,7 +80,9 @@ export function InventarioList({
               {counts.sin_stock > 0 && counts.critico > 0 && ' · '}
               {counts.critico > 0 && `${counts.critico} bajo mínimo`}
             </span>
-            <span className="text-warn-fg/75 ml-1">— revisa las órdenes de compra pendientes.</span>
+            <span className="text-warn-fg/75 ml-1">
+              — revisa las compras a proveedores pendientes.
+            </span>
           </div>
         </div>
       )}
@@ -135,7 +138,7 @@ export function InventarioList({
               <th className="px-4 py-2.5 text-right font-medium text-orion-fg-muted">
                 Último mov.
               </th>
-              <th className="w-10" />
+              <th className="w-20" />
             </tr>
           </thead>
           <tbody>
@@ -215,13 +218,24 @@ export function InventarioList({
                     {fechaMov}
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      href={`${base}/${row.productoId}`}
-                      className="flex items-center justify-center rounded p-1 text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
-                      title="Ver kardex"
-                    >
-                      <ArrowUpRight size={14} />
-                    </Link>
+                    <div className="flex items-center gap-1">
+                      {canAjustar && (
+                        <Link
+                          href={`${base}/${row.productoId}/ajuste`}
+                          className="flex items-center justify-center rounded p-1 text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
+                          title="Ajuste manual"
+                        >
+                          <SlidersHorizontal size={14} />
+                        </Link>
+                      )}
+                      <Link
+                        href={`${base}/${row.productoId}`}
+                        className="flex items-center justify-center rounded p-1 text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
+                        title="Ver kardex"
+                      >
+                        <ArrowUpRight size={14} />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               );
