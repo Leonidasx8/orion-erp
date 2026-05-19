@@ -201,7 +201,11 @@ async function seedCategorias(tenantId: string) {
 }
 
 // ─── Productos ────────────────────────────────────────────────────────────
-async function seedProductos(tenantId: string, cats: { id: string; nombre: string }[]) {
+async function seedProductos(
+  tenantId: string,
+  cats: { id: string; nombre: string }[],
+  celsaId?: string
+) {
   const catIdByName = new Map(cats.map((c) => [c.nombre, c.id]));
   const items: Array<{
     codigo: string;
@@ -211,6 +215,7 @@ async function seedProductos(tenantId: string, cats: { id: string; nombre: strin
     precio: number;
     costo: number;
     stockActual: number;
+    proveedor?: 'celsa';
   }> = [
     {
       codigo: 'TX-4821',
@@ -247,6 +252,7 @@ async function seedProductos(tenantId: string, cats: { id: string; nombre: strin
       precio: 124.5,
       costo: 92,
       stockActual: 320,
+      proveedor: 'celsa',
     },
     {
       codigo: 'CB-1006',
@@ -256,6 +262,7 @@ async function seedProductos(tenantId: string, cats: { id: string; nombre: strin
       precio: 78.4,
       costo: 56,
       stockActual: 480,
+      proveedor: 'celsa',
     },
     {
       codigo: 'CB-1010',
@@ -265,6 +272,7 @@ async function seedProductos(tenantId: string, cats: { id: string; nombre: strin
       precio: 42.8,
       costo: 30,
       stockActual: 1200,
+      proveedor: 'celsa',
     },
     {
       codigo: 'CB-1014',
@@ -274,6 +282,7 @@ async function seedProductos(tenantId: string, cats: { id: string; nombre: strin
       precio: 18.2,
       costo: 12,
       stockActual: 2400,
+      proveedor: 'celsa',
     },
     {
       codigo: 'CB-2400',
@@ -283,6 +292,7 @@ async function seedProductos(tenantId: string, cats: { id: string; nombre: strin
       precio: 92,
       costo: 68,
       stockActual: 180,
+      proveedor: 'celsa',
     },
     {
       codigo: 'SW-2210',
@@ -395,6 +405,7 @@ async function seedProductos(tenantId: string, cats: { id: string; nombre: strin
         stockActual: String(it.stockActual),
         stockMinimo: '5',
         activo: true,
+        proveedorPrincipalId: it.proveedor === 'celsa' ? (celsaId ?? null) : null,
       }))
     )
     .returning();
@@ -486,13 +497,13 @@ async function seedClientes(tenantId: string) {
       tags: ['gobierno'],
     },
     {
-      razon: 'IMPORTACIONES SUR EIRL',
+      razon: 'CELSA SAC',
       ruc: '20887766554',
-      email: 'compras@impsur.pe',
+      email: 'ventas@celsa.pe',
       telefono: '+51 1 7654321',
       esCliente: false,
       esProveedor: true,
-      tags: ['proveedor'],
+      tags: ['proveedor', 'principal'],
     },
     {
       razon: 'TRANSFORMADORES DEL PERÚ SAC',
@@ -924,8 +935,9 @@ async function main() {
   const userId = await upsertUser();
   const tenant = await createTenant(userId);
   const cats = await seedCategorias(tenant.id);
-  const prods = await seedProductos(tenant.id, cats);
   const cls = await seedClientes(tenant.id);
+  const celsaId = cls.find((c) => c.razonSocial === 'CELSA SAC')?.id;
+  const prods = await seedProductos(tenant.id, cats, celsaId);
   await seedCotizaciones(tenant.id, userId, prods, cls);
   await seedOrdenes(tenant.id, prods, cls);
   await seedKardex(tenant.id, prods);
