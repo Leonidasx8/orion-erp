@@ -2,9 +2,9 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-18 GMT-5 (tarde — sesión post-compactación)
+**Última actualización:** 2026-05-18 GMT-5 (tarde — sesión post-compactación, parte 2)
 **Branch activa:** `feat/B-09-sunat-nubefact`
-**Estado verificado:** TypeCheck limpio. Commit `8423561`.
+**Estado verificado:** TypeCheck limpio. Commit `0c474c6`.
 
 ---
 
@@ -37,6 +37,25 @@ pnpm dev
 - "Generar OC" en cotización aceptada → join productos.proveedorPrincipalId
 
 **Credenciales demo:** revisar `.env.local` para usuario admin. El seed crea tenant `idex` con usuario `lescriva@grupoidex.com.pe`.
+
+---
+
+### Sesión 2026-05-18 tarde parte 2 — Contactos modal + clienteId filters + pre-selección
+
+**ClienteDetail — modal inline para agregar contacto (commit `0c474c6`):**
+
+- Botón "+" en sección Contactos ahora abre modal inline (antes: link roto a `/contactos/nuevo`)
+- Campos: nombre\*, cargo, email, telefono, esPrincipal — llama `agregarContacto` server action
+
+**Pre-selección de cliente en cotización (commit `54be9f1`):**
+
+- `cotizaciones/nueva/page.tsx` lee `?clienteId=` de searchParams
+- `CotizacionForm` acepta `defaultClienteId` prop → formulario pre-selecciona el cliente
+
+**clienteId filter en facturas (commit `9582898`):**
+
+- `facturas/page.tsx` acepta `?clienteId=` → filtra filas igual que cotizaciones
+- "Ver facturas" desde ClienteDetail ahora filtra correctamente
 
 ---
 
