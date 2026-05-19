@@ -36,7 +36,7 @@ export type CotizacionesListProps = {
     total: number;
     borrador: number;
     enviada: number;
-    aprobada: number;
+    aceptada: number;
     rechazada: number;
     vencida: number;
     convertida: number;
@@ -52,7 +52,7 @@ const FILTROS: { key: 'todas' | Estado; label: string }[] = [
   { key: 'todas', label: 'Todas' },
   { key: 'borrador', label: 'Borrador' },
   { key: 'enviada', label: 'Enviadas' },
-  { key: 'aprobada', label: 'Aprobadas' },
+  { key: 'aceptada', label: 'Aceptadas' },
   { key: 'rechazada', label: 'Rechazadas' },
   { key: 'vencida', label: 'Vencidas' },
   { key: 'convertida', label: 'Convertidas' },

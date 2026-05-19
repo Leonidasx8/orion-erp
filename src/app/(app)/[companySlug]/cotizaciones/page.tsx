@@ -16,7 +16,7 @@ const PAGE_SIZE = 20;
 const ESTADO_FILTROS = new Set<Estado>([
   'borrador',
   'enviada',
-  'aprobada',
+  'aceptada',
   'rechazada',
   'vencida',
   'convertida',
@@ -77,7 +77,7 @@ export default async function CotizacionesPage({
     total: 0,
     borrador: 0,
     enviada: 0,
-    aprobada: 0,
+    aceptada: 0,
     rechazada: 0,
     vencida: 0,
     convertida: 0,

@@ -67,7 +67,60 @@ export default function PreviewDashboardPage({
         crumbs={[{ label: 'Idex', href: `/${tenant.slug}` }, { label: 'Dashboard' }]}
       />
       <main className="col-start-2 row-start-2 overflow-auto bg-orion-bg-subtle p-6">
-        <DashboardContent tenant={tenant} greetName="Lucas" />
+        <DashboardContent
+          tenant={tenant}
+          data={{
+            kpis: {
+              ventasMes: 38412,
+              cotizacionesTotal: 9,
+              pipelineCount: 3,
+              pipelineValor: 24600,
+              stockCriticoCount: 2,
+              clientesActivos: 8,
+            },
+            pipeline: [
+              { estado: 'borrador', count: 1, valor: 4200 },
+              { estado: 'enviada', count: 3, valor: 18415 },
+              { estado: 'aceptada', count: 2, valor: 15997 },
+              { estado: 'rechazada', count: 1, valor: 0 },
+              { estado: 'vencida', count: 1, valor: 0 },
+            ],
+            porAprobar: [
+              {
+                id: '1',
+                numero: 'COT-2026-00002',
+                cliente: 'TECNOLOGÍA INDUSTRIAL SAC',
+                total: 4218.4,
+                moneda: 'USD',
+                diasHastaVencimiento: 4,
+              },
+              {
+                id: '2',
+                numero: 'COT-2026-00003',
+                cliente: 'CONSTRUCTORA SUR EIRL',
+                total: 1840.2,
+                moneda: 'USD',
+                diasHastaVencimiento: 1,
+              },
+            ],
+            stockCritico: [
+              {
+                id: '1',
+                codigo: 'CB-1010',
+                nombre: 'Cable de cobre AWG #10 · 100m',
+                stockActual: 3,
+                stockMinimo: 5,
+              },
+              {
+                id: '2',
+                codigo: 'CB-1014',
+                nombre: 'Cable de cobre AWG #14 · 100m',
+                stockActual: 4,
+                stockMinimo: 5,
+              },
+            ],
+          }}
+        />
       </main>
     </div>
   );

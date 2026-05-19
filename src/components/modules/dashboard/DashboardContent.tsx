@@ -5,7 +5,6 @@ import {
   ArrowRight,
   Calendar,
   ChevronDown,
-  Check,
   Circle,
   FileText,
   Layers,
@@ -13,31 +12,77 @@ import {
   Receipt,
   Users,
   Wallet,
-  Zap,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { Tenant } from '@/lib/db/schema';
 import { Money } from '@/components/shared/Money';
 import { PageHead } from '@/components/shared/PageHead';
 import { Kpi, KpiRow } from '@/components/shared/Kpi';
+import { EstadoBadge } from '@/components/shared/EstadoBadge';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-/**
- * Dashboard tenant — pivote del Sistema de Diseño V1.
- * TODO: reemplazar mock data con queries reales cuando llegue B.11 reportes.
- */
-export function DashboardContent({ tenant, greetName }: { tenant: Tenant; greetName?: string }) {
+export type DashboardData = {
+  kpis: {
+    ventasMes: number;
+    cotizacionesTotal: number;
+    pipelineCount: number;
+    pipelineValor: number;
+    stockCriticoCount: number;
+    clientesActivos: number;
+  };
+  pipeline: Array<{ estado: string; count: number; valor: number }>;
+  porAprobar: Array<{
+    id: string;
+    numero: string;
+    cliente: string;
+    total: number;
+    moneda: string;
+    diasHastaVencimiento: number;
+  }>;
+  stockCritico: Array<{
+    id: string;
+    codigo: string;
+    nombre: string;
+    stockActual: number;
+    stockMinimo: number;
+  }>;
+};
+
+function formatSubtitle() {
+  const now = new Date();
+  const meses = [
+    'ene',
+    'feb',
+    'mar',
+    'abr',
+    'may',
+    'jun',
+    'jul',
+    'ago',
+    'sep',
+    'oct',
+    'nov',
+    'dic',
+  ];
+  const label = `${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}`;
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const diasRestantes = lastDay.getDate() - now.getDate();
+  return `Resumen del ${label} · cierra mes en ${diasRestantes} días`;
+}
+
+export function DashboardContent({ tenant, data }: { tenant: Tenant; data: DashboardData }) {
   const firstName =
-    greetName ??
-    (tenant.razonSocial.split(/\s+/)[0] ?? 'Equipo').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ]/g, '') ??
+    (tenant.razonSocial.split(/\s+/)[0] ?? 'Equipo').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ]/g, '') ||
     'Equipo';
+
+  const { kpis, pipeline, porAprobar, stockCritico } = data;
 
   return (
     <>
       <PageHead
         title={`Buen día, ${firstName}`}
-        subtitle="Resumen del 5 may 2026 · cierra mes en 26 días"
+        subtitle={formatSubtitle()}
         actions={
           <>
             <button
@@ -59,102 +104,104 @@ export function DashboardContent({ tenant, greetName }: { tenant: Tenant; greetN
         }
       />
 
-      <KpiRow cols={6}>
+      <KpiRow cols={5}>
         <Kpi
-          label="Ventas mes"
+          label="Pipeline activo"
           icon={<Receipt size={12} />}
           delta={
             <>
-              <ArrowUp size={11} />
-              +18,4% vs marzo
-            </>
-          }
-          deltaTone="up"
-        >
-          <Money value={48231} dp={0} />
-        </Kpi>
-        <Kpi
-          label="Cotizaciones"
-          icon={<FileText size={12} />}
-          delta={
-            <>
               <Circle size={8} fill="currentColor" />
-              USD 38.412 en pipeline
+              {kpis.pipelineCount} cot. enviadas
             </>
           }
           deltaTone="info"
         >
-          42 <span className="text-xs font-normal text-orion-fg-faint">· 12 abiertas</span>
+          <Money value={kpis.pipelineValor} dp={0} ccy="USD" />
+        </Kpi>
+        <Kpi
+          label="Total aceptadas"
+          icon={<FileText size={12} />}
+          delta={
+            kpis.ventasMes > 0 ? (
+              <>
+                <ArrowUp size={11} />
+                cotizaciones cerradas
+              </>
+            ) : (
+              <>
+                <Circle size={8} fill="currentColor" />
+                sin cierres aún
+              </>
+            )
+          }
+          deltaTone={kpis.ventasMes > 0 ? 'up' : 'info'}
+        >
+          <Money value={kpis.ventasMes} dp={0} ccy="USD" />
         </Kpi>
         <Kpi
           label="CxC vencido"
           icon={<Wallet size={12} />}
           delta={
             <>
-              <ArrowDown size={11} />3 facturas {'>'} 30 días
+              <ArrowDown size={11} />
+              módulo en construcción
             </>
           }
           deltaTone="down"
         >
-          <span className="text-warn-fg">
-            <Money value={5840.5} dp={2} />
-          </span>
+          <span className="text-sm font-normal text-orion-fg-muted">—</span>
         </Kpi>
         <Kpi
           label="Stock crítico"
           icon={<Layers size={12} />}
           delta={
-            <>
-              <AlertTriangle size={11} />
-              bajo umbral mínimo
-            </>
+            kpis.stockCriticoCount > 0 ? (
+              <>
+                <AlertTriangle size={11} />
+                bajo umbral mínimo
+              </>
+            ) : (
+              <>
+                <Circle size={8} fill="currentColor" />
+                sin alertas
+              </>
+            )
           }
-          deltaTone="warn"
+          deltaTone={kpis.stockCriticoCount > 0 ? 'warn' : 'up'}
         >
-          7 <span className="text-xs font-normal text-orion-fg-faint">SKUs</span>
-        </Kpi>
-        <Kpi
-          label="SUNAT (mes)"
-          icon={<Zap size={12} />}
-          delta={
-            <>
-              <Check size={11} />
-              100% sin rechazo
-            </>
-          }
-          deltaTone="up"
-        >
-          187 <span className="text-xs font-normal text-orion-fg-faint">aceptadas</span>
+          {kpis.stockCriticoCount}{' '}
+          <span className="text-xs font-normal text-orion-fg-faint">SKUs</span>
         </Kpi>
         <Kpi
           label="Clientes activos"
           icon={<Users size={12} />}
           delta={
             <>
-              <ArrowUp size={11} />
-              +5 este mes
+              <Circle size={8} fill="currentColor" />
+              en cartera
             </>
           }
-          deltaTone="up"
+          deltaTone="info"
         >
-          94
+          {kpis.clientesActivos}
         </Kpi>
       </KpiRow>
 
       <div className="mt-4 grid grid-cols-[3fr_2fr] gap-4">
         <SalesChartCard />
-        <PipelineCard />
+        <PipelineCard pipeline={pipeline} />
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-4">
-        <CotizacionesPorAprobarCard tenantSlug={tenant.slug} />
-        <StockCriticoCard />
+        <CotizacionesPorAprobarCard tenantSlug={tenant.slug} rows={porAprobar} />
+        <StockCriticoCard tenantSlug={tenant.slug} rows={stockCritico} />
       </div>
     </>
   );
 }
 
 function SalesChartCard() {
+  // Placeholder — wired to real data in B.11 reportes
   const data = [28, 32, 30, 38, 42, 35, 46, 52, 48, 55, 58, 48];
   const labels = [
     'May',
@@ -177,7 +224,9 @@ function SalesChartCard() {
       <CardHead>
         <div>
           <CardTitle>Ventas · 12 meses</CardTitle>
-          <p className="mt-0.5 text-[11.5px] text-orion-fg-muted">USD · facturas aceptadas SUNAT</p>
+          <p className="mt-0.5 text-[11.5px] text-orion-fg-muted">
+            USD · referencia histórica (B.11)
+          </p>
         </div>
         <div className="ml-auto flex items-center gap-1">
           <ChartRangeBtn>Mes</ChartRangeBtn>
@@ -203,39 +252,36 @@ function SalesChartCard() {
   );
 }
 
-function PipelineCard() {
-  type Estado = 'borrador' | 'enviada' | 'aprobada' | 'rechazada' | 'vencida';
-  const stages: { est: Estado; count: number; val: number; pct: number }[] = [
-    { est: 'borrador', count: 5, val: 8420, pct: 18 },
-    { est: 'enviada', count: 7, val: 18415, pct: 42 },
-    { est: 'aprobada', count: 3, val: 11577, pct: 30 },
-    { est: 'rechazada', count: 2, val: 0, pct: 5 },
-    { est: 'vencida', count: 1, val: 0, pct: 5 },
-  ];
-  const barColor: Record<Estado, string> = {
-    borrador: 'bg-orion-fg-faint',
-    enviada: 'bg-info',
-    aprobada: 'bg-success',
-    rechazada: 'bg-danger',
-    vencida: 'bg-warn',
-  };
+const PIPELINE_COLORS: Record<string, string> = {
+  borrador: 'bg-orion-fg-faint',
+  enviada: 'bg-info',
+  aceptada: 'bg-success',
+  rechazada: 'bg-danger',
+  vencida: 'bg-warn',
+};
+
+function PipelineCard({ pipeline }: { pipeline: DashboardData['pipeline'] }) {
+  const maxVal = Math.max(...pipeline.map((s) => s.valor), 1);
   return (
     <Card>
       <CardHead>
         <CardTitle>Pipeline cotizaciones</CardTitle>
       </CardHead>
       <div className="p-4">
-        {stages.map((s) => (
-          <div key={s.est} className="mb-2.5">
+        {pipeline.map((s) => (
+          <div key={s.estado} className="mb-2.5">
             <div className="mb-1 flex items-center">
-              <EstadoBadge estado={s.est} />
+              <EstadoBadge estado={s.estado as 'borrador'} />
               <span className="ml-1.5 text-[11.5px] text-orion-fg-muted">{s.count} cot.</span>
               <span className="ml-auto font-mono text-xs text-orion-fg">
-                {s.val ? `USD ${s.val.toLocaleString('en-US')}` : '—'}
+                {s.valor > 0 ? <Money value={s.valor} ccy="USD" dp={0} /> : '—'}
               </span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-sm bg-orion-bg-muted">
-              <div className={cn('h-full', barColor[s.est])} style={{ width: `${s.pct}%` }} />
+              <div
+                className={cn('h-full', PIPELINE_COLORS[s.estado] ?? 'bg-orion-fg-faint')}
+                style={{ width: `${(s.valor / maxVal) * 100}%` }}
+              />
             </div>
           </div>
         ))}
@@ -244,128 +290,140 @@ function PipelineCard() {
   );
 }
 
-function CotizacionesPorAprobarCard({ tenantSlug }: { tenantSlug: string }) {
-  const rows: { num: string; cli: string; total: number; vence: string; urgent: boolean }[] = [
-    {
-      num: 'COT-2026-00132',
-      cli: 'TECNOLOGÍA INDUSTRIAL SAC',
-      total: 4218.4,
-      vence: 'mañana',
-      urgent: true,
-    },
-    {
-      num: 'COT-2026-00128',
-      cli: 'ELECTROANDES SA',
-      total: 12480.0,
-      vence: '3 días',
-      urgent: false,
-    },
-    {
-      num: 'COT-2026-00125',
-      cli: 'GRUPO MINERA CERRO VERDE',
-      total: 22150.5,
-      vence: '5 días',
-      urgent: false,
-    },
-    {
-      num: 'COT-2026-00121',
-      cli: 'CONSTRUCTORA SUR EIRL',
-      total: 1840.2,
-      vence: '7 días',
-      urgent: false,
-    },
-  ];
+function CotizacionesPorAprobarCard({
+  tenantSlug,
+  rows,
+}: {
+  tenantSlug: string;
+  rows: DashboardData['porAprobar'];
+}) {
   return (
     <Card>
       <CardHead>
         <CardTitle>Cotizaciones por aprobar</CardTitle>
         <a
-          href={`/${tenantSlug}/cotizaciones`}
+          href={`/${tenantSlug}/cotizaciones?estado=enviada`}
           className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
         >
           Ver todas <ArrowRight size={12} />
         </a>
       </CardHead>
-      <Table>
-        <thead>
-          <tr>
-            <Th>Número</Th>
-            <Th>Cliente</Th>
-            <Th align="right">Total</Th>
-            <Th>Vence</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.num} className="[&_td]:h-8">
-              <Td className="font-mono text-[11.5px]">{r.num}</Td>
-              <Td className="max-w-[180px] truncate">{r.cli}</Td>
-              <Td align="right">
-                <Money value={r.total} dp={2} />
-              </Td>
-              <Td>
-                {r.urgent ? (
-                  <span className="inline-flex h-5 items-center rounded-sm bg-warn-soft px-1.5 text-[11px] font-medium text-warn-fg">
-                    {r.vence}
-                  </span>
-                ) : (
-                  <span className="text-orion-fg-muted">{r.vence}</span>
-                )}
-              </Td>
+      {rows.length === 0 ? (
+        <div className="flex items-center justify-center py-10 text-[12px] text-orion-fg-muted">
+          No hay cotizaciones pendientes
+        </div>
+      ) : (
+        <Table>
+          <thead>
+            <tr>
+              <Th>Número</Th>
+              <Th>Cliente</Th>
+              <Th align="right">Total</Th>
+              <Th>Vence</Th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} className="[&_td]:h-8">
+                <Td className="font-mono text-[11.5px]">
+                  <Link
+                    href={`/${tenantSlug}/cotizaciones/${r.id}`}
+                    className="hover:text-tenant-accent hover:underline"
+                  >
+                    {r.numero}
+                  </Link>
+                </Td>
+                <Td className="max-w-[180px] truncate">{r.cliente}</Td>
+                <Td align="right">
+                  <Money value={r.total} dp={2} ccy={r.moneda as 'USD' | 'PEN'} />
+                </Td>
+                <Td>
+                  {r.diasHastaVencimiento <= 2 ? (
+                    <span className="inline-flex h-5 items-center rounded-sm bg-warn-soft px-1.5 text-[11px] font-medium text-warn-fg">
+                      {r.diasHastaVencimiento <= 0
+                        ? 'Hoy'
+                        : r.diasHastaVencimiento === 1
+                          ? 'Mañana'
+                          : `${r.diasHastaVencimiento} días`}
+                    </span>
+                  ) : (
+                    <span className="text-orion-fg-muted">
+                      {r.diasHastaVencimiento >= 999 ? '—' : `${r.diasHastaVencimiento} días`}
+                    </span>
+                  )}
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
     </Card>
   );
 }
 
-function StockCriticoCard() {
-  const rows: { sku: string; name: string; stock: number; min: number }[] = [
-    { sku: 'TER-50AWG-1/4', name: 'Terminal compresión 50AWG ¼"', stock: 3, min: 20 },
-    { sku: 'CAB-10AWG-NEG', name: 'Cable cobre 10 AWG negro 600V', stock: 28, min: 100 },
-    { sku: 'TER-25AWG-3/8', name: 'Terminal compresión 25AWG ⅜"', stock: 0, min: 15 },
-    { sku: 'TUB-12-NEG', name: 'Tubería termo-contractible 12mm', stock: 12, min: 40 },
-    { sku: 'CAB-14AWG-AZU', name: 'Cable cobre 14 AWG azul 600V', stock: 45, min: 80 },
-  ];
+function StockCriticoCard({
+  tenantSlug,
+  rows,
+}: {
+  tenantSlug: string;
+  rows: DashboardData['stockCritico'];
+}) {
   return (
     <Card>
       <CardHead>
         <CardTitle>Stock crítico</CardTitle>
-        <Badge
-          variant="outline"
-          className="border-warn/40 ml-auto h-5 gap-1 bg-warn-soft px-2 text-[11px] font-medium text-warn-fg"
+        {rows.length > 0 && (
+          <Badge
+            variant="outline"
+            className="border-warn/40 ml-auto h-5 gap-1 bg-warn-soft px-2 text-[11px] font-medium text-warn-fg"
+          >
+            <Circle size={6} fill="currentColor" />
+            {rows.length} SKUs
+          </Badge>
+        )}
+        <a
+          href={`/${tenantSlug}/inventario?estado=critico`}
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
         >
-          <Circle size={6} fill="currentColor" />7 SKUs
-        </Badge>
+          Ver <ArrowRight size={12} />
+        </a>
       </CardHead>
-      <Table>
-        <thead>
-          <tr>
-            <Th>SKU</Th>
-            <Th>Producto</Th>
-            <Th align="right">Stock</Th>
-            <Th align="right">Mínimo</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.sku} className="[&_td]:h-8">
-              <Td className="font-mono text-[11.5px]">{r.sku}</Td>
-              <Td className="max-w-[200px] truncate">{r.name}</Td>
-              <Td
-                align="right"
-                className={cn('font-semibold', r.stock === 0 ? 'text-danger-fg' : 'text-warn-fg')}
-              >
-                {r.stock}
-              </Td>
-              <Td align="right" className="text-orion-fg-muted">
-                {r.min}
-              </Td>
+      {rows.length === 0 ? (
+        <div className="flex items-center justify-center py-10 text-[12px] text-orion-fg-muted">
+          Sin productos bajo umbral mínimo
+        </div>
+      ) : (
+        <Table>
+          <thead>
+            <tr>
+              <Th>SKU</Th>
+              <Th>Producto</Th>
+              <Th align="right">Stock</Th>
+              <Th align="right">Mínimo</Th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} className="[&_td]:h-8">
+                <Td className="font-mono text-[11.5px]">{r.codigo}</Td>
+                <Td className="max-w-[200px] truncate">{r.nombre}</Td>
+                <Td
+                  align="right"
+                  className={cn(
+                    'font-semibold',
+                    r.stockActual === 0 ? 'text-danger-fg' : 'text-warn-fg'
+                  )}
+                >
+                  {r.stockActual}
+                </Td>
+                <Td align="right" className="text-orion-fg-muted">
+                  {r.stockMinimo}
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
     </Card>
   );
 }
@@ -436,30 +494,5 @@ function Td({
     >
       {children}
     </td>
-  );
-}
-function EstadoBadge({
-  estado,
-}: {
-  estado: 'borrador' | 'enviada' | 'aprobada' | 'rechazada' | 'vencida';
-}) {
-  const cfg: Record<typeof estado, { label: string; className: string }> = {
-    borrador: { label: 'Borrador', className: 'bg-orion-bg-muted text-orion-fg-muted' },
-    enviada: { label: 'Enviada', className: 'bg-info-soft text-info-fg' },
-    aprobada: { label: 'Aprobada', className: 'bg-success-soft text-success-fg' },
-    rechazada: { label: 'Rechazada', className: 'bg-danger-soft text-danger-fg' },
-    vencida: { label: 'Vencida', className: 'bg-warn-soft text-warn-fg' },
-  };
-  const c = cfg[estado];
-  return (
-    <span
-      className={cn(
-        'inline-flex h-5 items-center gap-1 rounded-full px-2 text-[11px] font-medium',
-        c.className
-      )}
-    >
-      <Circle size={6} fill="currentColor" />
-      {c.label}
-    </span>
   );
 }
