@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   ChevronLeft,
@@ -56,8 +59,17 @@ export function OrdenesList({
   pageSize,
 }: OrdenesListProps) {
   const base = `/${tenantSlug}/ordenes`;
-  const showingFrom = rows.length === 0 ? 0 : (page - 1) * pageSize + 1;
-  const showingTo = (page - 1) * pageSize + rows.length;
+  const [query, setQuery] = useState('');
+
+  const q = query.trim().toLowerCase();
+  const visibleRows = q
+    ? rows.filter(
+        (r) => r.numero.toLowerCase().includes(q) || r.proveedor.toLowerCase().includes(q)
+      )
+    : rows;
+
+  const showingFrom = visibleRows.length === 0 ? 0 : (page - 1) * pageSize + 1;
+  const showingTo = (page - 1) * pageSize + visibleRows.length;
 
   const filtros: { key: 'todas' | Estado; label: string; n: number }[] = [
     { key: 'todas', label: 'Todas', n: counts.total },
@@ -128,6 +140,8 @@ export function OrdenesList({
           <input
             placeholder="Buscar por número o proveedor…"
             className="w-full bg-transparent text-[12.5px] text-orion-fg outline-none placeholder:text-orion-fg-subtle"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
         </div>
       </div>
@@ -149,14 +163,14 @@ export function OrdenesList({
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && (
+            {visibleRows.length === 0 && (
               <tr>
                 <td colSpan={10} className="p-10 text-center text-orion-fg-muted">
-                  No hay compras en este filtro.
+                  {q ? 'Sin resultados para esa búsqueda.' : 'No hay compras en este filtro.'}
                 </td>
               </tr>
             )}
-            {rows.map((r) => (
+            {visibleRows.map((r) => (
               <tr
                 key={r.id}
                 className="border-t border-orion-border transition-colors hover:bg-orion-bg-subtle"
@@ -223,7 +237,7 @@ export function OrdenesList({
 
       <div className="flex items-center justify-between text-[12px] text-orion-fg-muted">
         <span>
-          {showingFrom}–{showingTo} de {counts.total}
+          {showingFrom}–{showingTo} de {q ? visibleRows.length : counts.total}
         </span>
         <div className="flex items-center gap-2">
           <PageBtn href={page > 1 ? `${base}?page=${page - 1}` : null}>

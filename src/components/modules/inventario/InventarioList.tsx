@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, ArrowUpRight, Package, Search, SlidersHorizontal } from 'lucide-react';
 import { Money } from '@/components/shared/Money';
@@ -47,6 +48,12 @@ export function InventarioList({
   canAjustar,
 }: InventarioListProps) {
   const base = `/${tenantSlug}/inventario`;
+  const [query, setQuery] = useState('');
+
+  const q = query.trim().toLowerCase();
+  const visibleRows = q
+    ? rows.filter((r) => r.codigo.toLowerCase().includes(q) || r.nombre.toLowerCase().includes(q))
+    : rows;
 
   const chips: { key: InventarioListProps['filtroActivo']; label: string; count: number }[] = [
     { key: 'todos', label: 'Todos', count: counts.total },
@@ -115,7 +122,8 @@ export function InventarioList({
             <input
               className="h-8 rounded-md border border-orion-border bg-orion-bg pl-8 pr-3 text-[12px] text-orion-fg placeholder:text-orion-fg-faint focus:outline-none focus:ring-1 focus:ring-tenant-accent"
               placeholder="Buscar producto..."
-              readOnly
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
             />
           </div>
         </div>
@@ -152,7 +160,7 @@ export function InventarioList({
                 </td>
               </tr>
             )}
-            {rows.map((row) => {
+            {visibleRows.map((row) => {
               const cfg = ESTADO_CFG[row.estadoStock];
               const fechaMov = row.ultimoMovimientoAt
                 ? new Date(row.ultimoMovimientoAt).toLocaleDateString('es-PE', {
