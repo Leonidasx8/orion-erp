@@ -6,7 +6,7 @@ import { Pencil, Plus, Hash, Mail, User, Check, AlertTriangle, Clock } from 'luc
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { eliminarContacto, cambiarEstadoCliente } from '@/server/actions/clientes';
+import { eliminarContacto, cambiarEstadoCliente, agregarContacto } from '@/server/actions/clientes';
 import type { Cliente, DireccionCliente, ContactoCliente } from '@/lib/db/schema';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -85,6 +85,14 @@ export function ClienteDetail({
 }: ClienteDetailProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [showContactoModal, setShowContactoModal] = useState(false);
+  const [nuevoContacto, setNuevoContacto] = useState({
+    nombre: '',
+    cargo: '',
+    email: '',
+    telefono: '',
+    esPrincipal: false,
+  });
 
   const handleEliminarContacto = (id: string) => {
     startTransition(async () => {
@@ -97,6 +105,25 @@ export function ClienteDetail({
     startTransition(async () => {
       const res = await cambiarEstadoCliente(cliente.id, estado);
       if (!res.success) setError(res.error);
+    });
+  };
+
+  const handleAgregarContacto = () => {
+    if (!nuevoContacto.nombre.trim()) return;
+    startTransition(async () => {
+      const res = await agregarContacto(cliente.id, {
+        nombre: nuevoContacto.nombre.trim(),
+        cargo: nuevoContacto.cargo.trim() || undefined,
+        email: nuevoContacto.email.trim() || undefined,
+        telefono: nuevoContacto.telefono.trim() || undefined,
+        esPrincipal: nuevoContacto.esPrincipal,
+      });
+      if (!res.success) {
+        setError(res.error);
+        return;
+      }
+      setShowContactoModal(false);
+      setNuevoContacto({ nombre: '', cargo: '', email: '', telefono: '', esPrincipal: false });
     });
   };
 
@@ -327,11 +354,15 @@ export function ClienteDetail({
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold">Contactos</h3>
                 {canEdit && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-                    <Link href={`/${companySlug}/clientes/${cliente.id}/contactos/nuevo`}>
-                      <Plus className="h-4 w-4" />
-                      <span className="sr-only">Agregar contacto</span>
-                    </Link>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setShowContactoModal(true)}
+                    disabled={pending}
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="sr-only">Agregar contacto</span>
                   </Button>
                 )}
               </div>
@@ -486,6 +517,102 @@ export function ClienteDetail({
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* ── Modal: Nuevo contacto ─────────────────────────────────── */}
+      {showContactoModal && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-lg border bg-card p-5 shadow-xl">
+            <h2 className="mb-4 text-sm font-semibold">Nuevo contacto</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Nombre *
+                </label>
+                <input
+                  autoFocus
+                  value={nuevoContacto.nombre}
+                  onChange={(e) => setNuevoContacto((p) => ({ ...p, nombre: e.target.value }))}
+                  className="block w-full rounded-md border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="Juan Pérez"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Cargo
+                </label>
+                <input
+                  value={nuevoContacto.cargo}
+                  onChange={(e) => setNuevoContacto((p) => ({ ...p, cargo: e.target.value }))}
+                  className="block w-full rounded-md border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="Gerente de Compras"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={nuevoContacto.email}
+                  onChange={(e) => setNuevoContacto((p) => ({ ...p, email: e.target.value }))}
+                  className="block w-full rounded-md border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="juan@empresa.com"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Teléfono
+                </label>
+                <input
+                  value={nuevoContacto.telefono}
+                  onChange={(e) => setNuevoContacto((p) => ({ ...p, telefono: e.target.value }))}
+                  className="block w-full rounded-md border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="+51 999 999 999"
+                />
+              </div>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={nuevoContacto.esPrincipal}
+                  onChange={(e) =>
+                    setNuevoContacto((p) => ({ ...p, esPrincipal: e.target.checked }))
+                  }
+                  className="h-4 w-4 accent-primary"
+                />
+                Contacto principal
+              </label>
+            </div>
+            {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowContactoModal(false);
+                  setNuevoContacto({
+                    nombre: '',
+                    cargo: '',
+                    email: '',
+                    telefono: '',
+                    esPrincipal: false,
+                  });
+                  setError(null);
+                }}
+                disabled={pending}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleAgregarContacto}
+                disabled={pending || !nuevoContacto.nombre.trim()}
+              >
+                {pending ? 'Guardando…' : 'Guardar'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
