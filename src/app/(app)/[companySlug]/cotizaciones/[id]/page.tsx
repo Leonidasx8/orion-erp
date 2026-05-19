@@ -40,6 +40,10 @@ export default async function CotizacionDetallePage({
       rechazadaAt: cotizaciones.rechazadaAt,
       motivoRechazo: cotizaciones.motivoRechazo,
       createdAt: cotizaciones.createdAt,
+      creadoPorNombre: cotizaciones.creadoPorNombre,
+      formaPago: cotizaciones.formaPago,
+      tiempoEntrega: cotizaciones.tiempoEntrega,
+      lugarEntrega: cotizaciones.lugarEntrega,
       clienteRazon: clientes.razonSocial,
       clienteNombres: clientes.nombres,
       clienteApellidoPaterno: clientes.apellidoPaterno,
@@ -76,7 +80,7 @@ export default async function CotizacionDetallePage({
     numero: row.numero ?? '—',
     estado: row.estado as Estado,
     cliente: clienteDisplay(row),
-    comercial: '—', // TODO: join con tenant_members o auditoría
+    comercial: row.creadoPorNombre ?? '—',
     fechaEmisionDisplay: formatDateLong(row.fechaEmision) ?? '—',
     fechaVencimientoDisplay: formatDateLong(row.fechaVencimiento),
     vencimientoTag: vencimientoTag(row.fechaVencimiento, row.estado as Estado),
@@ -96,8 +100,8 @@ export default async function CotizacionDetallePage({
       total: Number(row.total),
     },
     terminos: {
-      pago: 'A 30 días', // TODO: campo dedicado en schema
-      entrega: 'Por coordinar',
+      pago: row.formaPago ?? '—',
+      entrega: [row.tiempoEntrega, row.lugarEntrega].filter(Boolean).join(' · ') || '—',
       validez: row.fechaVencimiento ? `Hasta ${formatDateLong(row.fechaVencimiento)}` : '—',
       observaciones: row.notas,
     },
