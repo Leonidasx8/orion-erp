@@ -46,7 +46,7 @@ export default async function EditarCotizacionPage({
         apellidoPaterno: clientes.apellidoPaterno,
       })
       .from(clientes)
-      .where(eq(clientes.tenantId, tenant.id))
+      .where(and(eq(clientes.tenantId, tenant.id), eq(clientes.esCliente, true)))
       .orderBy(asc(clientes.razonSocial)),
     db
       .select({

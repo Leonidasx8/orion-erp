@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { userHasPermission } from '@/lib/auth/require-permission';
@@ -32,7 +32,7 @@ export default async function NuevaCotizacionPage({
         apellidoPaterno: clientes.apellidoPaterno,
       })
       .from(clientes)
-      .where(eq(clientes.tenantId, tenant.id))
+      .where(and(eq(clientes.tenantId, tenant.id), eq(clientes.esCliente, true)))
       .orderBy(asc(clientes.razonSocial)),
     db
       .select({
