@@ -2,9 +2,9 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-19 GMT-5 (madrugada)
+**Última actualización:** 2026-05-18 GMT-5 (tarde — sesión post-compactación)
 **Branch activa:** `feat/B-09-sunat-nubefact`
-**Estado verificado:** TypeCheck limpio. Commit `406a68e`.
+**Estado verificado:** TypeCheck limpio. Commit `8423561`.
 
 ---
 
@@ -37,6 +37,31 @@ pnpm dev
 - "Generar OC" en cotización aceptada → join productos.proveedorPrincipalId
 
 **Credenciales demo:** revisar `.env.local` para usuario admin. El seed crea tenant `idex` con usuario `lescriva@grupoidex.com.pe`.
+
+---
+
+### Sesión 2026-05-18 tarde — Combobox + sidebar funcional + recepción + stubs
+
+**ProductoCombobox (commit `a658546`):**
+
+- `src/components/shared/ProductoCombobox.tsx` — combobox con portal-based dropdown; busca por código o nombre; Escape cierra; click-outside cierra
+- Reemplaza `<select>` en `CotizacionForm` y `OrdenForm`; soluciona el clipping de `overflow-x-auto` vía `position: fixed`
+
+**CotizacionConversionSidebar (commit `423d75e`):**
+
+- `src/components/modules/cotizaciones/CotizacionConversionSidebar.tsx` — nuevo componente cliente
+- "Generar compra a proveedor" llama `generarOCsDesdeCotizacion` con toast y redirect
+- "Convertir a factura" llama `convertirCotizacionAFactura` con toast y redirect
+- Elimina `ConversionItem` estático (que era decorativo sin onClick)
+
+**Recepción modal (commit `79f03c0`):**
+
+- Botón "Recibir todo" en `RecepcionModal` llena todos los campos con cantidad pendiente de una vez
+
+**Stubs (commit `8423561`):**
+
+- Botón "Reenviar" en `CotizacionActions` ahora muestra toast "próximamente" en vez de silencio
+- Botón "Generar OC" renombrado a "Generar compra" para consistencia con módulo renombrado
 
 ---
 
