@@ -25,7 +25,7 @@ const ESTADO_FILTROS = new Set<Estado>([
 export default async function CotizacionesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string; page?: string }>;
+  searchParams: Promise<{ estado?: string; page?: string; clienteId?: string }>;
 }) {
   const tenant = await getCurrentTenant();
   const sp = await searchParams;
@@ -33,11 +33,16 @@ export default async function CotizacionesPage({
     sp.estado && ESTADO_FILTROS.has(sp.estado as Estado) ? (sp.estado as Estado) : 'todas'
   ) as 'todas' | Estado;
   const page = Math.max(1, Number(sp.page) || 1);
+  const clienteIdFilter = sp.clienteId ?? null;
 
-  const where =
-    filtroActivo === 'todas'
-      ? eq(cotizaciones.tenantId, tenant.id)
-      : and(eq(cotizaciones.tenantId, tenant.id), eq(cotizaciones.estado, filtroActivo));
+  const baseConditions = [eq(cotizaciones.tenantId, tenant.id)];
+  if (filtroActivo !== 'todas') baseConditions.push(eq(cotizaciones.estado, filtroActivo));
+  if (clienteIdFilter) baseConditions.push(eq(cotizaciones.clienteId, clienteIdFilter));
+  const where = baseConditions.length === 1 ? baseConditions[0] : and(...baseConditions);
+
+  const countsWhere = clienteIdFilter
+    ? and(eq(cotizaciones.tenantId, tenant.id), eq(cotizaciones.clienteId, clienteIdFilter))
+    : eq(cotizaciones.tenantId, tenant.id);
 
   const [canCreate, rowsRaw, countsRaw] = await Promise.all([
     userHasPermission('cotizaciones.crear'),
@@ -69,7 +74,7 @@ export default async function CotizacionesPage({
         totalUsd: sql<number>`COALESCE(SUM(CASE WHEN ${cotizaciones.moneda} = 'USD' THEN ${cotizaciones.total} ELSE 0 END), 0)::numeric`,
       })
       .from(cotizaciones)
-      .where(eq(cotizaciones.tenantId, tenant.id))
+      .where(countsWhere)
       .groupBy(cotizaciones.estado),
   ]);
 
