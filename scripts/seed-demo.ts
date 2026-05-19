@@ -729,6 +729,10 @@ async function seedCotizaciones(
         rechazadaAt: e.rechazadaAt ?? null,
         motivoRechazo: e.motivoRechazo ?? null,
         creadoPor: userId,
+        creadoPorNombre: USER_NAME,
+        formaPago: 'A 30 días',
+        tiempoEntrega: '5-7 días hábiles',
+        lugarEntrega: 'Almacén CELSA - Av. Argentina 4721, Lima',
       })
       .returning();
 
