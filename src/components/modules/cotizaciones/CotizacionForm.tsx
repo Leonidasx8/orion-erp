@@ -9,6 +9,7 @@ import { cotizacionSchema, type CotizacionInput } from '@/lib/schemas/cotizacion
 import { calcularTotales } from '@/lib/cotizaciones/calculo';
 import { crearCotizacion, actualizarCotizacion } from '@/server/actions/cotizaciones';
 import { Money } from '@/components/shared/Money';
+import { ProductoCombobox } from '@/components/shared/ProductoCombobox';
 import { cn } from '@/lib/utils';
 
 export type ClienteOption = { id: string; label: string };
@@ -287,19 +288,12 @@ export function CotizacionForm({ companySlug, clientes, productos, initial }: Pr
                 const itemErr = errors.items?.[idx];
                 return (
                   <tr key={f.id} className="border-b border-orion-border last:border-0">
-                    <Td className="min-w-[180px]">
-                      <select
-                        defaultValue={f.productoId ?? '__manual__'}
-                        onChange={(e) => aplicarProducto(idx, e.target.value)}
-                        className={cn(inputCls, 'h-8 text-[12px]')}
-                      >
-                        <option value="__manual__">— Manual —</option>
-                        {productos.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.codigo} · {p.nombre}
-                          </option>
-                        ))}
-                      </select>
+                    <Td className="min-w-[200px]">
+                      <ProductoCombobox
+                        value={it?.productoId}
+                        productos={productos}
+                        onChange={(id) => aplicarProducto(idx, id)}
+                      />
                     </Td>
                     <Td className="min-w-[220px]">
                       <input

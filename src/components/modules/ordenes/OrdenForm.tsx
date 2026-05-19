@@ -8,6 +8,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { ordenCompraSchema, type OrdenCompraInput } from '@/lib/schemas/orden-compra';
 import { crearOrdenCompra } from '@/server/actions/ordenes-compra';
 import { Money } from '@/components/shared/Money';
+import { ProductoCombobox } from '@/components/shared/ProductoCombobox';
 import { cn } from '@/lib/utils';
 
 export type ProveedorOption = { id: string; label: string };
@@ -216,19 +217,12 @@ export function OrdenForm({ companySlug, proveedores, productos }: Props) {
                 const itemErr = errors.lineas?.[idx];
                 return (
                   <tr key={f.id} className="border-b border-orion-border last:border-0">
-                    <Td className="min-w-[180px]">
-                      <select
-                        defaultValue={f.productoId ?? '__manual__'}
-                        onChange={(e) => aplicarProducto(idx, e.target.value)}
-                        className={cn(inputCls, 'h-8 text-[12px]')}
-                      >
-                        <option value="__manual__">— Manual —</option>
-                        {productos.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.codigo} · {p.nombre}
-                          </option>
-                        ))}
-                      </select>
+                    <Td className="min-w-[200px]">
+                      <ProductoCombobox
+                        value={it?.productoId}
+                        productos={productos}
+                        onChange={(id) => aplicarProducto(idx, id)}
+                      />
                     </Td>
                     <Td className="w-[110px]">
                       <input
