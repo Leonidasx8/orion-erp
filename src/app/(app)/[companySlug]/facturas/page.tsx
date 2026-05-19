@@ -34,17 +34,18 @@ function formatDate(iso: string | null): string {
 export default async function FacturasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string; page?: string }>;
+  searchParams: Promise<{ estado?: string; page?: string; clienteId?: string }>;
 }) {
   const tenant = await getCurrentTenant();
   const sp = await searchParams;
   const filtroActivo = sp.estado && ESTADOS_VALIDOS.has(sp.estado) ? sp.estado : 'todas';
   const page = Math.max(1, Number(sp.page) || 1);
+  const clienteIdFilter = sp.clienteId ?? null;
 
-  const estadoFilter =
-    filtroActivo === 'todas'
-      ? eq(facturas.tenantId, tenant.id)
-      : and(eq(facturas.tenantId, tenant.id), eq(facturas.estadoSunat, filtroActivo));
+  const baseConditions = [eq(facturas.tenantId, tenant.id)];
+  if (filtroActivo !== 'todas') baseConditions.push(eq(facturas.estadoSunat, filtroActivo));
+  if (clienteIdFilter) baseConditions.push(eq(facturas.clienteId, clienteIdFilter));
+  const estadoFilter = baseConditions.length === 1 ? baseConditions[0] : and(...baseConditions);
 
   const [rowsRaw, [{ total }]] = await Promise.all([
     db
