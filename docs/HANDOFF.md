@@ -2,9 +2,9 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-18 GMT-5
+**Última actualización:** 2026-05-18 GMT-5 (noche)
 **Branch activa:** `feat/B-09-sunat-nubefact`
-**Estado verificado:** TypeCheck limpio. Commit `b1bb28d` — 6 mejoras post-demo aplicadas.
+**Estado verificado:** TypeCheck limpio. Commits `275f589` + `764a3cc` — seed CELSA + M1 bulk price update.
 
 ---
 
@@ -38,9 +38,30 @@ Formulario de Lucas recibido y analizado. Respuestas clave:
 - `0036_historial_precios.sql`
 - Docker no estaba corriendo en esta sesión → no se aplicaron aún.
 
+### Sesión 2026-05-18 noche — Seed CELSA + M1 bulk price update
+
+**Seed script (`scripts/seed-demo.ts`):**
+
+- CELSA SAC es proveedor principal de todos los productos CB-\* (cables)
+- `seedClientes` corre antes que `seedProductos`; `celsaId` se extrae y pasa como tercer arg
+- `seedProductos(tenantId, cats, celsaId)` — firma actualizada, insert incluye `proveedorPrincipalId`
+
+**M1 — Actualización masiva de precios (Bucket B addendum):** ✅ IMPLEMENTADO
+
+- Nuevo server action `actualizarPreciosMasivo` en `src/server/actions/productos.ts`
+  - Valida con Zod; loop por producto; guarda historial en `historial_precios`; revalida path
+- Componente cliente `src/components/modules/productos/ActualizarPreciosForm.tsx`
+  - Filtros: familia + proveedor principal
+  - Modo: % incremento o precio fijo; campo: precio venta o costo
+  - Preview en vivo (viejo → nuevo, % diferencia coloreado)
+  - Razón obligatoria (mín. 3 chars); toast de resultado; redirect a /productos
+- Página server `src/app/(app)/[companySlug]/productos/actualizar-precios/page.tsx`
+  - Requiere permiso `productos.editar`; pasa productos + categorías + proveedores al form
+- Botón "Actualizar precios" (TrendingUp) en header de `ProductosList`
+
 **Addendum Bucket B pendiente de cotizar (US$ 380-420):**
 
-- M1: Actualización masiva de precios con filtros categoría/proveedor + preview + razón obligatoria
+- M1: ✅ entregado
 - Variantes en catálogo (Lucas eligió selector al cotizar — requiere diseño + schema nuevo)
 
 **Reunión miércoles 20-may con Lucas:** recorrido completo del sistema. Agenda sugerida pendiente.
