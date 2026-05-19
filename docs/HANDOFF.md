@@ -2,9 +2,37 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-18 GMT-5 (noche)
+**Última actualización:** 2026-05-18 GMT-5 (madrugada)
 **Branch activa:** `feat/B-09-sunat-nubefact`
-**Estado verificado:** TypeCheck limpio. Commits `275f589` + `764a3cc` — seed CELSA + M1 bulk price update.
+**Estado verificado:** TypeCheck limpio. Commit `8b40cba` — search funcional en inventario y compras.
+
+---
+
+### Sesión 2026-05-18 continuación — Dashboard real + aceptada fix + detail fix + search
+
+**Dashboard real (commit `[ver git log]`):**
+
+- `src/app/(app)/[companySlug]/page.tsx` — 5 queries paralelas con `Promise.all`; KPIs, pipeline, porAprobar, stockCrítico todos en vivo
+- `DashboardContent` — nueva prop `data: DashboardData`; `formatSubtitle()` dinámico; gráfico pipeline con barras proporcionales; cards "Cotizaciones por aprobar" y "Stock crítico" con datos reales
+
+**Bug crítico aprobada→aceptada (commit `[ver git log]`):**
+
+- Estado en DB es `'aceptada'`; todo el frontend usaba `'aprobada'`. Corregido en:
+  - `src/app/(app)/[companySlug]/cotizaciones/page.tsx`
+  - `src/components/modules/cotizaciones/CotizacionesList.tsx`
+  - `src/app/preview/cotizaciones/page.tsx`
+  - `src/app/preview/dashboard/page.tsx` (también arregló prop `data` faltante)
+
+**Cotización detalle — eliminar hardcoded (commit `[ver git log]`):**
+
+- `src/app/(app)/[companySlug]/cotizaciones/[id]/page.tsx`
+- SELECT ahora incluye `creadoPorNombre`, `formaPago`, `tiempoEntrega`, `lugarEntrega`
+- Seed actualizado con esos campos para que el detalle muestre datos reales
+
+**Search funcional (commit `8b40cba`):**
+
+- `InventarioList.tsx` — añadido `useState` + filtro por código/nombre; quitado `readOnly`
+- `OrdenesList.tsx` — añadido `'use client'` + `useState` + filtro por número/proveedor
 
 ---
 
