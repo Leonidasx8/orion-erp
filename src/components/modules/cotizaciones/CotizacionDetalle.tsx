@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { Bell, Clock, Inbox, Pencil, Receipt } from 'lucide-react';
+import { Bell, Clock, Pencil } from 'lucide-react';
 import { Money } from '@/components/shared/Money';
 import { EstadoBadge, type Estado } from '@/components/shared/EstadoBadge';
 import { CotizacionActions } from './CotizacionActions';
+import { CotizacionConversionSidebar } from './CotizacionConversionSidebar';
 import { cn } from '@/lib/utils';
 
 export type CotizacionDetalleItem = {
@@ -221,20 +222,11 @@ export function CotizacionDetalle({
             <CardHead>
               <CardTitle>Conversiones disponibles</CardTitle>
             </CardHead>
-            <div className="flex flex-col gap-2 p-4">
-              <ConversionItem
-                icon={<Receipt size={16} />}
-                titulo="Convertir a factura"
-                disponible={conversionesDisponibles}
-                hint={conversionesDisponibles ? undefined : 'Disponible cuando esté aceptada'}
-              />
-              <ConversionItem
-                icon={<Inbox size={16} />}
-                titulo="Convertir a orden de compra"
-                disponible={conversionesDisponibles}
-                hint={conversionesDisponibles ? undefined : 'Disponible cuando esté aceptada'}
-              />
-            </div>
+            <CotizacionConversionSidebar
+              cotizacionId={data.id}
+              tenantSlug={tenantSlug}
+              disponible={conversionesDisponibles}
+            />
           </Card>
         </div>
       </div>
@@ -299,34 +291,6 @@ function TerminoField({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-[11px] text-orion-fg-muted">{label}</div>
       <div className="text-orion-fg">{value}</div>
-    </div>
-  );
-}
-function ConversionItem({
-  icon,
-  titulo,
-  disponible,
-  hint,
-}: {
-  icon: React.ReactNode;
-  titulo: string;
-  disponible: boolean;
-  hint?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        'flex items-center gap-2 rounded-md border border-orion-border p-2.5',
-        disponible
-          ? 'cursor-pointer hover:border-tenant-accent hover:bg-tenant-accent-soft'
-          : 'opacity-50'
-      )}
-    >
-      <span className="text-orion-fg-muted">{icon}</span>
-      <div className="min-w-0 flex-1">
-        <div className="text-[12.5px] font-medium text-orion-fg">{titulo}</div>
-        {hint && <div className="text-[11px] text-orion-fg-muted">{hint}</div>}
-      </div>
     </div>
   );
 }

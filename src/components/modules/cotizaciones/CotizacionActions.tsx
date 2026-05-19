@@ -165,7 +165,7 @@ export function CotizacionActions({ cotizacionId, estado, tenantSlug, permission
           )}
         >
           <ShoppingCart size={13} />
-          {pending ? 'Generando…' : 'Generar OC'}
+          {pending ? 'Generando…' : 'Generar compra'}
         </button>
       )}
 
