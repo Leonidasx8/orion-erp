@@ -2,9 +2,38 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-18 GMT-5 (madrugada)
+**Última actualización:** 2026-05-19 GMT-5 (madrugada)
 **Branch activa:** `feat/B-09-sunat-nubefact`
-**Estado verificado:** TypeCheck limpio. Commit `8b40cba` — search funcional en inventario y compras.
+**Estado verificado:** TypeCheck limpio. Commit `c9648f5` — clienteId filter en cotizaciones.
+
+---
+
+### Sesión 2026-05-19 — Demo prep: role filters + aceptada sweep + clienteId filter
+
+**Fix: role filters en formularios de crear (commit `e0915a4`):**
+
+- `cotizaciones/nueva` y `cotizaciones/[id]/editar` → `esCliente=true` en query de clientes
+- `ordenes/nueva` → `esProveedor=true` en query de proveedores
+- Sin este fix, CELSA aparecía en el dropdown de "Cliente" de una cotización
+
+**Fix: aceptada sweep completo (commit `4438e9d`):**
+
+- `CotizacionDetalle.tsx` — `conversionesDisponibles = data.estado === 'aceptada'` (antes `'aprobada'`, OC card nunca se habilitaba)
+- `cotizaciones/[id]/page.tsx` — `vencimientoTag` guard correcto
+- `server/actions/facturas.ts` — permitir facturar cotizaciones `aceptada`
+
+**Fix: comprador en OrdenDetalle (commit `375c0c4`):**
+
+- `ordenes/[id]/page.tsx` — selecciona `compradorNombre`; ya no muestra `'—'` hardcoded
+
+**Fix: clienteId filter en cotizaciones (commit `c9648f5`):**
+
+- `cotizaciones/page.tsx` — acepta `?clienteId=` param; filtra filas y counts
+- Botón "Ver cotizaciones" en ClienteDetail ahora muestra solo las de ese cliente
+
+**Seed mejorado:**
+
+- `compradorNombre: USER_NAME` añadido a ordenes de compra (commit `3414e0d`)
 
 ---
 
