@@ -877,6 +877,7 @@ async function seedOrdenes(tenantId: string, prods: ProductoRow[], cls: ClienteR
         subtotal: String(round2(subtotal)),
         igv: String(round2(igv)),
         total: String(round2(subtotal + igv)),
+        compradorNombre: USER_NAME,
         terminosPago: '50% adelanto · 50% contra entrega',
         direccionEntrega: 'Almacén Lurín — Av. Industrial 1024',
         observaciones: 'Coordinar con almacén con 24h de anticipación.',
