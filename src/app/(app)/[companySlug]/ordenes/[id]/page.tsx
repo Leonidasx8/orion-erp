@@ -28,6 +28,7 @@ export default async function OrdenDetallePage({ params }: { params: Promise<{ i
       terminosPago: ordenesCompra.terminosPago,
       direccionEntrega: ordenesCompra.direccionEntrega,
       observaciones: ordenesCompra.observaciones,
+      compradorNombre: ordenesCompra.compradorNombre,
       proveedorRazon: clientes.razonSocial,
       proveedorNombres: clientes.nombres,
       proveedorApellido: clientes.apellidoPaterno,
@@ -63,7 +64,7 @@ export default async function OrdenDetallePage({ params }: { params: Promise<{ i
     numero: row.numero,
     estado: row.estado as Estado,
     proveedor: proveedorDisplay(row),
-    comprador: '—', // TODO: join con tenant_members
+    comprador: row.compradorNombre ?? '—',
     fechaEmisionDisplay: formatDateLong(row.fechaEmision) ?? '—',
     fechaEntregaDisplay: formatDateLong(row.fechaEntrega),
     moneda: row.moneda,
