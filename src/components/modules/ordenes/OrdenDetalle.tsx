@@ -334,8 +334,19 @@ function RecepcionModal({
           <h2 className="text-[15px] font-semibold text-orion-fg">Registrar recepción</h2>
           <button
             type="button"
+            onClick={() => {
+              const all: Record<string, number> = {};
+              for (const l of lineas) all[l.id] = l.cantidad - l.cantidadRecibida;
+              setRecepciones(all);
+            }}
+            className="ml-auto inline-flex h-7 items-center gap-1.5 rounded-md border border-orion-border px-2.5 text-[12px] font-medium text-orion-fg hover:bg-orion-bg-muted"
+          >
+            Recibir todo
+          </button>
+          <button
+            type="button"
             onClick={onClose}
-            className="ml-auto grid h-7 w-7 place-items-center rounded-md text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
+            className="grid h-7 w-7 place-items-center rounded-md text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
           >
             <X size={14} />
           </button>
