@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   Calendar,
@@ -69,6 +72,16 @@ export function CotizacionesList({
   pageSize = 9,
 }: CotizacionesListProps) {
   const base = `/${tenantSlug}/cotizaciones`;
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+  const visibleRows = q
+    ? rows.filter(
+        (r) =>
+          r.numero.toLowerCase().includes(q) ||
+          r.cliente.toLowerCase().includes(q) ||
+          r.comercial.toLowerCase().includes(q)
+      )
+    : rows;
   const subtitle = `${counts.total} totales · ${counts.borrador + counts.enviada} abiertas · USD ${pipelineUsd.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} en pipeline`;
   const totalAbiertas = counts.borrador + counts.enviada;
   void totalAbiertas;
@@ -134,6 +147,8 @@ export function CotizacionesList({
             type="text"
             placeholder="Buscar número, cliente…"
             className="flex-1 bg-transparent text-[12px] text-orion-fg placeholder:text-orion-fg-faint focus:outline-none"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
         </div>
         <ToolbarBtn icon={<Calendar size={12} />} label="Fecha emisión" />
@@ -161,14 +176,14 @@ export function CotizacionesList({
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
+            {visibleRows.length === 0 ? (
               <tr>
                 <td colSpan={10} className="py-12 text-center text-orion-fg-muted">
-                  Sin cotizaciones que mostrar.
+                  {q ? 'Sin resultados para esa búsqueda.' : 'Sin cotizaciones que mostrar.'}
                 </td>
               </tr>
             ) : (
-              rows.map((r) => (
+              visibleRows.map((r) => (
                 <tr
                   key={r.id}
                   className="border-b border-orion-border last:border-0 hover:bg-orion-bg-subtle"
