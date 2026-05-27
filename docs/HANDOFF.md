@@ -2,13 +2,38 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-18 GMT-5 (tarde — sesión post-compactación, parte 2)
+**Última actualización:** 2026-05-27 GMT-5
 **Branch activa:** `feat/B-09-sunat-nubefact`
-**Estado verificado:** TypeCheck limpio. Commit `0c474c6`.
+**Estado verificado:** TypeCheck limpio. DB reseteada con 36 migrations OK. Seed OK. Dev server OK.
 
 ---
 
-## ⚠️ CHECKLIST PRE-DEMO (miércoles 20-may)
+## ⚠️ CHECKLIST ARRANQUE LOCAL
+
+```bash
+# 1. Docker Desktop corriendo
+
+# 2. Desde /Users/leonidasyauri/dev/orion-erp
+supabase start           # si ves "port already allocated" detener otro proyecto:
+                         # supabase stop --project-id Super_treno
+
+# 3. Si la DB fue reseteada (o es primera vez):
+supabase db reset        # aplica las 36 migrations
+
+# 4. Poblar datos demo
+pnpm tsx --env-file=.env.local scripts/seed-demo.ts
+#   ⚠️ IMPORTANTE: usar --env-file=.env.local (sin este flag, falla ECONNREFUSED
+#      porque los imports ESM se hoistan antes de que el script lea el .env)
+
+# 5. Levantar el servidor
+pnpm dev
+# → http://localhost:3000/idex
+# Login: lucas@orion.demo / orion-demo-2026
+```
+
+---
+
+## ⚠️ CHECKLIST PRE-DEMO (miércoles 20-may — ya pasó)
 
 Ejecutar en orden antes del demo con Lucas:
 
@@ -643,6 +668,17 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
   - `src/components/modules/inventario/AjusteManualForm.tsx`: useForm + ajusteManualSchema, preview reactivo stock antes/después + valor antes/después, alerta roja "acción crítica", audit trail preview en monospace. Usa server action `ajusteManualStock`.
   - Routes: `/inventario`, `/inventario/[productoId]`, `/inventario/[productoId]/ajuste`. Previews en `/preview/inventario/`.
   - 3 screenshots pivote validados vía Playwright.
+
+### 2026-05-27
+
+- **Recuperación de entorno local.** Contenedores Docker de orion-erp habían sido eliminados (solo quedaba Super_treno corriendo). Pasos ejecutados:
+  1. `supabase stop --project-id Super_treno` (liberó puerto 54322)
+  2. `supabase start` (levantó orion-erp fresh)
+  3. `supabase db reset` → aplicó las 36 migrations. Fix previo necesario: `0032_sunat_cron.sql` tenía conflicto de delimitador `$$` — corregido a `$cron_body$` para el body del job cron anidado dentro del DO block. Commit pendiente.
+  4. `pnpm tsx --env-file=.env.local scripts/seed-demo.ts` → seed OK (18 productos, 10 clientes, 9 cotizaciones, 7 OC, 18 kardex).
+  5. TypeCheck limpio. Dev server responde 200 en localhost:3000.
+
+- **⚠️ Decisión de sesión:** Usuario quiere desplegar a producción (Vercel + Supabase cloud + dominio + Resend) tras terminar pendientes del roadmap. Ver "Próximos pasos producción" abajo.
 
 ### 2026-04-29
 

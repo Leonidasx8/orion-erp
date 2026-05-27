@@ -20,7 +20,7 @@ BEGIN
   PERFORM cron.schedule(
     'sunat-worker-even',
     '* * * * *',
-    $$
+    $cron_body$
       SELECT net.http_post(
         url := current_setting('app.settings.sunat_worker_url', true),
         headers := jsonb_build_object(
@@ -29,7 +29,7 @@ BEGIN
         ),
         body := '{}'::jsonb
       );
-    $$
+    $cron_body$
   );
 
   RAISE NOTICE 'Job sunat-worker-even creado. Configurar app.settings.sunat_worker_url y app.settings.sunat_worker_secret en Supabase.';
