@@ -11,10 +11,11 @@ export const metadata = { title: 'Actualizar precios' };
 export default async function ActualizarPreciosPage({
   params,
 }: {
-  params: { companySlug: string };
+  params: Promise<{ companySlug: string }>;
 }) {
+  const { companySlug } = await params;
   const canEdit = await userHasPermission('productos.editar');
-  if (!canEdit) redirect(`/${params.companySlug}/productos`);
+  if (!canEdit) redirect(`/${companySlug}/productos`);
 
   const tenant = await getCurrentTenant();
 
@@ -53,7 +54,7 @@ export default async function ActualizarPreciosPage({
     <div className="space-y-6">
       <div>
         <p className="text-sm text-muted-foreground">
-          <a href={`/${params.companySlug}/productos`} className="hover:underline">
+          <a href={`/${companySlug}/productos`} className="hover:underline">
             Productos
           </a>{' '}
           / Actualizar precios
@@ -68,7 +69,7 @@ export default async function ActualizarPreciosPage({
         productos={rows}
         categorias={categorias}
         proveedores={proveedoresMapped}
-        companySlug={params.companySlug}
+        companySlug={companySlug}
       />
     </div>
   );
