@@ -47,6 +47,7 @@ import {
   lineasOrdenCompra,
   roles,
   rolPermisos,
+  permisosDefinidos,
 } from '../src/lib/db/schema';
 
 // ─── Config ───────────────────────────────────────────────────────────────
@@ -932,11 +933,43 @@ async function seedKardex(
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
+// ─── Permisos módulo crédito ──────────────────────────────────────────────────
+async function seedPermisosCredito() {
+  await db
+    .insert(permisosDefinidos)
+    .values([
+      {
+        codigo: 'credito.ver',
+        modulo: 'credito',
+        accion: 'ver',
+        descripcion: 'Ver cuentas por cobrar',
+        esSensible: false,
+      },
+      {
+        codigo: 'credito.otorgar',
+        modulo: 'credito',
+        accion: 'otorgar',
+        descripcion: 'Otorgar/modificar línea de crédito',
+        esSensible: true,
+      },
+      {
+        codigo: 'credito.registrar_pago',
+        modulo: 'credito',
+        accion: 'registrar_pago',
+        descripcion: 'Registrar pago de cliente',
+        esSensible: false,
+      },
+    ])
+    .onConflictDoNothing();
+  log('Permisos módulo crédito garantizados');
+}
+
 async function main() {
   log('Iniciando seed demo…');
   log(`DATABASE_URL: ${process.env.DATABASE_URL?.replace(/:[^@]+@/, ':***@')}`);
 
   await purgeTenant();
+  await seedPermisosCredito();
   const userId = await upsertUser();
   const tenant = await createTenant(userId);
   const cats = await seedCategorias(tenant.id);
