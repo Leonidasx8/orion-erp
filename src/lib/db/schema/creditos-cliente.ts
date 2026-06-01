@@ -23,6 +23,7 @@ export const creditosCliente = pgTable('creditos_cliente', {
 
   updatedBy: uuid('updated_by'),
   updatedAt: timestamptz('updated_at').notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 export type CreditoCliente = typeof creditosCliente.$inferSelect;
