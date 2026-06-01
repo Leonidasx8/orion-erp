@@ -18,11 +18,18 @@ export type AgingBuckets = {
   bucket90mas: number;
 };
 
+const AGING_COLORS = [
+  '#16a34a', // green-600  — 0-30 días
+  '#ca8a04', // yellow-600 — 31-60 días
+  '#ea580c', // orange-600 — 61-90 días
+  '#dc2626', // red-600    — +90 días
+] as const;
+
 const BUCKETS = [
-  { key: 'bucket0a30', label: '0–30 días', color: '#22c55e' },
-  { key: 'bucket31a60', label: '31–60 días', color: '#eab308' },
-  { key: 'bucket61a90', label: '61–90 días', color: '#f97316' },
-  { key: 'bucket90mas', label: '+90 días', color: '#ef4444' },
+  { key: 'bucket0a30', label: '0–30 días', color: AGING_COLORS[0] },
+  { key: 'bucket31a60', label: '31–60 días', color: AGING_COLORS[1] },
+  { key: 'bucket61a90', label: '61–90 días', color: AGING_COLORS[2] },
+  { key: 'bucket90mas', label: '+90 días', color: AGING_COLORS[3] },
 ] as const;
 
 function formatSoles(value: number): string {

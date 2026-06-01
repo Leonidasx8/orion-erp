@@ -14,7 +14,6 @@ export function BloqueoActions({
   motivoBloqueo,
 }: {
   clienteId: string;
-  companySlug: string;
   bloqueado: boolean;
   motivoBloqueo: string | null;
 }) {

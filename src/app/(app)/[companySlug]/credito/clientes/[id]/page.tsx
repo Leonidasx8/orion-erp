@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { sql, eq, and, desc } from 'drizzle-orm';
+import { sql, eq, and, desc, inArray } from 'drizzle-orm';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { userHasPermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
@@ -124,22 +124,26 @@ export default async function ClienteCxCDetallePage({
     ])
   );
 
-  // Historial de pagos recientes
-  const pagosHistorial = await db
-    .select({
-      id: pagos.id,
-      facturaId: pagos.facturaId,
-      monto: pagos.monto,
-      moneda: pagos.moneda,
-      fechaPago: pagos.fechaPago,
-      metodo: pagos.metodo,
-      referencia: pagos.referencia,
-      createdAt: pagos.createdAt,
-    })
-    .from(pagos)
-    .where(eq(pagos.tenantId, tenant.id))
-    .orderBy(desc(pagos.createdAt))
-    .limit(10);
+  // Historial de pagos recientes — filtrado solo a las facturas de este cliente
+  const facturaIds = facturasRows.map((f) => f.id);
+  const pagosHistorial =
+    facturaIds.length > 0
+      ? await db
+          .select({
+            id: pagos.id,
+            facturaId: pagos.facturaId,
+            monto: pagos.monto,
+            moneda: pagos.moneda,
+            fechaPago: pagos.fechaPago,
+            metodo: pagos.metodo,
+            referencia: pagos.referencia,
+            createdAt: pagos.createdAt,
+          })
+          .from(pagos)
+          .where(and(eq(pagos.tenantId, tenant.id), inArray(pagos.facturaId, facturaIds)))
+          .orderBy(desc(pagos.createdAt))
+          .limit(20)
+      : [];
 
   const nombreCliente =
     cliente.tipoPersona === 'juridica'
@@ -217,7 +221,6 @@ export default async function ClienteCxCDetallePage({
         {canOtorgar && (
           <BloqueoActions
             clienteId={id}
-            companySlug={companySlug}
             bloqueado={bloqueado}
             motivoBloqueo={credito?.motivoBloqueo ?? null}
           />

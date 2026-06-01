@@ -32,13 +32,13 @@ export default async function CreditoPage() {
       bucket_0_30: string;
       bucket_31_60: string;
       bucket_61_90: string;
-      bucket_90_mas: string;
+      bucket_90_plus: string;
     }>(sql`
       SELECT
-        COALESCE(SUM(bucket_0_30), 0)::text   AS bucket_0_30,
-        COALESCE(SUM(bucket_31_60), 0)::text  AS bucket_31_60,
-        COALESCE(SUM(bucket_61_90), 0)::text  AS bucket_61_90,
-        COALESCE(SUM(bucket_90_mas), 0)::text AS bucket_90_mas
+        COALESCE(SUM(bucket_0_30), 0)::text    AS bucket_0_30,
+        COALESCE(SUM(bucket_31_60), 0)::text   AS bucket_31_60,
+        COALESCE(SUM(bucket_61_90), 0)::text   AS bucket_61_90,
+        COALESCE(SUM(bucket_90_plus), 0)::text AS bucket_90_plus
       FROM aging_cxc
       WHERE tenant_id = ${tenant.id}
     `),
@@ -56,13 +56,13 @@ export default async function CreditoPage() {
     }>(sql`
       SELECT
         cxc.cliente_id,
-        cxc.nombre_cliente,
-        COALESCE(cr.linea_credito, 0)::text  AS linea_credito,
+        cxc.razon_social                                          AS nombre_cliente,
+        COALESCE(cr.linea_credito, 0)::text                      AS linea_credito,
         cxc.saldo_total,
         cxc.saldo_vencido,
-        cxc.dias_mas_vencido::text           AS dias_mas_vencido,
-        COALESCE(cr.bloqueado, false)        AS bloqueado,
-        COALESCE(cr.moneda, 'PEN')           AS moneda
+        (CURRENT_DATE - cxc.dia_mas_vencido)::text               AS dias_mas_vencido,
+        COALESCE(cr.bloqueado, false)                            AS bloqueado,
+        COALESCE(cr.moneda, 'PEN')                               AS moneda
       FROM cuentas_por_cobrar cxc
       LEFT JOIN creditos_cliente cr ON cr.cliente_id = cxc.cliente_id
       WHERE cxc.tenant_id = ${tenant.id}
@@ -90,14 +90,14 @@ export default async function CreditoPage() {
     bucket_0_30: '0',
     bucket_31_60: '0',
     bucket_61_90: '0',
-    bucket_90_mas: '0',
+    bucket_90_plus: '0',
   };
 
   const agingBuckets: AgingBuckets = {
     bucket0a30: Number(agingRow.bucket_0_30),
     bucket31a60: Number(agingRow.bucket_31_60),
     bucket61a90: Number(agingRow.bucket_61_90),
-    bucket90mas: Number(agingRow.bucket_90_mas),
+    bucket90mas: Number(agingRow.bucket_90_plus),
   };
 
   const clientesRows: ClienteSaldoRow[] = (
