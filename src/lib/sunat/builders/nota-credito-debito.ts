@@ -28,9 +28,8 @@ function buildItem(l: LineaSunatPayload, idx: number): Record<string, unknown> {
     precio_unitario: l.precioUnitario,
     descuento: l.descuento ?? 0,
     tipo_de_igv: IGV_TIPO_MAP[l.tipoAfectacionIgv] ?? 1,
-    total_base_igv: l.baseImponible,
-    porcentaje_igv: l.porcentajeIgv,
-    total_igv: l.igvLinea,
+    subtotal: l.baseImponible,
+    igv: l.igvLinea,
     total: l.totalLinea,
     orden: idx + 1,
   };
