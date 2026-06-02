@@ -116,7 +116,12 @@ export default async function DashboardPage({
       <PageHead title={`Buen día, ${firstName}`} subtitle={formatSubtitle()} />
 
       {/* Fila 1: 6 KPI cards */}
-      <DashboardKpis metricas={metricas} cxcTotales={cxcTotales} stockCritico={stockCritico} />
+      <DashboardKpis
+        metricas={metricas}
+        cxcTotales={cxcTotales}
+        stockCritico={stockCritico}
+        companySlug={companySlug}
+      />
 
       {/* Fila 2: gráficos de ventas y pipeline */}
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">

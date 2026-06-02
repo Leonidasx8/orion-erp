@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { KpiCard } from '@/components/charts';
 
 export interface MetricasRow extends Record<string, unknown> {
@@ -17,9 +18,15 @@ interface DashboardKpisProps {
   metricas: MetricasRow[];
   cxcTotales: CxCRow | null;
   stockCritico: number;
+  companySlug: string;
 }
 
-export function DashboardKpis({ metricas, cxcTotales, stockCritico }: DashboardKpisProps) {
+export function DashboardKpis({
+  metricas,
+  cxcTotales,
+  stockCritico,
+  companySlug,
+}: DashboardKpisProps) {
   const mesActual = metricas[metricas.length - 1];
   const mesAnterior = metricas[metricas.length - 2];
 
@@ -30,23 +37,59 @@ export function DashboardKpis({ metricas, cxcTotales, stockCritico }: DashboardK
         100
       : 0;
 
+  // Compute date range for current month (YYYY-MM-DD format)
+  const now = new Date();
+  const mesActualStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const finDeMesStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-      <KpiCard
-        label="Ventas del mes"
-        value={Number(mesActual?.ventas_total ?? 0)}
-        delta={deltaVentas}
-        format="currency"
-      />
-      <KpiCard label="Facturas emitidas" value={Number(mesActual?.facturas_emitidas ?? 0)} />
-      <KpiCard label="Clientes únicos" value={Number(mesActual?.clientes_unicos ?? 0)} />
-      <KpiCard
-        label="Ticket promedio"
-        value={Number(mesActual?.ticket_promedio ?? 0)}
-        format="currency"
-      />
-      <KpiCard label="CxC total" value={Number(cxcTotales?.total ?? 0)} format="currency" />
-      <KpiCard label="Stock crítico" value={stockCritico} />
+      <Link
+        href={`/${companySlug}/reportes/ventas?desde=${mesActualStr}&hasta=${finDeMesStr}`}
+        className="block rounded-lg transition-opacity hover:opacity-80"
+      >
+        <KpiCard
+          label="Ventas del mes"
+          value={Number(mesActual?.ventas_total ?? 0)}
+          delta={deltaVentas}
+          format="currency"
+        />
+      </Link>
+      <Link
+        href={`/${companySlug}/facturas`}
+        className="block rounded-lg transition-opacity hover:opacity-80"
+      >
+        <KpiCard label="Facturas emitidas" value={Number(mesActual?.facturas_emitidas ?? 0)} />
+      </Link>
+      <Link
+        href={`/${companySlug}/clientes`}
+        className="block rounded-lg transition-opacity hover:opacity-80"
+      >
+        <KpiCard label="Clientes únicos" value={Number(mesActual?.clientes_unicos ?? 0)} />
+      </Link>
+      <Link
+        href={`/${companySlug}/reportes/ventas`}
+        className="block rounded-lg transition-opacity hover:opacity-80"
+      >
+        <KpiCard
+          label="Ticket promedio"
+          value={Number(mesActual?.ticket_promedio ?? 0)}
+          format="currency"
+        />
+      </Link>
+      <Link
+        href={`/${companySlug}/credito`}
+        className="block rounded-lg transition-opacity hover:opacity-80"
+      >
+        <KpiCard label="CxC total" value={Number(cxcTotales?.total ?? 0)} format="currency" />
+      </Link>
+      <Link
+        href={`/${companySlug}/inventario?filter=critico`}
+        className="block rounded-lg transition-opacity hover:opacity-80"
+      >
+        <KpiCard label="Stock crítico" value={stockCritico} />
+      </Link>
     </div>
   );
 }
