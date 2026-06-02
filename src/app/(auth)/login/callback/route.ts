@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createSSRClient } from '@/lib/supabase/server';
-import { db } from '@/lib/db/client';
-import { platformAdmins, tenantMembers, tenants } from '@/lib/db/schema';
-import { and, eq } from 'drizzle-orm';
+import { createServerAdminClient } from '@/lib/supabase/serverAdminClient';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const supabase = await createSSRClient();
 
-  // Si vino con ?code= (magic link / OAuth) hacemos el exchange.
-  // Si no, asumimos que la sesión ya fue establecida (ej: signInWithPassword).
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
@@ -22,38 +18,39 @@ export async function GET(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Si ya tenía una empresa seleccionada, ir directo
   const lastSlug = user?.user_metadata?.current_tenant_slug as string | undefined;
   if (lastSlug) {
     return NextResponse.redirect(new URL(`/${lastSlug}`, url.origin));
   }
 
   if (user) {
-    // Verificar si tiene membresías en tenants activos
-    const membership = await db
-      .select({ slug: tenants.slug })
-      .from(tenantMembers)
-      .innerJoin(tenants, eq(tenants.id, tenantMembers.tenantId))
-      .where(
-        and(
-          eq(tenantMembers.userId, user.id),
-          eq(tenantMembers.estado, 'activo'),
-          eq(tenants.estado, 'activo')
-        )
-      )
+    // Usar supabase-js (REST/HTTPS) en lugar de Drizzle para evitar
+    // la limitación de conexión directa postgres en free tier.
+    const admin = await createServerAdminClient();
+
+    const { data: membership } = await admin
+      .from('tenant_members')
+      .select('tenant_id, tenants!inner(slug, estado)')
+      .eq('user_id', user.id)
+      .eq('estado', 'activo')
       .limit(1);
 
-    if (membership.length > 0) {
-      // Tiene tenants → picker o auto-redirect
+    const activeMembership = membership?.find(
+      (m: { tenants: { estado: string } | null }) => m.tenants?.estado === 'activo'
+    );
+
+    if (activeMembership) {
       return NextResponse.redirect(new URL('/seleccionar-empresa', url.origin));
     }
 
-    // Sin tenants: platform admin puro → panel admin
-    const [pa] = await db
-      .select()
-      .from(platformAdmins)
-      .where(and(eq(platformAdmins.userId, user.id), eq(platformAdmins.activo, true)))
-      .limit(1);
+    const { data: pa } = await admin
+      .from('platform_admins')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('activo', true)
+      .limit(1)
+      .single();
+
     if (pa) {
       return NextResponse.redirect(new URL('/admin', url.origin));
     }
