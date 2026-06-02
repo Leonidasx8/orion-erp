@@ -2,36 +2,46 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-02 04:30 GMT-5
+**Última actualización:** 2026-06-02 madrugada GMT-5
 **Branch activa:** `main` (producción desplegada en orion-rp.com)
-**Estado verificado:** Login Playwright ✅. Build Vercel OK. DB conecta. `/api/test-db` → `{"ok":true}`.
+**Estado verificado:** Login + QA comprehensivo Playwright ✅. Pipeline facturación end-to-end ✅. `/api/test-db` → `{"ok":true}`.
+**Último commit prod:** `e57327a` — fix EstadoBadge estados SUNAT.
 
 ---
 
-## ✅ ESTADO PRODUCCIÓN — 2026-06-02 (sesión noche)
+## ✅ ESTADO PRODUCCIÓN — 2026-06-02 (sesión noche/madrugada)
 
-### ✅ Login + todas las páginas verificadas (Playwright)
+### ✅ QA comprehensivo vía UI (Playwright contra orion-rp.com)
 
-Test `scripts/test-prod-login.ts` contra orion-rp.com — **PASS sin errores de consola**:
+Dos scripts de test (en `scripts/`, ya commiteados):
 
-- Login `lescriva@grupoidex.com.pe` / `Idex2026!` → redirige a `/idex` ✅
-- Dashboard, Clientes, Productos, Cotizaciones, Compras, Inventario — todos 200 ✅
+- `test-prod-login.ts` — smoke test login + navegación básica.
+- `test-full-ui.ts` — **suite comprehensivo**: todos los módulos, todos los botones, pipelines completos y 3 roles (superadmin/vendedor/contador). Última corrida: **75/81 PASS**, 5 SKIP esperados, 1 "FAIL" = no-bug (admin panel no accesible porque no hay platform_admin en prod, comportamiento correcto).
 
-### ✅ Test Playwright comprehensivo — 75/81 PASS
+Cubre: Dashboard · Clientes (CRUD + modal contacto) · Productos (CRUD + tab precios + precios masivo) · Cotizaciones (pipeline: crear→enviar→aceptar→generar OC→**convertir a factura**→duplicar) · Compras (crear→enviar→aprobar→recepción modal) · Inventario (lista + kardex + ajuste manual) · Facturas · Crédito · Reportes · permisos por rol.
 
-`pnpm tsx scripts/test-full-ui.ts` — cubre todos los módulos y pipelines vía UI real en orion-rp.com.
+### ✅ 7 bugs encontrados y resueltos (todos desplegados a prod)
 
-**Resumen:** Dashboard, Clientes (CRUD+contacto), Productos (CRUD+precios masivo), Cotizaciones (pipeline completo: crear→enviar→aceptar→OC→factura→duplicar), Compras (crear→enviar→aprobar→recibir), Inventario (lista+kardex+ajuste manual), Facturas, Crédito, Reportes, Roles (vendedor+contador). 5 SKIPs esperados (admin panel, facturas vacías, CxC vacío).
+| #   | Bug                                                                                                                                                   | Archivo                                    | Fix                                                                                      | Commit    |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------- | --------- |
+| 1   | `reportes/ventas` sin guard de permisos — cualquier user autenticado entraba                                                                          | `reportes/layout.tsx` (nuevo)              | `requirePermission('reportes.ver')` en layout de toda la sección                         | `5da85d7` |
+| 2   | Botones submit al final de forms largos, **bloqueados por la cookie-consent banner** (fixed bottom z-50) — usuarios no podían crear productos/órdenes | `ProductoForm.tsx`, `OrdenForm.tsx`        | Botones Crear/Cancelar movidos al TOP del form                                           | `5da85d7` |
+| 3   | `tipoCambio` en Orden con moneda PEN: `z.coerce.number().positive()` convierte `""`→`0` y falla                                                       | `schemas/orden-compra.ts`                  | `z.preprocess(v => v===''\|\|v==null?undefined:v, ...)` (mismo patrón que cotizacion.ts) | `97e9a5f` |
+| 4   | `convertirCotizacionAFactura` fallaba: `codigo` requerido en líneas manuales (sin SKU)                                                                | `schemas/factura.ts`                       | `codigo: z.string().default('')`                                                         | `c86c845` |
+| 5   | INSERT de factura fallaba: `numero_completo` es **GENERATED column** en DB pero el action la insertaba                                                | `server/actions/facturas.ts`               | Quitar `numeroCompleto` del `.values()`                                                  | `c86c845` |
+| 6   | Estado `'convertida'` no estaba en el CHECK constraint de `cotizaciones` → falla el UPDATE post-factura                                               | migration `0016` + DB prod                 | `ALTER TABLE … CHECK (… ,'convertida')` aplicado en prod + migration actualizada         | `89d14c5` |
+| 7   | `FacturaDetalle` crasheaba ("Cannot read … 'className'"): `EstadoBadge` no tenía `lista_para_emitir`/`emitida`/`sin_enviar`                           | `EstadoBadge.tsx`, `CotizacionDetalle.tsx` | Agregados los 3 estados SUNAT al CFG y al map de labels                                  | `e57327a` |
 
-### ✅ Bugs encontrados y resueltos en esta sesión
+**Pipeline de facturación verificado end-to-end:** cotización aceptada → "Convertir a factura" → factura `F001-0000000X` creada con estado `Lista para emitir` / SUNAT `Pendiente`, encolada en pgmq. Falta solo el envío real a NUBEFACT (gate de credenciales sandbox, ver más abajo).
 
-| Bug                                                                                                  | Archivo                             | Fix                                                                |
-| ---------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------ | --- | ---------------------------------------------------------------------- |
-| `reportes/ventas` sin guard de permisos (accesible a cualquier usuario autenticado)                  | `reportes/layout.tsx` (nuevo)       | `requirePermission('reportes.ver')` en layout para toda la sección |
-| Botones submit al FINAL de forms largos — bloqueados por cookie consent banner (z-50 fixed bottom)   | `ProductoForm.tsx`, `OrdenForm.tsx` | Mover botones Crear/Cancelar al TOP del formulario                 |
-| `tipoCambio` en OrdenForm falla con moneda PEN (`z.coerce.number().positive()` convierte `""` → `0`) | `schemas/orden-compra.ts`           | `z.preprocess(v => v===''                                          |     | v==null?undefined:v, ...)`— mismo fix que ya existía en`cotizacion.ts` |
+### ⚙️ Configuración de datos aplicada en prod (Supabase, tenant idex)
 
-**Commit prod:** `97e9a5f` — todos los fixes desplegados en orion-rp.com.
+- **`series_documentos`** estaba **vacía** (el tenant se creó por seed, sin pasar por el wizard que las siembra). Insertadas manualmente: `01/F001`, `03/B001`, `09/T001` (todas `activa=true`, correlativo 0). **Sin esto, ninguna factura/boleta se puede emitir.** ⚠️ Cualquier tenant nuevo creado por seed necesita lo mismo.
+- No hay UI para añadir series post-creación (solo se configuran en el wizard `admin/tenants/nuevo`). Mejora futura: pantalla de configuración de series en el panel de tenant.
+
+### 📌 Datos de prueba en prod tras el QA
+
+El test crea registros en cada corrida (cliente/producto/cotización/orden por run). Estado actual aprox: ~20 clientes, ~25 productos, ~23 cotizaciones (varios estados, incluida `convertida`), ~16 órdenes, **3 facturas** `F001-6/7/8`. **Considerar limpiar datos de test antes del demo del 4-jun** si se quiere una vista limpia (o dejarlos — son realistas).
 
 ### ✅ Responsive + branding commiteado y desplegado
 
@@ -80,8 +90,26 @@ Commit `c7e7201` — "feat(ui): responsive layout + violet brand color para demo
 
 - **Supabase DB password actual:** `Holiboli2026123456789`
 - **Supabase proyecto:** `aycraotcdbunybfjzlmq` (sa-east-1), org `orionrp-hub`
-- **Último commit prod:** `c7e7201` — "feat(ui): responsive layout + violet brand color para demo 4-jun"
+- **Último commit prod:** `e57327a` — "fix EstadoBadge estados SUNAT"
 - **DB bloqueador:** RESUELTO — pooler `aws-1-sa-east-1.pooler.supabase.com:6543`, `prepare: false`
+- **Remote git de prod:** `orionrp` (NO `origin`). `git push orionrp main`. Deploy: `vercel --prod`.
+
+---
+
+## 🔜 PRÓXIMOS PASOS (siguiente sesión / Sonnet en otra terminal)
+
+> Contexto: la sesión que generó esto corrió con Opus para el debugging cross-sistema de facturación. Lo que queda es mayormente verificación y pulido — **se puede continuar con Sonnet**.
+
+1. **Re-correr el QA completo y confirmar 76/81+:** `cd /Users/leonidasyauri/dev/orion-erp && pnpm tsx scripts/test-full-ui.ts`. Con el fix #7 desplegado, "Facturas: detalle" ya no debería ser SKIP. El único FAIL esperado sigue siendo "Admin panel" (no-bug).
+2. **Decidir limpieza de datos de test** antes del demo 4-jun (ver nota arriba). Si se limpia, hacerlo por UI o pedir confirmación antes de tocar la DB directamente — **el usuario pidió explícitamente NO ejecutar mutaciones directas en la DB; todo por la interfaz.**
+3. **Probar `vendedor@idex.demo` y `contador@idex.demo`** con login real (nunca han iniciado sesión). El QA ya confirmó que sus permisos de ruta funcionan, pero falta validar el primer login (set de contraseña / magic link).
+4. **Anular factura** (`anularFactura` vía NC) no se probó en el QA — no había facturas antes. Ahora hay 3. Probar el botón "Anular" en `FacturaDetalle`.
+5. **Envío real a NUBEFACT** sigue gateado por credenciales sandbox (ver B.8/B.9 abajo). Las facturas quedan en `pendiente`/`lista_para_emitir` y encoladas en pgmq; el worker no las procesa sin credenciales.
+
+### ⚠️ Reglas de trabajo recordadas esta sesión
+
+- **Solo UI, no DB directa:** el usuario pidió probar funcionalidades y pipelines vía los botones de la interfaz, no ejecutando SQL. La única excepción necesaria fue configurar `series_documentos` (no hay UI para ello).
+- **Avisar antes de Opus:** Sonnet por default. El debugging de facturación cross-sistema justificó Opus; el pulido restante no.
 
 ---
 
