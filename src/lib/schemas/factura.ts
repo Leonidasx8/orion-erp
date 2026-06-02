@@ -5,7 +5,7 @@ const IGV_RATE = 0.18;
 export const lineaFacturaSchema = z.object({
   productoId: z.string().uuid().optional(),
   descripcion: z.string().min(1, 'Descripción requerida'),
-  codigo: z.string().min(1, 'SKU requerido'),
+  codigo: z.string().default(''),
   unidadMedida: z.string().default('NIU'),
   cantidad: z.number().positive('Cantidad debe ser positiva'),
   // precio que ve el cliente (con IGV para gravado, sin IGV para exonerado/inafecto)
