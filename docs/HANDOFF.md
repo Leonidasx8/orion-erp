@@ -2,9 +2,47 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-05-27 GMT-5
-**Branch activa:** `feat/B-09-sunat-nubefact`
-**Estado verificado:** TypeCheck limpio. DB reseteada con 36 migrations OK. Seed OK. Dev server OK.
+**Última actualización:** 2026-06-02 GMT-5
+**Branch activa:** `main` (producción desplegada en orion-rp.com)
+**Estado verificado:** Build Vercel OK. DB Drizzle conecta en producción. `/api/test-db` → `{"ok":true}`.
+
+---
+
+## 🚨 ESTADO PRODUCCIÓN — 2026-06-02
+
+### ✅ Bloqueador DB RESUELTO
+
+La conexión Drizzle→Supabase en Vercel **ya funciona**. Fix aplicado:
+
+- **Pooler correcto:** `aws-1-sa-east-1.pooler.supabase.com:6543` (antes se usaba `aws-0`, que no reconocía el proyecto)
+- **DATABASE_URL en Vercel prod:**
+  ```
+  postgresql://postgres.aycraotcdbunybfjzlmq:Holiboli2026123456789@aws-1-sa-east-1.pooler.supabase.com:6543/postgres
+  ```
+- `prepare: false` activo en `src/lib/db/client.ts`
+- `/api/auth/callback` sigue usando supabase-js REST (parche previo, no tocar)
+- Test: `curl https://orion-rp.com/api/test-db` → `{"ok":true,"result":[{"slug":"idex"}]}`
+
+### ⚠️ Pendiente verificar antes del demo (miércoles 4-jun)
+
+1. **Login completo con Playwright:** el test en orion-rp.com fue interrumpido. Verificar:
+   - Login con `lescriva@grupoidex.com.pe` / `Idex2026!`
+   - Que llega a `/idex` dashboard sin "Application error"
+   - Navegar: Clientes, Productos, Cotizaciones, Órdenes, Inventario
+2. **Cambios localizacion sin commit:** hay ~25 archivos modificados en `main` (branding peruano) que NO están en producción. Decidir si commitear antes del demo.
+
+### Credenciales producción (orion-rp.com)
+
+| Rol                | Email                       | Password          |
+| ------------------ | --------------------------- | ----------------- |
+| Superadmin (Lucas) | `lescriva@grupoidex.com.pe` | `Idex2026!`       |
+| Vendedor           | `vendedor@idex.demo`        | `Idex2026!`       |
+| Contador           | `contador@idex.demo`        | `Idex2026!`       |
+| Demo admin         | `lucas@orion.demo`          | `orion-demo-2026` |
+
+- **Supabase DB password actual:** `Holiboli2026123456789`
+- **Supabase proyecto:** `aycraotcdbunybfjzlmq` (sa-east-1), org `orionrp-hub`
+- **Último commit prod:** `e28c3f1` — "docs(adr): handoff sesión 2026-06-02"
 
 ---
 
