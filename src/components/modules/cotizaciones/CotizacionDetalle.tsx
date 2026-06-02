@@ -343,6 +343,9 @@ function labelLowercase(estado: Estado): string {
     cerrada: 'cerrada',
     anulada: 'anulada',
     convertida: 'convertida',
+    lista_para_emitir: 'lista para emitir',
+    emitida: 'emitida',
+    sin_enviar: 'sin enviar',
   };
   return map[estado];
 }
