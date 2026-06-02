@@ -7,6 +7,8 @@ const PUBLIC_PATHS = [
   '/login/recuperar',
   '/login/aceptar-invitacion',
   '/api/test-db',
+  '/api/sunat/procesar-cola', // worker server-to-server, auth propia via SUNAT_WORKER_SECRET
+  '/api/webhooks/nubefact', // webhook Nubefact, auth propia via NUBEFACT_WEBHOOK_SECRET
 ];
 
 // Rutas de preview del design system. La página adentro hace su propio gate
