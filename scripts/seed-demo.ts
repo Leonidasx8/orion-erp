@@ -932,6 +932,30 @@ async function seedKardex(
   log(`${created} movimientos kardex iniciales creados`);
 }
 
+// ─── Permisos módulo reportes ─────────────────────────────────────────────────
+async function seedPermisosReportes() {
+  await db
+    .insert(permisosDefinidos)
+    .values([
+      {
+        codigo: 'reportes.ver',
+        modulo: 'reportes',
+        accion: 'ver',
+        descripcion: 'Ver dashboard y reportes',
+        esSensible: false,
+      },
+      {
+        codigo: 'reportes.exportar',
+        modulo: 'reportes',
+        accion: 'exportar',
+        descripcion: 'Exportar reportes a Excel',
+        esSensible: false,
+      },
+    ])
+    .onConflictDoNothing();
+  log('Permisos módulo reportes garantizados');
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────
 // ─── Permisos módulo crédito ──────────────────────────────────────────────────
 async function seedPermisosCredito() {
@@ -969,6 +993,7 @@ async function main() {
   log(`DATABASE_URL: ${process.env.DATABASE_URL?.replace(/:[^@]+@/, ':***@')}`);
 
   await purgeTenant();
+  await seedPermisosReportes();
   await seedPermisosCredito();
   const userId = await upsertUser();
   const tenant = await createTenant(userId);
