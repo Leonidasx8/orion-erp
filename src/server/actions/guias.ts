@@ -5,8 +5,9 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { guiasRemision, clientes, tenants, seriesDocumentos } from '@/lib/db/schema';
+import { guiasRemision, lineasGuia, clientes, tenants, seriesDocumentos } from '@/lib/db/schema';
 import { reservarCorrelativo } from '@/lib/sunat/reservar-correlativo';
+import { encolarEnvioSunat } from '@/lib/sunat/queue';
 
 type AR<T = undefined> = { success: true; data: T } | { success: false; error: string };
 
@@ -99,6 +100,28 @@ export async function crearGuia(
         creadoPor: user.id,
       })
       .returning({ id: guiasRemision.id });
+
+    // Insertar líneas de mercadería
+    if (d.items.length > 0) {
+      await db.insert(lineasGuia).values(
+        d.items.map((it, i) => ({
+          guiaId: nuevaGuia.id,
+          tenantId: tenant.id,
+          skuSnapshot: '',
+          descripcion: it.descripcion,
+          cantidad: String(it.cantidad),
+          unidadMedida: it.unidadMedida,
+          orden: i,
+        }))
+      );
+    }
+
+    // Encolar en sunat_outbox para emisión automática a Nubefact
+    await encolarEnvioSunat({
+      tenantId: tenant.id,
+      documentoTipo: 'guia_remision',
+      documentoId: nuevaGuia.id,
+    });
 
     revalidatePath(`/${tenant.slug}/guias`);
     return { success: true, data: { guiaId: nuevaGuia.id, numero: numeroStr } };

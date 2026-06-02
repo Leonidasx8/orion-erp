@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ModuleHelp } from '@/components/shared/ModuleHelp';
 import Link from 'next/link';
 import {
   ChevronLeft,
@@ -85,9 +86,21 @@ export function OrdenesList({
     <div className="flex flex-col gap-4">
       <div className="flex items-end gap-4">
         <div>
-          <h1 className="m-0 text-[22px] font-semibold tracking-tight text-orion-fg">
-            Compras a Proveedores
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="m-0 text-[22px] font-semibold tracking-tight text-orion-fg">
+              Compras a Proveedores
+            </h1>
+            <ModuleHelp
+              module="ordenes"
+              title="Compras a Proveedores"
+              description="Gestiona las órdenes de compra al proveedor. Al recepcionar, el inventario se actualiza automáticamente con el costo real."
+              tips={[
+                'Flujo: Borrador → Enviada → Aprobada → Recibida',
+                'Recepciona en partes: registra lo que llegó aunque no sea el total',
+                'El costo promedio ponderado del inventario se recalcula con cada recepción',
+              ]}
+            />
+          </div>
           <p className="mt-1 text-[12px] text-orion-fg-muted">
             {counts.total} compras · pendiente por recibir{' '}
             <Money value={pendienteUsd} ccy="USD" dp={0} />

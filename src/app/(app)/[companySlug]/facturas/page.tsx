@@ -3,6 +3,7 @@ import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { db } from '@/lib/db/client';
 import { facturas } from '@/lib/db/schema';
 import { FacturasList, type FacturaRow } from '@/components/modules/facturas/FacturasList';
+import { ModuleHelp } from '@/components/shared/ModuleHelp';
 
 export const metadata = { title: 'Facturas' };
 
@@ -86,7 +87,19 @@ export default async function FacturasPage({
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-orion-fg">Facturas y Boletas</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-semibold text-orion-fg">Facturas y Boletas</h1>
+          <ModuleHelp
+            module="facturas"
+            title="Facturas y Boletas"
+            description="Emite facturas y boletas electrónicas a SUNAT vía Nubefact. Se generan desde cotizaciones aceptadas o directamente desde aquí."
+            tips={[
+              'Las facturas se envían automáticamente a Nubefact cada 60 segundos',
+              'Estado SUNAT: Pendiente → Aceptada (con PDF/CDR) o Rechazada (ver motivo)',
+              'Para anular: usa "Generar Nota de Crédito" desde el detalle',
+            ]}
+          />
+        </div>
       </div>
       <FacturasList
         rows={rows}

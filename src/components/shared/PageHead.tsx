@@ -4,15 +4,20 @@ export function PageHead({
   title,
   subtitle,
   actions,
+  help,
 }: {
   title: string;
   subtitle?: string;
   actions?: React.ReactNode;
+  help?: React.ReactNode;
 }) {
   return (
     <div className="mb-5 flex items-start gap-4">
       <div className="min-w-0 flex-1">
-        <h1 className="m-0 text-[22px] font-semibold tracking-tight text-orion-fg">{title}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="m-0 text-[22px] font-semibold tracking-tight text-orion-fg">{title}</h1>
+          {help}
+        </div>
         {subtitle && <p className="mt-1 text-[13px] text-orion-fg-muted">{subtitle}</p>}
       </div>
       {actions && <div className="ml-auto flex shrink-0 gap-2">{actions}</div>}

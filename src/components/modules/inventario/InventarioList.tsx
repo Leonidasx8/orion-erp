@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, ArrowUpRight, Package, Search, SlidersHorizontal } from 'lucide-react';
 import { Money } from '@/components/shared/Money';
+import { ModuleHelp } from '@/components/shared/ModuleHelp';
 import { cn } from '@/lib/utils';
 
 export type StockRow = {
@@ -67,7 +68,19 @@ export function InventarioList({
       {/* Header */}
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
-          <h1 className="text-[22px] font-semibold tracking-tight text-orion-fg">Inventario</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[22px] font-semibold tracking-tight text-orion-fg">Inventario</h1>
+            <ModuleHelp
+              module="inventario"
+              title="Inventario"
+              description="Control de stock con kardex completo. Cada entrada y salida queda registrada con su costo, fecha y documento de origen."
+              tips={[
+                'El costo promedio ponderado se recalcula automáticamente en cada entrada',
+                'Usa "Ajuste manual" para corregir diferencias físicas con motivo obligatorio',
+                'El kardex de cada producto muestra el historial completo de movimientos',
+              ]}
+            />
+          </div>
           <p className="mt-0.5 text-[13px] text-orion-fg-muted">
             {counts.total} producto{counts.total !== 1 ? 's' : ''} en stock ·{' '}
             <span className="tabular-nums">

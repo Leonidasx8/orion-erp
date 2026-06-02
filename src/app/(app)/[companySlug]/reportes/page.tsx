@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHead } from '@/components/shared/PageHead';
+import { ModuleHelp } from '@/components/shared/ModuleHelp';
 
 export const metadata = { title: 'Reportes' };
 
@@ -13,7 +14,22 @@ export default async function ReportesPage({
 
   return (
     <div className="space-y-4">
-      <PageHead title="Reportes" subtitle="Selecciona el reporte que deseas consultar." />
+      <PageHead
+        title="Reportes"
+        subtitle="Selecciona el reporte que deseas consultar."
+        help={
+          <ModuleHelp
+            module="reportes"
+            title="Reportes"
+            description="Análisis del negocio: ventas por período, seguimiento de cotizaciones por comercial y auditoría de cambios de precios."
+            tips={[
+              'Cotizaciones por comercial: tasa de conversión y pipeline en tiempo real',
+              'Historial de precios: quién cambió qué precio, cuándo y por qué',
+              'Ventas: agrupa por mes, cliente, producto o comercial',
+            ]}
+          />
+        }
+      />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Link href={`/${companySlug}/reportes/ventas`}>
           <Card className="cursor-pointer transition-colors hover:bg-accent">

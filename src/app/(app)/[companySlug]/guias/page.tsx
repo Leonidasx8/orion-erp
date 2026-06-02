@@ -6,6 +6,7 @@ import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { guiasRemision, clientes } from '@/lib/db/schema';
 import { PageHead } from '@/components/shared/PageHead';
+import { ModuleHelp } from '@/components/shared/ModuleHelp';
 import { GuiaActions } from '@/components/modules/guias/GuiaActions';
 
 export const metadata = { title: 'Guías de remisión' };
@@ -76,6 +77,18 @@ export default async function GuiasPage({ params }: { params: Promise<{ companyS
             rows.length === 0
               ? 'Sin guías — crea la primera'
               : `${rows.length} total · ${pendientes} pendientes · ${enCamino} en camino`
+          }
+          help={
+            <ModuleHelp
+              module="guias"
+              title="Guías de Remisión"
+              description="Registra el despacho de mercadería al cliente. Incluye seguimiento interno (Pendiente / En camino / Entregado) y el documento electrónico T001 para SUNAT."
+              tips={[
+                'Crea la guía → haz clic "Despachar" cuando sale el camión → "Entregado" al confirmar',
+                'El documento T001 se envía automáticamente a Nubefact al crear la guía',
+                'El estado SUNAT (columna derecha) confirma si fue aceptado por SUNAT',
+              ]}
+            />
           }
         />
         <Link

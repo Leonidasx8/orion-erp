@@ -4,6 +4,7 @@ import { db } from '@/lib/db/client';
 import { DashboardCxC, type DashboardCxCData } from '@/components/modules/credito/DashboardCxC';
 import { AgingChart, type AgingBuckets } from '@/components/modules/credito/AgingChart';
 import { ClientesSaldos, type ClienteSaldoRow } from '@/components/modules/credito/ClientesSaldos';
+import { ModuleHelp } from '@/components/shared/ModuleHelp';
 
 export const metadata = { title: 'Crédito y CxC' };
 
@@ -127,7 +128,19 @@ export default async function CreditoPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-orion-fg">Crédito y Cuentas por Cobrar</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-semibold text-orion-fg">Crédito y Cuentas por Cobrar</h1>
+            <ModuleHelp
+              module="credito"
+              title="Crédito y CxC"
+              description="Administra las cuentas por cobrar. Otorga líneas de crédito a clientes y registra sus pagos para controlar el saldo pendiente."
+              tips={[
+                'Otorga línea de crédito al cliente antes de registrar pagos',
+                'Los pagos parciales reducen el saldo — registra cada cobro',
+                'El aging muestra cuántos días llevan pendientes las facturas',
+              ]}
+            />
+          </div>
           <p className="mt-0.5 text-sm text-orion-fg-muted">Saldos pendientes y aging de cartera</p>
         </div>
       </div>

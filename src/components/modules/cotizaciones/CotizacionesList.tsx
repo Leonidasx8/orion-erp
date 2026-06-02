@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Money } from '@/components/shared/Money';
 import { PageHead } from '@/components/shared/PageHead';
+import { ModuleHelp } from '@/components/shared/ModuleHelp';
 import { EstadoBadge, type Estado } from '@/components/shared/EstadoBadge';
 import { cn } from '@/lib/utils';
 
@@ -91,6 +92,18 @@ export function CotizacionesList({
       <PageHead
         title="Cotizaciones"
         subtitle={subtitle}
+        help={
+          <ModuleHelp
+            module="cotizaciones"
+            title="Cotizaciones"
+            description="Crea y envía presupuestos al cliente. Una vez aceptadas, se convierten en compra al proveedor o factura electrónica."
+            tips={[
+              'Flujo: Borrador → Enviada → Aceptada → Convertida (factura o compra)',
+              'Desde "Aceptada" genera la OC al proveedor con un clic',
+              'El PDF se descarga desde el detalle de la cotización',
+            ]}
+          />
+        }
         actions={
           <>
             <button
