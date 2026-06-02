@@ -47,10 +47,10 @@
 
 > Estas decisiones cambian qué se prueba y qué se construye. El worker debe confirmarlas con el usuario (Leonidas) en un solo mensaje al inicio y NO asumir.
 
-- [ ] **D1 — ¿Quién actualiza precios?** Hoy SOLO el Superadmin puede crear/editar productos y actualizar precios (`productos.editar`). El usuario habló de "actualización de precios **por comercial**". Opciones:
-  - **(A, recomendada)** Dar a Comercial los permisos `productos.editar` y `productos.editar_margen` (sigue sin poder crear ni eliminar). Así el comercial actualiza precios y el reporte de "precios por comercial" tiene sentido.
-  - (B) Dejar precios solo como Superadmin; el reporte de precios mostrará al admin como autor.
-  - Si se elige (A): crear migration `00XX_comercial_productos_editar.sql` que inserta en `rol_permisos` los códigos `productos.editar` y `productos.editar_margen` para el rol `Comercial` del tenant, y re-ejecutar `syncTenantToCasbin`. (Ver Tarea 0.1.)
+- [x] **D1 — ¿Quién actualiza precios? → RESUELTO (opción B): solo Lucas/Superadmin.** El comercial NO crea/edita productos ni actualiza precios; eso queda con el Superadmin. Esto YA es el comportamiento actual del sistema, así que **NO se cambian permisos** y **se OMITE la Tarea 0.1**. Consecuencias para el plan:
+  - Tarea 1.2 (productos + actualización de precios masiva) se ejecuta como **Superadmin** (`lescriva@grupoidex.com.pe`), no como comercial.
+  - En Fase 2.1, verificar que el Comercial está **bloqueado** de crear/editar productos y de "Actualizar precios" (comportamiento correcto, no bug).
+  - El Reporte R2 (historial de precios) mostrará como autor a Lucas/admin — sigue siendo útil: el Superadmin audita qué precios cambiaron, cuándo y por qué.
 
 - [ ] **D2 — ¿CxC automático?** Hoy emitir factura con `forma_pago='credito'` NO crea la línea de crédito; hay que ejecutar `otorgarCredito` aparte. ¿Se quiere que al emitir a crédito se cree/actualice automáticamente la CxC del cliente? (Recomendado: sí, crear la cuenta por cobrar al aceptarse la factura por SUNAT). Si sí → ver Tarea 4.5 (opcional, fuera del MVP de este plan; por defecto se prueba el flujo manual actual).
 
@@ -58,7 +58,9 @@
 
 - [ ] **D0.4 — Modo facturación.** La cuenta Nubefact de Idex está en modo pruebas; la serie real `F001` solo emite tras "Activar con SUNAT". Para este QA, las facturas quedarán `lista_para_emitir` y el worker las marcará según la respuesta de Nubefact. Si el usuario ya activó SUNAT, las pruebas de emisión real usan montos mínimos (1 sol). Ver [[project_nubefact_serie_blocker]] en memoria. Confirmar estado antes de la Fase 4.
 
-### Tarea 0.1: (Si D1=A) Permiso de edición de precios para Comercial
+### Tarea 0.1: ~~Permiso de edición de precios para Comercial~~ — OMITIDA (D1=B, precios solo Lucas/admin)
+
+> Esta tarea queda anulada por la decisión D1 (opción B). NO crear la migration ni cambiar permisos. Sección conservada solo como referencia histórica.
 
 **Files:**
 
@@ -108,7 +110,7 @@ Crear estos 5 clientes desde `/idex/clientes` → "Nuevo cliente":
 - [ ] **Caso límite C6 — duplicado:** intentar crear de nuevo C1 (mismo RUC). **Esperado:** el sistema rechaza o advierte duplicado. Documentar el comportamiento real.
 - [ ] **Contacto:** a C1, agregar un contacto desde el detalle (modal "+"): nombre "María Torres", cargo "Compras", email, `esPrincipal=true`. **Esperado:** contacto agregado.
 
-### Tarea 1.2: Productos y precios (rol según D1 — Comercial si D1=A, si no Superadmin)
+### Tarea 1.2: Productos y precios (rol **Superadmin** — Lucas; D1=B)
 
 Desde `/idex/productos` → "Nuevo producto". Crear 4 productos que exijan distintas reglas tributarias y monedas:
 
@@ -162,8 +164,7 @@ Desde `/idex/cotizaciones` → "Nueva cotización". Crear:
 ### Tarea 2.1: Rol **Comercial** (`vendedor@idex.demo`)
 
 - [ ] PUEDE: ver dashboard, crear cliente, crear/editar/enviar cotización, ver productos, ver inventario, ver reportes, descargar PDF cotización.
-- [ ] (Si D1=A) PUEDE: actualizar precios de productos.
-- [ ] NO PUEDE (verificar bloqueo): aprobar cotización; acceder a `/idex/facturas`; acceder a `/idex/credito`; crear orden de compra; acceder a `/idex/configuracion`; acceder a `/idex/admin/*`.
+- [ ] NO PUEDE (verificar bloqueo): **crear/editar productos ni actualizar precios** (D1=B — solo admin); aprobar cotización; acceder a `/idex/facturas`; acceder a `/idex/credito`; crear orden de compra; acceder a `/idex/configuracion`; acceder a `/idex/admin/*`.
 
 ### Tarea 2.2: Rol **Facturación** (`contador@idex.demo`)
 
