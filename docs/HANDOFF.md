@@ -2,10 +2,63 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-02 mañana GMT-5
+**Última actualización:** 2026-06-02 tarde GMT-5
 **Branch activa:** `main` (producción desplegada en orion-rp.com)
-**Estado verificado:** Login + QA comprehensivo Playwright ✅ (76/81). Worker SUNAT procesa la cola end-to-end ✅. Config Nubefact por UI ✅. `/api/test-db` → `{"ok":true}`.
-**Último commit prod:** `1cd8fcb` — feat config Nubefact por tenant vía UI.
+**Estado verificado:** Playwright contra prod. Reportes R1/R2/R3 ✅. Configuración 4 tabs ✅. Usuarios en sidebar ✅. `/api/test-db` → `{"ok":true}`.
+**Último commit prod:** `ecc74f2` — fix(config): eliminar useSearchParams para evitar Suspense boundary error.
+
+---
+
+## ✅ SESIÓN 2026-06-02 tarde — Reportes + Configuración empresa + CxC automática
+
+### Cambios desplegados (commits `e410e05` → `ecc74f2`)
+
+| #   | Qué                                                                                                                                                                     | Commit    |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| 1   | **D2 auto-CxC:** `convertirCotizacionAFactura` acepta `formaPago`+`plazoDias`; si crédito calcula `fechaVencimiento` y hace upsert en `creditosCliente` automáticamente | `e410e05` |
+| 2   | **CotizacionConversionSidebar:** selector inline formaPago/plazo antes de confirmar conversión                                                                          | `e410e05` |
+| 3   | **R1:** `/reportes/cotizaciones` — seguimiento por comercial (Total/Enviadas/Aceptadas/Rechazadas/Convertidas/Montos)                                                   | `e410e05` |
+| 4   | **R3:** Panel KPI embebido en R1 (Generadas / Por cerrar / Tasa conversión / Pipeline S/)                                                                               | `e410e05` |
+| 5   | **R2:** `/reportes/precios` — historial de cambios con autor, Δ% coloreado                                                                                              | `e410e05` |
+| 6   | Sidebar: **Usuarios** habilitado (apunta a `/admin/usuarios`)                                                                                                           | `c80f4dc` |
+| 7   | Reportes auto-cargan al abrir la página (useEffect en mount)                                                                                                            | `c80f4dc` |
+| 8   | **Configuración 4 tabs:** Empresa / Comercial / Datos bancarios / Facturación SUNAT / Usuarios y permisos                                                               | `ecc74f2` |
+| 9   | Server actions `actualizarInfoEmpresa` + `actualizarInfoComercial`                                                                                                      | `ecc74f2` |
+
+### Estado verificado por Playwright (prod orion-rp.com)
+
+| Feature                        | Estado                                                                  |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| R1 Cotizaciones por comercial  | ✅ 25 cotizaciones, 44% conversión, "Por cerrar: 3" en naranja          |
+| R2 Historial de precios        | ✅ carga, sin datos aún (normal — no hay cambios de precio registrados) |
+| R3 Panel KPI                   | ✅ embebido en R1                                                       |
+| Config tab Empresa             | ✅ razón social, RUC, dirección, contacto pre-cargados                  |
+| Config tab Comercial           | ✅ Lucas Escrivá, BBVA, cuentas bancarias pre-cargadas                  |
+| Config tab Facturación SUNAT   | ✅ Nubefact form + series                                               |
+| Config tab Usuarios y permisos | ✅ 4 usuarios activos (2 Superadmin, 1 Comercial, 1 Facturación)        |
+| Usuarios en sidebar            | ✅ habilitado sin PRONTO badge                                          |
+
+### ⚠️ Pendiente: Plan QA E2E (plan en `docs/superpowers/plans/2026-06-02-qa-roles-e2e-reportes.md`)
+
+El plan QA (FLUJO PRINCIPAL + Fases 1–5) fue acordado y las decisiones D1–D4 resueltas, pero no se ejecutó porque la sesión se dedicó a:
+
+1. Implementar D2 (auto-CxC)
+2. Construir los 3 reportes
+3. Rediseñar configuración
+4. Resolver el bug de deploy (RSC serialization)
+
+**Decisiones ya tomadas:**
+
+- D1: precios solo Superadmin (Lucas) — sin cambios en permisos
+- D2: CxC automática al facturar a crédito ✅ implementado
+- D3: prefijo `[QA2]` en toda data de prueba
+- D0.4: Nubefact sigue en modo pruebas (no emitir real)
+
+**Siguiente sesión debe:** ejecutar el FLUJO PRINCIPAL de punta a punta por Playwright (crear cliente → producto → cotización → compra → recepción → factura a crédito → cobro) y luego las Fases 1–5 del plan QA.
+
+### ⚠️ Nota: vercel --prod es MANUAL (no hay auto-deploy en este proyecto)
+
+Vercel NO tiene integración auto-deploy con GitHub en este proyecto. Cada push requiere un `vercel --prod` explícito para quedar en producción. Sin este paso, los cambios quedan en GitHub pero no se reflejan en orion-rp.com.
 
 ---
 
