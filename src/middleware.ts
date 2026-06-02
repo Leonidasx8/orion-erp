@@ -1,7 +1,13 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-const PUBLIC_PATHS = ['/login', '/login/mfa', '/login/recuperar', '/login/aceptar-invitacion'];
+const PUBLIC_PATHS = [
+  '/login',
+  '/login/mfa',
+  '/login/recuperar',
+  '/login/aceptar-invitacion',
+  '/api/test-db',
+];
 
 // Rutas de preview del design system. La página adentro hace su propio gate
 // con NODE_ENV !== 'development' → 404. Aquí solo evitamos el redirect a /login.
