@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { and, eq } from 'drizzle-orm';
 import { createSSRClient } from '@/lib/supabase/server';
@@ -8,6 +9,11 @@ import { TenantHeader } from '@/components/shared/TenantHeader';
 import { TenantSidebar } from '@/components/shared/TenantSidebar';
 import { PermissionsBootstrap } from '@/components/shared/PermissionsBootstrap';
 import { tenantThemeClass } from '@/lib/design/tenant-theme';
+
+const TENANT_LOGOS: Record<string, string> = {
+  idex: '/idex-logo.png',
+  agroalves: '/agroalves-logo.png',
+};
 
 export default async function TenantLayout({
   children,
@@ -55,17 +61,40 @@ export default async function TenantLayout({
 
   const userName = (user?.user_metadata?.nombre as string | undefined) ?? user?.email ?? undefined;
 
+  const logoSrc = TENANT_LOGOS[tenant.slug];
+  const companyShortName = tenant.razonSocial.split(/\s+/)[0];
+
   return (
-    <div
-      className={`grid h-screen min-h-0 ${tenantThemeClass(tenant.slug)}`}
-      style={{ gridTemplateColumns: '240px 1fr', gridTemplateRows: '56px 1fr' }}
-    >
+    <div className={`flex min-h-screen bg-orion-bg-subtle ${tenantThemeClass(tenant.slug)}`}>
+      {/* Mobile top bar — visible only below lg */}
+      <div className="fixed inset-x-0 top-0 z-40 flex h-12 items-center gap-3 border-b border-orion-border bg-orion-bg px-4 lg:hidden">
+        {logoSrc ? (
+          <Image
+            src={logoSrc}
+            alt={tenant.razonSocial}
+            width={80}
+            height={32}
+            className="h-8 w-auto max-w-[120px] object-contain"
+          />
+        ) : (
+          <>
+            <span className="grid h-6 w-6 place-items-center rounded-md bg-tenant-accent text-[10px] font-bold text-white">
+              {companyShortName.slice(0, 2).toUpperCase()}
+            </span>
+            <span className="text-sm font-semibold text-orion-fg">{companyShortName}</span>
+          </>
+        )}
+      </div>
+
+      {/* Sidebar — hidden on mobile, visible on lg+ */}
       <TenantSidebar tenant={tenant} userName={userName} userRole={userRol} />
-      <TenantHeader tenant={tenant} userName={userName} />
-      <PermissionsBootstrap permisos={userPermisos.map((p) => p.codigo)} />
-      <main className="col-start-2 row-start-2 overflow-auto bg-orion-bg-subtle p-6">
-        {children}
-      </main>
+
+      {/* Right column: topbar + content */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TenantHeader tenant={tenant} userName={userName} />
+        <PermissionsBootstrap permisos={userPermisos.map((p) => p.codigo)} />
+        <main className="flex-1 overflow-auto p-4 pt-16 lg:p-6 lg:pt-6">{children}</main>
+      </div>
     </div>
   );
 }

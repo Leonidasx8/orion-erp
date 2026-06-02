@@ -16,7 +16,7 @@ export function TenantHeader({
   ];
 
   return (
-    <header className="col-start-2 row-start-1 flex h-14 items-center gap-4 border-b border-orion-border bg-orion-bg px-6">
+    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-orion-border bg-orion-bg px-6">
       {/* Breadcrumbs */}
       <nav className="flex min-w-0 items-center gap-1.5 text-[13px] text-orion-fg-muted">
         {trail.map((c, i) => {

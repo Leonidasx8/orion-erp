@@ -199,7 +199,7 @@ export function ClientesList({
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border">
+      <div className="overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
           <thead>
             {table.getHeaderGroups().map((hg) => (

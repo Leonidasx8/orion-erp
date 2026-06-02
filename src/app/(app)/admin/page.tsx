@@ -136,7 +136,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         {/* Tenants activos */}
         <div className="rounded-lg border bg-card p-4">
           <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -190,7 +190,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Tenants table + SUNAT chart */}
-      <div className="mt-4 grid gap-4" style={{ gridTemplateColumns: '5fr 3fr' }}>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[5fr_3fr]">
         {/* Tenants card */}
         <div className="rounded-lg border bg-card">
           <div className="flex items-center border-b px-4 py-3">
@@ -224,7 +224,7 @@ export default async function AdminDashboardPage() {
                 allTenants.map((t, i) => {
                   const initials = slugInitials(t.slug);
                   const avatarBg =
-                    i === 0 ? 'bg-primary' : i === 1 ? 'bg-green-600' : 'bg-slate-400';
+                    i === 0 ? 'bg-violet-600' : i === 1 ? 'bg-green-600' : 'bg-slate-400';
                   const userCount = userCountMap.get(t.id) ?? 0;
                   return (
                     <tr key={t.id} className="border-b last:border-0 hover:bg-muted/30">
@@ -253,8 +253,13 @@ export default async function AdminDashboardPage() {
                       <td className="px-4 py-2.5">
                         <EstadoBadge estado={t.estado} />
                       </td>
-                      <td className="px-4 py-2.5 text-muted-foreground">
-                        <MoreHorizontal size={14} />
+                      <td className="px-4 py-2.5">
+                        <Link
+                          href={`/admin/tenants/${t.id}`}
+                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                        >
+                          <MoreHorizontal size={14} />
+                        </Link>
                       </td>
                     </tr>
                   );

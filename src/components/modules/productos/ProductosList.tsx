@@ -249,7 +249,7 @@ export function ProductosList({
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Catálogo</h1>
+          <h2 className="text-2xl font-semibold tracking-tight">Catálogo</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
             {productos.length} productos · {totalCategorias} familias · lista AAA vigente
           </p>
@@ -300,7 +300,7 @@ export function ProductosList({
           <button
             key={id}
             onClick={() => handleCategoryToggle(id)}
-            className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground"
+            className="inline-flex items-center gap-1 rounded-full bg-tenant-accent px-2.5 py-1 text-xs font-medium text-white"
           >
             {catMap[id] ?? id}
             <X className="h-3 w-3" />
@@ -348,7 +348,9 @@ export function ProductosList({
             setGridPage(0);
           }}
           className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm transition-colors ${
-            stockFilter ? 'border-primary bg-primary/10 font-medium text-primary' : 'hover:bg-muted'
+            stockFilter
+              ? 'border-tenant-accent bg-tenant-accent-soft font-medium text-tenant-accent-fg'
+              : 'hover:bg-muted'
           }`}
         >
           Solo con stock
@@ -448,7 +450,7 @@ export function ProductosList({
 
       {/* ── List View ──────────────────────────────────────── */}
       {viewMode === 'list' && (
-        <div className="rounded-lg border">
+        <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-sm">
             <thead>
               {table.getHeaderGroups().map((hg) => (

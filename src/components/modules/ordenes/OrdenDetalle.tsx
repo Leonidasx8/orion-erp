@@ -148,7 +148,7 @@ export function OrdenDetalle({ data, tenantSlug }: { data: OrdenDetalleData; ten
         </div>
       )}
 
-      <div className="grid grid-cols-[3fr_2fr] gap-4">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
         <div className="flex flex-col gap-4">
           <Card>
             <CardHead>
@@ -158,44 +158,46 @@ export function OrdenDetalle({ data, tenantSlug }: { data: OrdenDetalleData; ten
                 recibido · {Math.round(recibidoPct)}%
               </span>
             </CardHead>
-            <table className="w-full border-collapse text-[12.5px]">
-              <thead>
-                <tr>
-                  <Th>SKU</Th>
-                  <Th>Descripción</Th>
-                  <Th align="right">Pedido</Th>
-                  <Th align="right">Recibido</Th>
-                  <Th align="right">Pendiente</Th>
-                  <Th align="right">Precio</Th>
-                  <Th align="right">Subtotal</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.lineas.map((l) => {
-                  const pendiente = l.cantidad - l.cantidadRecibida;
-                  return (
-                    <tr key={l.id} className="border-b border-orion-border last:border-0">
-                      <Td className="font-mono text-[11.5px]">{l.sku}</Td>
-                      <Td className="max-w-[280px] truncate">{l.descripcion}</Td>
-                      <Td align="right">{l.cantidad.toLocaleString('en-US')}</Td>
-                      <Td align="right">{l.cantidadRecibida.toLocaleString('en-US')}</Td>
-                      <Td
-                        align="right"
-                        className={cn(pendiente > 0 ? 'text-warn-fg' : 'text-success-fg')}
-                      >
-                        {pendiente.toLocaleString('en-US')}
-                      </Td>
-                      <Td align="right">
-                        <Money value={l.precioUnitario} ccy={data.moneda} dp={4} />
-                      </Td>
-                      <Td align="right">
-                        <Money value={l.subtotal} ccy={data.moneda} dp={2} />
-                      </Td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-[12.5px]">
+                <thead>
+                  <tr>
+                    <Th>SKU</Th>
+                    <Th>Descripción</Th>
+                    <Th align="right">Pedido</Th>
+                    <Th align="right">Recibido</Th>
+                    <Th align="right">Pendiente</Th>
+                    <Th align="right">Precio</Th>
+                    <Th align="right">Subtotal</Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.lineas.map((l) => {
+                    const pendiente = l.cantidad - l.cantidadRecibida;
+                    return (
+                      <tr key={l.id} className="border-b border-orion-border last:border-0">
+                        <Td className="font-mono text-[11.5px]">{l.sku}</Td>
+                        <Td className="max-w-[280px] truncate">{l.descripcion}</Td>
+                        <Td align="right">{l.cantidad.toLocaleString('en-US')}</Td>
+                        <Td align="right">{l.cantidadRecibida.toLocaleString('en-US')}</Td>
+                        <Td
+                          align="right"
+                          className={cn(pendiente > 0 ? 'text-warn-fg' : 'text-success-fg')}
+                        >
+                          {pendiente.toLocaleString('en-US')}
+                        </Td>
+                        <Td align="right">
+                          <Money value={l.precioUnitario} ccy={data.moneda} dp={4} />
+                        </Td>
+                        <Td align="right">
+                          <Money value={l.subtotal} ccy={data.moneda} dp={2} />
+                        </Td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </Card>
 
           <Card>

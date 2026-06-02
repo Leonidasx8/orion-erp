@@ -157,7 +157,7 @@ export function CotizacionesList({
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-b-lg border border-orion-border bg-orion-bg shadow-orion-1">
+      <div className="overflow-x-auto rounded-b-lg border border-orion-border bg-orion-bg shadow-orion-1">
         <table className="w-full border-collapse text-[12.5px]">
           <thead>
             <tr>
@@ -235,13 +235,17 @@ export function CotizacionesList({
               : `${(page - 1) * pageSize + 1}–${(page - 1) * pageSize + rows.length} de ${counts.total}`}
           </span>
           <div className="ml-auto flex items-center gap-1">
-            <PaginationBtn disabled={page <= 1}>
+            <PageBtn href={page > 1 ? buildHref(base, filtroActivo, page - 1) : null}>
               <ChevronLeft size={12} />
-            </PaginationBtn>
-            <PaginationBtn active>{page}</PaginationBtn>
-            <PaginationBtn disabled={page * pageSize >= counts.total}>
+            </PageBtn>
+            <span className="inline-flex h-7 min-w-[28px] items-center justify-center rounded-md border border-orion-border bg-orion-bg px-1.5 text-[12px] font-medium text-orion-fg">
+              {page}
+            </span>
+            <PageBtn
+              href={page * pageSize < counts.total ? buildHref(base, filtroActivo, page + 1) : null}
+            >
               <ChevronRight size={12} />
-            </PaginationBtn>
+            </PageBtn>
           </div>
         </div>
       </div>
@@ -312,28 +316,28 @@ function Td({
   );
 }
 
-function PaginationBtn({
-  children,
-  active,
-  disabled,
-}: {
-  children: React.ReactNode;
-  active?: boolean;
-  disabled?: boolean;
-}) {
+function buildHref(base: string, filtroActivo: 'todas' | Estado, targetPage: number) {
+  const params = new URLSearchParams();
+  if (filtroActivo !== 'todas') params.set('estado', filtroActivo);
+  if (targetPage > 1) params.set('page', String(targetPage));
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
+function PageBtn({ href, children }: { href: string | null; children: React.ReactNode }) {
+  if (!href) {
+    return (
+      <span className="grid h-7 w-7 place-items-center rounded-md text-orion-fg-faint opacity-40">
+        {children}
+      </span>
+    );
+  }
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      className={cn(
-        'inline-flex h-7 min-w-[28px] items-center justify-center rounded-md border px-1.5 text-[12px] font-medium',
-        active
-          ? 'border-orion-border bg-orion-bg text-orion-fg'
-          : 'border-orion-border bg-orion-bg text-orion-fg-muted hover:bg-orion-bg-muted',
-        disabled && 'cursor-not-allowed opacity-40'
-      )}
+    <Link
+      href={href}
+      className="grid h-7 w-7 place-items-center rounded-md border border-orion-border bg-orion-bg text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
     >
       {children}
-    </button>
+    </Link>
   );
 }

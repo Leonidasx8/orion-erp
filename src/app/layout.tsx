@@ -20,8 +20,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_PRODUCTNAME,
-  description: 'The best way to build your SaaS product.',
+  title: 'Sistema Orión — ERP para PYMEs peruanas',
+  description:
+    'Gestiona cotizaciones, órdenes de compra, inventario y facturación SUNAT desde un solo sistema en la nube.',
 };
 
 export default function RootLayout({

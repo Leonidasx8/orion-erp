@@ -102,7 +102,7 @@ export function PagoForm({
             {facturas.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.numeroCompleto} — {f.moneda}{' '}
-                {f.saldoPendiente.toLocaleString('en-US', {
+                {f.saldoPendiente.toLocaleString('es-PE', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}{' '}

@@ -148,7 +148,7 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 21 90% 48%;            /* #ea580c orange-600 — brand naranja Orión */
+    --primary: 262 83% 58%;            /* violet-600 #7c3aed — Orión platform brand */
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96%;         /* #f1f5f9 (slate-100) */
     --secondary-foreground: 222 47% 11%;
@@ -160,8 +160,8 @@
     --destructive-foreground: 0 0% 100%;
     --border: 214 32% 91%;            /* #e2e8f0 (slate-200) */
     --input: 214 32% 91%;
-    --ring: 21 90% 48%;               /* match primary */
-    --chart-1: 21 90% 48%;             /* orange primary */
+    --ring: 262 83% 58%;               /* match primary */
+    --chart-1: 262 83% 58%;            /* violet primary */
     --chart-2: 142 71% 36%;           /* agro green */
     --chart-3: 263 80% 57%;           /* dignita purple */
     --chart-4: 27 87% 51%;            /* warn orange */
@@ -175,7 +175,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 222 47% 11%;
     --popover-foreground: 0 0% 98%;
-    --primary: 24 95% 53%;            /* dark mode: orange-500 */
+    --primary: 262 83% 67%;            /* dark mode: violet-400 */
     --primary-foreground: 0 0% 100%;
     --secondary: 217 33% 17%;
     --secondary-foreground: 0 0% 98%;

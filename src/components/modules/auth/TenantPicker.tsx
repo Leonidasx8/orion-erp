@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import Image from 'next/image';
 import { createBrowserClient } from '@supabase/ssr';
 import { seleccionarEmpresa } from '@/server/actions/seleccionar-empresa';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -62,8 +63,7 @@ export function TenantPicker({ memberships, user }: { memberships: Membership[];
       <div className="w-full max-w-[720px]">
         {/* Logo + nombre */}
         <div className="mb-8 flex items-center justify-center gap-2.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/orion-logo.png" alt="Orión" className="h-9 w-9" />
+          <Image src="/orion-logo.png" alt="Orión" width={28} height={28} priority />
           <span className="text-[18px] font-semibold tracking-[-0.01em]">Sistema Orión</span>
         </div>
 
@@ -78,7 +78,7 @@ export function TenantPicker({ memberships, user }: { memberships: Membership[];
         {error && <p className="mb-4 text-center text-sm text-destructive">{error}</p>}
 
         {/* Grid de tarjetas */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {memberships.map(({ tenant, rol }) => {
             const isActive = tenant.slug === selected;
             return (
@@ -96,10 +96,11 @@ export function TenantPicker({ memberships, user }: { memberships: Membership[];
                 {/* Header de la tarjeta */}
                 <div className="flex items-center">
                   {TENANT_LOGOS[tenant.slug] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={TENANT_LOGOS[tenant.slug]}
+                    <Image
+                      src={TENANT_LOGOS[tenant.slug]!}
                       alt={tenant.razonSocial}
+                      width={48}
+                      height={48}
                       className="h-12 w-12 shrink-0 rounded-xl border border-border bg-white object-contain p-1"
                     />
                   ) : (

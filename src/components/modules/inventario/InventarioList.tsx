@@ -130,7 +130,7 @@ export function InventarioList({
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg border border-orion-border">
+      <div className="overflow-x-auto rounded-lg border border-orion-border">
         <table className="w-full text-[13px]">
           <thead>
             <tr className="border-b border-orion-border bg-orion-bg-subtle">
@@ -150,12 +150,14 @@ export function InventarioList({
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && (
+            {visibleRows.length === 0 && (
               <tr>
                 <td colSpan={9}>
                   <div className="flex flex-col items-center gap-2 py-16 text-orion-fg-muted">
                     <Package size={32} className="text-orion-fg-faint" />
-                    <span className="text-[13px]">Sin registros de inventario</span>
+                    <span className="text-[13px]">
+                      {q ? `Sin resultados para "${query.trim()}"` : 'Sin registros de inventario'}
+                    </span>
                   </div>
                 </td>
               </tr>

@@ -228,7 +228,7 @@ export function MFASetup({ onStatusChange }: MFASetupProps) {
         {step === 'enroll' && (
           <div className="space-y-4">
             <div className="flex justify-center">
-              {qr && <img src={qr} alt="QR Code" className="h-48 w-48 rounded-lg border p-2" />}
+              {qr && <img src={qr} alt="Código QR" className="h-48 w-48 rounded-lg border p-2" />}
             </div>
 
             <div className="space-y-2">

@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
+import { BarChart2 } from 'lucide-react';
 
 export type AgingBuckets = {
   bucket0a30: number;
@@ -55,8 +56,9 @@ export function AgingChart({
 
   if (total === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-orion-fg-faint">
-        Sin saldos pendientes
+      <div className="flex flex-col items-center gap-2 py-12">
+        <BarChart2 className="h-8 w-8 text-orion-fg-faint opacity-50" />
+        <p className="text-sm text-orion-fg-muted">Sin datos de cartera</p>
       </div>
     );
   }
@@ -85,7 +87,7 @@ export function AgingChart({
           />
           <Tooltip
             formatter={(value: number) => [
-              `${moneda} ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+              `${moneda} ${value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
               'Saldo',
             ]}
             contentStyle={{
@@ -111,7 +113,7 @@ export function AgingChart({
             <span>{d.name}</span>
             <span className="font-medium tabular-nums text-orion-fg">
               {moneda}{' '}
-              {d.value.toLocaleString('en-US', {
+              {d.value.toLocaleString('es-PE', {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
               })}

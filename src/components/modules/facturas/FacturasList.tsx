@@ -53,8 +53,8 @@ export function FacturasList({
             href={f.key === 'todas' ? base : `${base}?estado=${f.key}`}
             className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
               filtroActivo === f.key
-                ? 'border-orion-accent bg-orion-accent text-white'
-                : 'hover:border-orion-accent/50 border-orion-border bg-orion-bg-subtle text-orion-fg-muted'
+                ? 'border-tenant-accent bg-tenant-accent text-white'
+                : 'hover:border-tenant-accent/50 border-orion-border bg-orion-bg-subtle text-orion-fg-muted'
             }`}
           >
             {f.label}
@@ -92,7 +92,7 @@ export function FacturasList({
                   <td className="px-4 py-3">
                     <Link
                       href={`${base}/${r.id}`}
-                      className="text-orion-accent font-mono font-medium hover:underline"
+                      className="font-mono font-medium text-tenant-accent-fg hover:underline"
                     >
                       {r.numeroCompleto}
                     </Link>
@@ -126,7 +126,7 @@ export function FacturasList({
             {page > 1 && (
               <Link
                 href={`${pathname}?page=${page - 1}`}
-                className="text-orion-accent hover:underline"
+                className="text-tenant-accent-fg hover:underline"
               >
                 ← Anterior
               </Link>
@@ -134,7 +134,7 @@ export function FacturasList({
             {rows.length === 20 && (
               <Link
                 href={`${pathname}?page=${page + 1}`}
-                className="text-orion-accent hover:underline"
+                className="text-tenant-accent-fg hover:underline"
               >
                 Siguiente →
               </Link>

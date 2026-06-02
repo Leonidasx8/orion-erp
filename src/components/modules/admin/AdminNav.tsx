@@ -36,8 +36,8 @@ export function AdminNav() {
             className={cn(
               'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
               isActive
-                ? 'bg-primary font-medium text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                ? 'bg-violet-600 font-medium text-white'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
             )}
           >
             <Icon size={15} strokeWidth={1.75} />

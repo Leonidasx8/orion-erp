@@ -85,7 +85,7 @@ export function OrdenesList({
     <div className="flex flex-col gap-4">
       <div className="flex items-end gap-4">
         <div>
-          <h1 className="m-0 font-mono text-[22px] font-semibold tracking-tight text-orion-fg">
+          <h1 className="m-0 text-[22px] font-semibold tracking-tight text-orion-fg">
             Compras a Proveedores
           </h1>
           <p className="mt-1 text-[12px] text-orion-fg-muted">
@@ -146,7 +146,7 @@ export function OrdenesList({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-orion-border bg-orion-bg shadow-orion-1">
+      <div className="overflow-x-auto rounded-lg border border-orion-border bg-orion-bg shadow-orion-1">
         <table className="w-full border-collapse text-[12.5px]">
           <thead>
             <tr>

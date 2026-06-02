@@ -87,7 +87,7 @@ export function TenantSidebar({
   const initials = brandInitials(tenant.razonSocial);
 
   return (
-    <aside className="row-span-2 row-start-1 flex min-h-0 w-60 flex-col border-r border-orion-border bg-orion-bg">
+    <aside className="hidden min-h-0 w-60 shrink-0 flex-col border-r border-orion-border bg-orion-bg lg:flex">
       {/* Brand */}
       <div className="flex h-14 items-center gap-2.5 border-b border-orion-border px-4">
         {TENANT_LOGOS[tenant.slug] ? (
@@ -152,14 +152,11 @@ export function TenantSidebar({
                   className={cn(
                     'my-px flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors',
                     isActive
-                      ? 'bg-tenant-accent-soft text-tenant-accent-fg'
-                      : 'text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg'
+                      ? 'bg-tenant-accent text-white'
+                      : 'text-orion-fg-subtle hover:bg-orion-bg-hover hover:text-orion-fg'
                   )}
                 >
-                  <Icon
-                    size={16}
-                    className={cn(isActive ? 'text-tenant-accent' : 'text-orion-fg-faint')}
-                  />
+                  <Icon size={16} className={cn(isActive ? 'text-white' : 'text-orion-fg-faint')} />
                   <span className="flex-1 truncate">{item.label}</span>
                   {item.badge !== undefined && (
                     <span

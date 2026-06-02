@@ -3,6 +3,7 @@
 import { useState, useRef, KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { verifyMfaLogin } from '@/server/actions/mfa';
 import { Button } from '@/components/ui/button';
 import { Shield, ChevronLeft } from 'lucide-react';
@@ -96,8 +97,14 @@ export default function MfaLoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo + nombre */}
         <div className="mb-6 flex items-center justify-center gap-2.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/orion-logo.png" alt="Orión" className="h-9 w-9" />
+          <Image
+            src="/orion-logo.png"
+            alt="Orión"
+            width={36}
+            height={36}
+            priority
+            className="h-9 w-9"
+          />
           <span className="text-[18px] font-semibold tracking-[-0.01em]">Sistema Orión</span>
         </div>
 
