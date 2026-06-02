@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm'; // noqa
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { DashboardCxC, type DashboardCxCData } from '@/components/modules/credito/DashboardCxC';

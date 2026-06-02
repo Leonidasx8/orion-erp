@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from 'next/link'; // noqa
 import { sql, eq, and } from 'drizzle-orm';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
