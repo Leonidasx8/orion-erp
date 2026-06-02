@@ -401,7 +401,7 @@ async function ackMensaje(msgId: number) {
 }
 
 async function marcarErrorDefinitivo(documentoTipo: string, documentoId: string, mensaje: string) {
-  const set = { estadoSunat: 'error_sunat', sunatMensaje: mensaje, updatedAt: new Date() };
+  const set = { estadoSunat: 'error_red', sunatMensaje: mensaje, updatedAt: new Date() };
   if (documentoTipo === 'factura') {
     await db.update(facturas).set(set).where(eq(facturas.id, documentoId));
   } else if (documentoTipo === 'nota_credito_debito') {
