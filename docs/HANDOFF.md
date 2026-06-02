@@ -2,7 +2,7 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-02 23:30 GMT-5 (QA E2E completado)
+**Última actualización:** 2026-06-02 23:45 GMT-5 (QA E2E completo + B3 fix desplegado)
 **Branch activa:** `main` (producción desplegada en orion-rp.com)
 **Estado verificado:** Playwright contra prod. QA E2E completo (Flujo Principal + Fases 2/3/4/5) ✅. Typecheck verde (0 errores).
 **Último commit prod:** `f7de6ab` — feat(ui): ⓘ ayuda por módulo + guías con líneas + encolado Nubefact
@@ -80,12 +80,22 @@
 | S3 Stock negativo (1000 uds, stock=500) | ✅ Permitido sin bloquear (Kickoff: correcto). Warning visual no implementado. |
 | S10 Cotización rechazada → convertir    | ✅ Bloqueado: "Disponible cuando esté aceptada"                                |
 
-### ⚠️ Pendientes post-QA (antes del demo 4-jun)
+### ✅ B3 RESUELTO y desplegado (commit dc365bb)
 
-1. **FIX B3 (URGENTE):** Verificar y corregir que Comercial NO pueda ver `/idex/facturas`. Revisar la policy Casbin del rol Comercial — puede que tenga `facturas.ver` por error.
-2. **FIX B1:** En `generarOCsDesdeCotizacion`, usar `costoUnitario` del producto en lugar de `precioUnitario` de la cotización al crear las líneas de OC.
-3. **Activar serie F001 en Nubefact** (acción de Lucas) para desbloquear cobros y emisión SUNAT.
-4. Data [QA2]: Decide si limpiar antes del demo o conservar (2 cotizaciones, 1 OC, 1 factura, 1 cliente, 1 producto nuevos).
+`requirePermission('facturas.ver')` en `/facturas` y `/facturas/[id]`. Verificado: Comercial bloqueado.
+
+### 📋 PENDIENTES PRÓXIMA SESIÓN (prioridad descendente)
+
+1. **Auditoría (feature):** Quitar `disabled:true` en `TenantSidebar.tsx:64`. Crear `src/app/(app)/[companySlug]/auditoria/page.tsx` con log de actividad del tenant. Referencia: `/admin/auditoria/page.tsx` existente. Tabla disponible: `audit_permisos` + datos de cotizaciones/facturas/precios para construir el log. Permiso: `admin.auditoria.ver` (solo Superadmin).
+2. **FIX B1:** `generarOCsDesdeCotizacion` usa `precioUnitario` de la cot. como costo de OC → kardex registra costo incorrecto. Fix: usar `costoUnitario` del producto.
+3. **FIX B4:** `requirePermission` sin acceso → 500 en prod. Envolver con try/catch + `redirect('/[slug]')` en layout o page.
+4. **FIX B5:** Warning visual en CotizacionForm cuando cantidad > stock disponible del producto.
+5. **Limpieza data [QA2]:** Decidir si borrar antes del demo (cliente, producto, 2 cotizaciones, 1 OC, 1 factura con sufijo [QA2]).
+6. **Serie F001 Nubefact:** Acción externa de Lucas.
+
+### 🔍 Módulos intermitentes (causa: Supabase free pooler)
+
+Facturas / Crédito / Admin Usuarios / Configuración dan 500 ocasionalmente. No son bugs de código. Al recargar vuelven. Para el demo: abrir cada módulo una vez antes para calentar conexiones.
 
 ---
 
