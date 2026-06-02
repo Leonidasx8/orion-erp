@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { getCurrentTenant } from '@/lib/auth/current-tenant';
+import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { facturas } from '@/lib/db/schema';
 import { FacturasList, type FacturaRow } from '@/components/modules/facturas/FacturasList';
@@ -37,7 +37,7 @@ export default async function FacturasPage({
 }: {
   searchParams: Promise<{ estado?: string; page?: string; clienteId?: string }>;
 }) {
-  const tenant = await getCurrentTenant();
+  const { tenant } = await requirePermission('facturas.ver');
   const sp = await searchParams;
   const filtroActivo = sp.estado && ESTADOS_VALIDOS.has(sp.estado) ? sp.estado : 'todas';
   const page = Math.max(1, Number(sp.page) || 1);
