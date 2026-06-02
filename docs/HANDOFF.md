@@ -2,10 +2,42 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-02 tarde GMT-5
+**Última actualización:** 2026-06-02 noche GMT-5
 **Branch activa:** `main` (producción desplegada en orion-rp.com)
-**Estado verificado:** Playwright contra prod. Reportes R1/R2/R3 ✅. Configuración 4 tabs ✅. Usuarios en sidebar ✅. `/api/test-db` → `{"ok":true}`.
-**Último commit prod:** `ecc74f2` — fix(config): eliminar useSearchParams para evitar Suspense boundary error.
+**Estado verificado:** Playwright contra prod. Todo el checklist de abajo ✅.
+**Último commit prod:** `f7de6ab` — feat(ui): ⓘ ayuda por módulo + guías con líneas + encolado Nubefact
+
+---
+
+## ✅ SESIÓN 2026-06-02 noche — Móvil, Guías, ⓘ Info, Configuración completa
+
+### Checklist producción verificado por Playwright
+
+| Feature                                                                      | Estado |
+| ---------------------------------------------------------------------------- | ------ |
+| Menú hamburguesa móvil + drawer con nav completo                             | ✅     |
+| Guías de remisión: lista con Despacho + SUNAT lado a lado                    | ✅     |
+| Guías: formulario Nueva Guía (destinatario, ítems, transportista, placa)     | ✅     |
+| Guías conectadas a Nubefact (lineas_guia insertadas + encolado sunat_outbox) | ✅     |
+| ⓘ info en TODOS los módulos con "No mostrar" en localStorage                 | ✅     |
+| Configuración 4 tabs (Empresa / Comercial / Facturación SUNAT / Usuarios)    | ✅     |
+| R1 Cotizaciones por comercial + R3 Panel KPI auto-carga                      | ✅     |
+| R2 Historial de precios                                                      | ✅     |
+| CxC automática al facturar a crédito                                         | ✅     |
+| Usuarios habilitado en sidebar                                               | ✅     |
+
+### Notas técnicas importantes
+
+- **vercel --prod es MANUAL**: no hay auto-deploy en este proyecto. Cada push necesita `vercel --prod`.
+- **Guías + Nubefact**: `crearGuia` encola con `documentoTipo: 'guia_remision'` en `sunat_outbox`. El worker de 60s lo procesará como T001.
+- **ModuleHelp**: componente en `src/components/shared/ModuleHelp.tsx`. Clave localStorage: `orion-help-{module}`. Añadido a 9 módulos.
+- **RSC caveat**: no pasar `Record<TabId, ReactNode>` como prop a Client Components — rompe la serialización en prod. Usar `searchParams` para estado de tabs.
+
+### ⚠️ Pendiente: Plan QA E2E (PRÓXIMA SESIÓN)
+
+Plan en `docs/superpowers/plans/2026-06-02-qa-roles-e2e-reportes.md`.
+Flujo principal por Playwright: crear cliente → producto → cotización → compra al proveedor → recepción → factura a crédito (CxC auto) → cobro → guía de remisión.
+Decisiones D1-D4 ya resueltas. Solo falta ejecutar.
 
 ---
 
