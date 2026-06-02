@@ -2,10 +2,53 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-02 madrugada GMT-5
+**Última actualización:** 2026-06-02 mañana GMT-5
 **Branch activa:** `main` (producción desplegada en orion-rp.com)
-**Estado verificado:** Login + QA comprehensivo Playwright ✅. Pipeline facturación end-to-end ✅. `/api/test-db` → `{"ok":true}`.
-**Último commit prod:** `e57327a` — fix EstadoBadge estados SUNAT.
+**Estado verificado:** Login + QA comprehensivo Playwright ✅ (76/81). Worker SUNAT procesa la cola end-to-end ✅. Config Nubefact por UI ✅. `/api/test-db` → `{"ok":true}`.
+**Último commit prod:** `1cd8fcb` — feat config Nubefact por tenant vía UI.
+
+---
+
+## ✅ SESIÓN 2026-06-02 mañana — Worker SUNAT funcionando + config Nubefact por UI
+
+### Re-corrida QA: 76 ✅ / 1 ❌ (no-bug) / 4 ⏭️
+
+`pnpm tsx scripts/test-full-ui.ts` → 76 PASS. El FAIL sigue siendo "Admin panel" (no hay platform_admin en prod, correcto). "Facturas: detalle" ahora PASA.
+
+### 🔴 El módulo de facturas NO emitía — 4 bugs raíz encadenados (todos resueltos)
+
+| #   | Bug                                                                                                                                                                                                               | Fix                                                                               | Commit    |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------- |
+| 1   | Middleware exigía sesión de browser en `/api/sunat/procesar-cola` → el worker (pg_cron/curl) siempre redirigía a `/login`                                                                                         | Agregadas las rutas worker + webhook a `PUBLIC_PATHS` en `middleware.ts`          | `14776d5` |
+| 2   | `SUNAT_WORKER_SECRET` vacío en Vercel → worker 401                                                                                                                                                                | Seteado en Vercel prod (`orion-sunat-prod-ad20ab214f6334d1`)                      | — (env)   |
+| 3   | Builder mandaba `total_base_igv`/`total_igv` por **ítem** (esos nombres solo valen en el header). Nubefact leía IGV=0 y rechazaba (cód 21)                                                                        | Renombrado a `subtotal`/`igv` en `builders/factura.ts` y `nota-credito-debito.ts` | `c6adaac` |
+| 4   | `pgmq.delete`/`pgmq.send` sobrecargadas; sin cast `::bigint`/`::integer` Postgres lanza "function not unique" → worker crasheaba en el ACK de **todo** mensaje (incluso facturas aceptadas) → 500 sin drenar cola | Cast explícito en `procesar-cola/route.ts` y `queue.ts`                           | `5c3052f` |
+
+**Verificación:** el bug #3 lo probé enviando el payload real de F001-6 a la API de Nubefact (`scripts/diag-nubefact.ts`, untracked) y leyendo la respuesta cruda; el #4 reproduciendo `pgmq.delete` directo en la DB. Tras los fixes, el worker procesa la cola: **HTTP 200, cola drenada (0), log poblado, 4 facturas procesadas**.
+
+### ⚠️ ÚNICO BLOQUEADOR RESTANTE para emitir: serie en Nubefact (lado de Lucas)
+
+Tras arreglar el #3, Nubefact acepta el cálculo pero responde:
+
+> `"Serie No puedes emitir comprobantes con esta serie"`
+
+La serie **F001 no está habilitada en la cuenta Nubefact de Idex**. Las 4 facturas quedaron en `estado_sunat='error_red'`. **Acción pendiente de Lucas:** habilitar/registrar la serie **F001** (Factura), y B001/T001, en su panel de Nubefact (Series y correlativos). "Probar conexión" SÍ funciona → la cuenta es válida; solo falta la serie.
+
+### 🟣 Nueva feature: config Nubefact por tenant vía UI (`1cd8fcb`)
+
+"Solo con conectar ruta + token ya funciona" — pedido del usuario:
+
+- `getSunatClient` ahora es **async** y lee `tenants.config_sunat` (DB) con fallback a env vars.
+- Página `/[companySlug]/configuracion` (permiso `admin.config.editar`): form ruta+token con **"Probar conexión"** (ping real a Nubefact sin guardar), normaliza la ruta si pegan la URL completa, token enmascarado, auditoría sin exponer el token.
+- Tabla read-only de series configuradas + aviso de que deben coincidir con Nubefact.
+- Link "Configuración" del sidebar habilitado.
+- **Verificado por UI en prod:** "Conexión exitosa", credenciales guardadas en `config_sunat` (ruta normalizada + token 64 chars).
+
+### 📌 Pendientes que NO alcancé esta sesión (de la lista original)
+
+- **Primer login de `vendedor@idex.demo` / `contador@idex.demo`** (nunca han iniciado sesión). El QA confirma sus permisos de ruta; falta validar el primer login real.
+- **Anular factura vía NC** en `FacturaDetalle` (hay facturas F001-6/7/8). El builder de NC ya quedó arreglado (#3), falta probar el botón. **Nota:** anular también emitiría a Nubefact → bloqueado por el mismo tema de serie.
+- **Limpieza de datos de prueba** antes del demo (el usuario aún no decidió; preguntar antes de borrar).
 
 ---
 
