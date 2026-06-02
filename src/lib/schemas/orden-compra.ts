@@ -15,7 +15,10 @@ export const ordenCompraSchema = z
     proveedorId: z.string().uuid('Proveedor requerido'),
     cotizacionOrigenId: z.string().uuid().optional(),
     moneda: z.enum(['PEN', 'USD']).default('USD'),
-    tipoCambio: z.coerce.number().positive().optional(),
+    tipoCambio: z.preprocess(
+      (v) => (v === '' || v == null ? undefined : v),
+      z.coerce.number().positive().optional()
+    ),
     fechaEmision: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato YYYY-MM-DD'),
     fechaEntregaEsperada: z
       .string()
