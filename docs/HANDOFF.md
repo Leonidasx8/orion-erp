@@ -2,7 +2,7 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-02 02:10 GMT-5
+**Última actualización:** 2026-06-02 04:30 GMT-5
 **Branch activa:** `main` (producción desplegada en orion-rp.com)
 **Estado verificado:** Login Playwright ✅. Build Vercel OK. DB conecta. `/api/test-db` → `{"ok":true}`.
 
@@ -16,6 +16,22 @@ Test `scripts/test-prod-login.ts` contra orion-rp.com — **PASS sin errores de 
 
 - Login `lescriva@grupoidex.com.pe` / `Idex2026!` → redirige a `/idex` ✅
 - Dashboard, Clientes, Productos, Cotizaciones, Compras, Inventario — todos 200 ✅
+
+### ✅ Test Playwright comprehensivo — 75/81 PASS
+
+`pnpm tsx scripts/test-full-ui.ts` — cubre todos los módulos y pipelines vía UI real en orion-rp.com.
+
+**Resumen:** Dashboard, Clientes (CRUD+contacto), Productos (CRUD+precios masivo), Cotizaciones (pipeline completo: crear→enviar→aceptar→OC→factura→duplicar), Compras (crear→enviar→aprobar→recibir), Inventario (lista+kardex+ajuste manual), Facturas, Crédito, Reportes, Roles (vendedor+contador). 5 SKIPs esperados (admin panel, facturas vacías, CxC vacío).
+
+### ✅ Bugs encontrados y resueltos en esta sesión
+
+| Bug                                                                                                  | Archivo                             | Fix                                                                |
+| ---------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------ | --- | ---------------------------------------------------------------------- |
+| `reportes/ventas` sin guard de permisos (accesible a cualquier usuario autenticado)                  | `reportes/layout.tsx` (nuevo)       | `requirePermission('reportes.ver')` en layout para toda la sección |
+| Botones submit al FINAL de forms largos — bloqueados por cookie consent banner (z-50 fixed bottom)   | `ProductoForm.tsx`, `OrdenForm.tsx` | Mover botones Crear/Cancelar al TOP del formulario                 |
+| `tipoCambio` en OrdenForm falla con moneda PEN (`z.coerce.number().positive()` convierte `""` → `0`) | `schemas/orden-compra.ts`           | `z.preprocess(v => v===''                                          |     | v==null?undefined:v, ...)`— mismo fix que ya existía en`cotizacion.ts` |
+
+**Commit prod:** `97e9a5f` — todos los fixes desplegados en orion-rp.com.
 
 ### ✅ Responsive + branding commiteado y desplegado
 
