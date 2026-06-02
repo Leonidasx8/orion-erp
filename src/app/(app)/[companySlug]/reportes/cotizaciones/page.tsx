@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useCallback } from 'react';
+import { useState, useTransition, useCallback, useEffect } from 'react';
 import { reporteCotizaciones, type FilaReporteCot } from '@/server/actions/reportes-cotizaciones';
 import { PageHead } from '@/components/shared/PageHead';
 
@@ -98,6 +98,12 @@ export default function ReporteCotizacionesPage() {
       }
     });
   }, [desde, hasta, comercial, estadoFiltro]);
+
+  // Auto-cargar al abrir la página con el mes actual
+  useEffect(() => {
+    handleBuscar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const totalMonto = filas.reduce((s, f) => s + f.montoTotal, 0);
   const totalAceptado = filas.reduce((s, f) => s + f.montoAceptado, 0);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useCallback } from 'react';
+import { useState, useTransition, useCallback, useEffect } from 'react';
 import { reportePrecios, type FilaPrecio } from '@/server/actions/reportes-precios';
 import { PageHead } from '@/components/shared/PageHead';
 
@@ -47,6 +47,12 @@ export default function ReportePreciosPage() {
       }
     });
   }, [desde, hasta, comercial]);
+
+  // Auto-cargar al abrir la página con el mes actual
+  useEffect(() => {
+    handleBuscar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">

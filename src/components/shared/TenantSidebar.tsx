@@ -67,7 +67,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Administración',
     items: [
-      { href: '/usuarios', label: 'Usuarios', icon: Users, disabled: true },
+      { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
       { href: '/configuracion', label: 'Configuración', icon: Settings },
     ],
   },
