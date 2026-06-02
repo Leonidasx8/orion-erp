@@ -48,7 +48,7 @@ CREATE TABLE cotizaciones (
   fecha_vencimiento   date NOT NULL,
 
   estado              text NOT NULL DEFAULT 'borrador'
-                      CHECK (estado IN ('borrador','enviada','aceptada','rechazada','vencida')),
+                      CHECK (estado IN ('borrador','enviada','aceptada','rechazada','vencida','convertida')),
 
   -- Totales (en moneda original; calculados por la app y guardados denormalizados)
   subtotal            numeric(14,2) NOT NULL DEFAULT 0,
