@@ -43,6 +43,36 @@
 
 ---
 
+## ⭐ FLUJO PRINCIPAL — Admin de punta a punta: crear cliente → cobro (PRIORIDAD)
+
+> Este es el hilo central del demo y la prueba más importante: **Lucas (Superadmin) hace TODO el ciclo de negocio en una sola secuencia coherente**, con los mismos datos de inicio a fin. Ejecutar PRIMERO (tras resolver D3/D0.4 de la Fase 0). Login: `lescriva@grupoidex.com.pe` / `Idex2026!`. Todo por UI/Playwright. Anotar cada ID en `docs/HANDOFF.md`. Al final, una sola historia: cliente nuevo → cotización → compra al proveedor → factura a crédito → cobro completo.
+
+**Datos del hilo (usar exactamente estos):**
+
+- Cliente: B2B, RUC `20100070970` (autocompleta por SUNAT), sufijo `[QA2]` en algún campo visible.
+- Producto: "Cable THW 14 AWG [QA2]" (SKU `QA2-CABLE-01`), gravado IGV, S/ compra 8.50 / venta 12.00, stock inicial 0 (se abastece por la compra).
+
+- [ ] **Paso 1 — Crear cliente.** `/idex/clientes` → "Nuevo cliente". Tipo RUC `20100070970`, esperar autocompletado SUNAT (razón social + dirección), marcar `esCliente=true`, guardar. **Esperado:** cliente creado con razón social poblada. Anotar `clienteId`.
+- [ ] **Paso 2 — Crear producto.** `/idex/productos` → "Nuevo producto". SKU `QA2-CABLE-01`, nombre "Cable THW 14 AWG [QA2]", familia Cables, afectación IGV gravado, precio compra S/ 8.50, precio venta S/ 12.00, stock mínimo 100, proveedor principal = CELSA (o el proveedor existente). Guardar. **Esperado:** producto creado, margen calculado. Anotar `productoId`.
+- [ ] **Paso 3 — (Opcional) Ajustar precio.** Editar el producto y subir venta a S/ 13.00, razón "Ajuste lista [QA2]". **Esperado:** queda registrado en `historial_precios` con autor = Lucas (alimenta el Reporte R2).
+- [ ] **Paso 4 — Crear cotización.** `/idex/cotizaciones` → "Nueva cotización". Cliente = el del Paso 1. Línea: producto del Paso 2, cantidad 500, moneda PEN. **Esperado:** subtotal gravado S/ 6,500, IGV 18% S/ 1,170, total S/ 7,670 (con precio 13.00). Guardar. Anotar `cotizacionId`.
+- [ ] **Paso 5 — Descargar PDF.** Botón PDF en el detalle. **Esperado:** PDF 200 con datos del tenant y del cliente.
+- [ ] **Paso 6 — Enviar cotización.** Botón "Enviar". **Esperado:** estado → `enviada`.
+- [ ] **Paso 7 — Aceptar/Aprobar cotización.** Botón "Aceptar". **Esperado:** estado → `aceptada` (habilita conversión).
+- [ ] **Paso 8 — Generar compra al proveedor.** "Generar compra a proveedor" desde la cotización aceptada. **Esperado:** se crea 1 OC al proveedor principal del producto con la cantidad necesaria. Anotar `ordenId`.
+- [ ] **Paso 9 — Aprobar y recepcionar la OC.** Enviar → Aprobar → modal "Recibir todo" (las 500 unidades). **Esperado:** OC recibida; kardex registra ENTRADA de 500; stock del producto sube a 500; costo promedio = 8.50.
+- [ ] **Paso 10 — Convertir a factura a CRÉDITO.** Desde la cotización, "Convertir a factura". Forma de pago = **crédito**, plazo 30 días. **Esperado:** factura `F00X` creada, estado `lista_para_emitir`, cotización → `convertida`, encolada en pgmq. Anotar `facturaId` y número.
+- [ ] **Paso 11 — Emitir a SUNAT (según D0.4).** Si Nubefact está activado: el worker procesa y la factura queda `aceptada` con PDF/CDR. Si sigue en pruebas: queda `lista_para_emitir`/`error_red`; documentar. Forzar el worker si hace falta (`POST /api/sunat/procesar-cola` con `SUNAT_WORKER_SECRET`).
+- [ ] **Paso 12 — Otorgar crédito al cliente (abre la CxC).** `/idex/credito` → otorgar línea de crédito al cliente: límite S/ 50,000, plazo 30 días. **Esperado:** línea registrada; la factura a crédito aparece como saldo pendiente en CxC con su fecha de vencimiento.
+- [ ] **Paso 13 — Registrar COBRO parcial.** En Crédito/CxC, registrar un pago del cliente por S/ 3,670 (parcial). **Esperado:** saldo pendiente baja a S/ 4,000; la factura sigue parcialmente pagada.
+- [ ] **Paso 14 — Registrar COBRO final.** Registrar el pago restante S/ 4,000. **Esperado:** saldo 0; factura saldada; sale de "vencidas/pendientes".
+- [ ] **Paso 15 — Verificar en reportes.** En `/idex/reportes`: la venta aparece en el reporte de ventas; en el reporte de cotizaciones (R1, una vez construido) la cotización figura como `convertida`; el cambio de precio del Paso 3 aparece en R2. **Esperado:** todo el ciclo trazable desde los reportes del Superadmin.
+- [ ] **Cierre:** documentar en `docs/HANDOFF.md` el hilo completo con todos los IDs y el resultado de cada paso. Este es el guion que se puede mostrar en vivo en el demo.
+
+> Tras validar este flujo principal, continuar con las Fases 1–5 (data compleja, separación de roles, reportes, stress). Las Fases 3 (reportes) deben construirse para que el Paso 15 sea completo.
+
+---
+
 ## FASE 0 — Decisiones a resolver con el usuario ANTES de ejecutar
 
 > Estas decisiones cambian qué se prueba y qué se construye. El worker debe confirmarlas con el usuario (Leonidas) en un solo mensaje al inicio y NO asumir.
