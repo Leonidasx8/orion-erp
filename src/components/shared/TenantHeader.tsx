@@ -6,17 +6,21 @@ export function TenantHeader({
   tenant,
   crumbs,
   userName,
+  className,
 }: {
   tenant: Tenant;
   crumbs?: { label: string; href?: string }[];
   userName?: string;
+  className?: string;
 }) {
   const trail: { label: string; href?: string }[] = crumbs ?? [
     { label: tenant.razonSocial.split(/\s+/)[0], href: `/${tenant.slug}` },
   ];
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-orion-border bg-orion-bg px-6">
+    <header
+      className={`flex h-14 shrink-0 items-center gap-4 border-b border-orion-border bg-orion-bg px-6 ${className ?? ''}`}
+    >
       {/* Breadcrumbs */}
       <nav className="flex min-w-0 items-center gap-1.5 text-[13px] text-orion-fg-muted">
         {trail.map((c, i) => {

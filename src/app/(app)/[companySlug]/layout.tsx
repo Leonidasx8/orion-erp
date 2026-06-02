@@ -7,6 +7,7 @@ import { db } from '@/lib/db/client';
 import { tenantMembers, roles, rolPermisos } from '@/lib/db/schema';
 import { TenantHeader } from '@/components/shared/TenantHeader';
 import { TenantSidebar } from '@/components/shared/TenantSidebar';
+import { MobileTopBar } from '@/components/shared/MobileTopBar';
 import { PermissionsBootstrap } from '@/components/shared/PermissionsBootstrap';
 import { tenantThemeClass } from '@/lib/design/tenant-theme';
 
@@ -64,36 +65,34 @@ export default async function TenantLayout({
   const logoSrc = TENANT_LOGOS[tenant.slug];
   const companyShortName = tenant.razonSocial.split(/\s+/)[0];
 
+  const mobileLogo = logoSrc ? (
+    <Image
+      src={logoSrc}
+      alt={tenant.razonSocial}
+      width={80}
+      height={28}
+      className="h-7 w-auto max-w-[110px] object-contain"
+    />
+  ) : (
+    <span className="text-sm font-semibold text-orion-fg">{companyShortName}</span>
+  );
+
   return (
     <div className={`flex min-h-screen bg-orion-bg-subtle ${tenantThemeClass(tenant.slug)}`}>
-      {/* Mobile top bar — visible only below lg */}
-      <div className="fixed inset-x-0 top-0 z-40 flex h-12 items-center gap-3 border-b border-orion-border bg-orion-bg px-4 lg:hidden">
-        {logoSrc ? (
-          <Image
-            src={logoSrc}
-            alt={tenant.razonSocial}
-            width={80}
-            height={32}
-            className="h-8 w-auto max-w-[120px] object-contain"
-          />
-        ) : (
-          <>
-            <span className="grid h-6 w-6 place-items-center rounded-md bg-tenant-accent text-[10px] font-bold text-white">
-              {companyShortName.slice(0, 2).toUpperCase()}
-            </span>
-            <span className="text-sm font-semibold text-orion-fg">{companyShortName}</span>
-          </>
-        )}
-      </div>
+      {/* Mobile: barra fija + drawer con sidebar */}
+      <MobileTopBar
+        logo={mobileLogo}
+        sidebar={<TenantSidebar tenant={tenant} userName={userName} userRole={userRol} />}
+      />
 
-      {/* Sidebar — hidden on mobile, visible on lg+ */}
+      {/* Sidebar — solo en lg+ */}
       <TenantSidebar tenant={tenant} userName={userName} userRole={userRol} />
 
-      {/* Right column: topbar + content */}
+      {/* Columna derecha: header + contenido */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <TenantHeader tenant={tenant} userName={userName} />
+        <TenantHeader className="hidden lg:flex" tenant={tenant} userName={userName} />
         <PermissionsBootstrap permisos={userPermisos.map((p) => p.codigo)} />
-        <main className="flex-1 overflow-auto p-4 pt-16 lg:p-6 lg:pt-6">{children}</main>
+        <main className="flex-1 overflow-auto p-4 pt-14 lg:p-6 lg:pt-6">{children}</main>
       </div>
     </div>
   );

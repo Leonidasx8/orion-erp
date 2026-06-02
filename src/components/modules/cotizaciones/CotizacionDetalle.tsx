@@ -346,6 +346,7 @@ function labelLowercase(estado: Estado): string {
     lista_para_emitir: 'lista para emitir',
     emitida: 'emitida',
     sin_enviar: 'sin enviar',
+    error_red: 'error red',
   };
   return map[estado];
 }

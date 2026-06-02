@@ -21,7 +21,8 @@ export type Estado =
   | 'cerrada'
   | 'lista_para_emitir'
   | 'emitida'
-  | 'sin_enviar';
+  | 'sin_enviar'
+  | 'error_red';
 
 const CFG: Record<Estado, { label: string; className: string; lineThrough?: boolean }> = {
   borrador: { label: 'Borrador', className: 'bg-orion-bg-muted text-orion-fg-muted' },
@@ -44,6 +45,7 @@ const CFG: Record<Estado, { label: string; className: string; lineThrough?: bool
   lista_para_emitir: { label: 'Lista para emitir', className: 'bg-info-soft text-info-fg' },
   emitida: { label: 'Emitida', className: 'bg-success-soft text-success-fg' },
   sin_enviar: { label: 'Sin enviar', className: 'bg-orion-bg-muted text-orion-fg-muted' },
+  error_red: { label: 'Error red', className: 'bg-danger-soft text-danger-fg' },
 };
 
 export function EstadoBadge({
