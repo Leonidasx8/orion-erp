@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Building2, Briefcase, FileText, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,12 +20,9 @@ interface Props {
 export function ConfigTabBar({ active }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   function go(id: TabId) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', id);
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?tab=${id}`);
   }
 
   return (
