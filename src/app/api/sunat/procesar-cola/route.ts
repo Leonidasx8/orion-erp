@@ -76,7 +76,7 @@ export async function POST(req: Request) {
 
     if (!tenantRows.length) throw new Error(`Tenant ${tenantId} no encontrado`);
     const tenantSlug = tenantRows[0].slug;
-    const client = getSunatClient(tenantSlug);
+    const client = await getSunatClient(tenantSlug);
 
     if (documentoTipo === 'factura') {
       const [factura] = await db.select().from(facturas).where(eq(facturas.id, documentoId));

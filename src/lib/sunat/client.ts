@@ -1,5 +1,8 @@
 import 'server-only';
 
+import { eq } from 'drizzle-orm';
+import { db } from '@/lib/db/client';
+import { tenants } from '@/lib/db/schema';
 import { NubefactNetworkError, SunatError, SunatValidationError } from './errors';
 import type {
   FacturaPayload,
@@ -198,22 +201,49 @@ class SunatClientStub implements SunatClient {
 }
 
 /**
- * Obtiene el cliente NUBEFACT para un tenant.
- * Lee NUBEFACT_RUTA_<SLUG> y NUBEFACT_TOKEN_<SLUG> del entorno.
- * El slug se normaliza a mayúsculas con guiones → guiones bajos.
- *
- * Ejemplo: tenantSlug="idex" → NUBEFACT_RUTA_IDEX / NUBEFACT_TOKEN_IDEX
+ * Crea un cliente NUBEFACT a partir de ruta + token explícitos.
+ * Útil para "Probar conexión" en la UI antes de guardar las credenciales.
  */
-export function getSunatClient(tenantSlug: string): SunatClient {
+export function crearSunatClient(ruta: string, token: string): SunatClient {
+  return new NubefactHttpClient(ruta, token);
+}
+
+interface ConfigSunat {
+  ruta?: string;
+  token?: string;
+}
+
+/**
+ * Obtiene el cliente NUBEFACT para un tenant.
+ *
+ * Prioridad de credenciales:
+ *   1. `tenants.config_sunat` en la DB (configurado por el tenant vía UI).
+ *   2. Fallback: NUBEFACT_RUTA_<SLUG> / NUBEFACT_TOKEN_<SLUG> del entorno
+ *      (retrocompatibilidad; el slug se normaliza a mayúsculas con guiones → _).
+ *
+ * Si no hay ninguna, devuelve un stub que falla limpio.
+ */
+export async function getSunatClient(tenantSlug: string): Promise<SunatClient> {
+  // 1. Credenciales en la DB (configuradas por el tenant)
+  const [tenant] = await db
+    .select({ configSunat: tenants.configSunat })
+    .from(tenants)
+    .where(eq(tenants.slug, tenantSlug));
+
+  const cfg = (tenant?.configSunat ?? null) as ConfigSunat | null;
+  if (cfg?.ruta && cfg?.token) {
+    return new NubefactHttpClient(cfg.ruta, cfg.token);
+  }
+
+  // 2. Fallback a variables de entorno
   const key = tenantSlug.toUpperCase().replace(/-/g, '_');
   const ruta = process.env[`NUBEFACT_RUTA_${key}`];
   const token = process.env[`NUBEFACT_TOKEN_${key}`];
-
-  if (!ruta || !token) {
-    return new SunatClientStub();
+  if (ruta && token) {
+    return new NubefactHttpClient(ruta, token);
   }
 
-  return new NubefactHttpClient(ruta, token);
+  return new SunatClientStub();
 }
 
 export { NubefactNetworkError, SunatError, SunatValidationError };
