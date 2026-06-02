@@ -77,17 +77,24 @@ export function TenantSidebar({
   tenant,
   userName,
   userRole,
+  className,
 }: {
   tenant: Tenant;
   userName?: string;
   userRole?: string;
+  className?: string;
 }) {
   const pathname = usePathname();
   const tenantBase = `/${tenant.slug}`;
   const initials = brandInitials(tenant.razonSocial);
 
   return (
-    <aside className="hidden min-h-0 w-60 shrink-0 flex-col border-r border-orion-border bg-orion-bg lg:flex">
+    <aside
+      className={
+        className ??
+        'hidden min-h-0 w-60 shrink-0 flex-col border-r border-orion-border bg-orion-bg lg:flex'
+      }
+    >
       {/* Brand */}
       <div className="flex h-14 items-center gap-2.5 border-b border-orion-border px-4">
         {TENANT_LOGOS[tenant.slug] ? (

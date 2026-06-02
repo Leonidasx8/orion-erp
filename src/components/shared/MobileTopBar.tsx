@@ -6,10 +6,10 @@ import { Menu, X } from 'lucide-react';
 
 interface Props {
   logo: React.ReactNode;
-  sidebar: React.ReactNode;
+  drawerSidebar: React.ReactNode;
 }
 
-export function MobileTopBar({ logo, sidebar }: Props) {
+export function MobileTopBar({ logo, drawerSidebar }: Props) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -57,7 +57,7 @@ export function MobileTopBar({ logo, sidebar }: Props) {
             <X size={16} />
           </button>
         </div>
-        {sidebar}
+        {drawerSidebar}
       </div>
     </>
   );

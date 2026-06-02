@@ -82,7 +82,14 @@ export default async function TenantLayout({
       {/* Mobile: barra fija + drawer con sidebar */}
       <MobileTopBar
         logo={mobileLogo}
-        sidebar={<TenantSidebar tenant={tenant} userName={userName} userRole={userRol} />}
+        drawerSidebar={
+          <TenantSidebar
+            tenant={tenant}
+            userName={userName}
+            userRole={userRol}
+            className="flex min-h-0 w-full flex-col bg-orion-bg"
+          />
+        }
       />
 
       {/* Sidebar — solo en lg+ */}
