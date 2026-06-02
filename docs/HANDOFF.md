@@ -2,34 +2,56 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-02 GMT-5
+**Última actualización:** 2026-06-02 02:10 GMT-5
 **Branch activa:** `main` (producción desplegada en orion-rp.com)
-**Estado verificado:** Build Vercel OK. DB Drizzle conecta en producción. `/api/test-db` → `{"ok":true}`.
+**Estado verificado:** Login Playwright ✅. Build Vercel OK. DB conecta. `/api/test-db` → `{"ok":true}`.
 
 ---
 
-## 🚨 ESTADO PRODUCCIÓN — 2026-06-02
+## ✅ ESTADO PRODUCCIÓN — 2026-06-02 (sesión noche)
 
-### ✅ Bloqueador DB RESUELTO
+### ✅ Login + todas las páginas verificadas (Playwright)
 
-La conexión Drizzle→Supabase en Vercel **ya funciona**. Fix aplicado:
+Test `scripts/test-prod-login.ts` contra orion-rp.com — **PASS sin errores de consola**:
 
-- **Pooler correcto:** `aws-1-sa-east-1.pooler.supabase.com:6543` (antes se usaba `aws-0`, que no reconocía el proyecto)
-- **DATABASE_URL en Vercel prod:**
-  ```
-  postgresql://postgres.aycraotcdbunybfjzlmq:Holiboli2026123456789@aws-1-sa-east-1.pooler.supabase.com:6543/postgres
-  ```
-- `prepare: false` activo en `src/lib/db/client.ts`
-- `/api/auth/callback` sigue usando supabase-js REST (parche previo, no tocar)
-- Test: `curl https://orion-rp.com/api/test-db` → `{"ok":true,"result":[{"slug":"idex"}]}`
+- Login `lescriva@grupoidex.com.pe` / `Idex2026!` → redirige a `/idex` ✅
+- Dashboard, Clientes, Productos, Cotizaciones, Compras, Inventario — todos 200 ✅
 
-### ⚠️ Pendiente verificar antes del demo (miércoles 4-jun)
+### ✅ Responsive + branding commiteado y desplegado
 
-1. **Login completo con Playwright:** el test en orion-rp.com fue interrumpido. Verificar:
-   - Login con `lescriva@grupoidex.com.pe` / `Idex2026!`
-   - Que llega a `/idex` dashboard sin "Application error"
-   - Navegar: Clientes, Productos, Cotizaciones, Órdenes, Inventario
-2. **Cambios localizacion sin commit:** hay ~25 archivos modificados en `main` (branding peruano) que NO están en producción. Decidir si commitear antes del demo.
+Commit `c7e7201` — "feat(ui): responsive layout + violet brand color para demo 4-jun"
+
+- Layout tenant: flexbox responsive + mobile top bar con logo de tenant
+- Sidebar: `hidden lg:flex` (se oculta en mobile)
+- Tablas: `overflow-x-auto` en Cotizaciones, Órdenes, Inventario, Facturas
+- `--primary`: violeta (plataforma) vs naranja (tenant accent IDEX — sin cambios)
+- Deploy Vercel prod: **READY**, 0 errores en logs post-deploy
+
+### ✅ Datos producción verificados (Supabase)
+
+| Entidad       | Cantidad                                                      |
+| ------------- | ------------------------------------------------------------- |
+| Clientes      | 10                                                            |
+| Productos     | 18                                                            |
+| Cotizaciones  | 9 (aceptada×3, enviada×3, borrador×1, rechazada×1, vencida×1) |
+| Órdenes       | 7                                                             |
+| Stock activo  | 18 productos                                                  |
+| Stock crítico | 2                                                             |
+
+### 📋 CHECKLIST DEMO — miércoles 4-jun con Lucas
+
+| Item                                | Estado                                                               |
+| ----------------------------------- | -------------------------------------------------------------------- |
+| `curl /api/test-db` → `{"ok":true}` | ✅                                                                   |
+| Login `lescriva@grupoidex.com.pe`   | ✅ último sign-in hoy                                                |
+| Dashboard carga sin errores         | ✅                                                                   |
+| Clientes (10 registros)             | ✅                                                                   |
+| Productos (18 cables CELSA)         | ✅                                                                   |
+| Cotizaciones (9, todos los estados) | ✅                                                                   |
+| Compras a Proveedores (7 órdenes)   | ✅                                                                   |
+| Inventario / Kardex (18 productos)  | ✅                                                                   |
+| `vendedor@idex.demo` / `Idex2026!`  | ⚠️ creado, nunca ha iniciado sesión — probar si se va a usar en demo |
+| `contador@idex.demo` / `Idex2026!`  | ⚠️ creado, nunca ha iniciado sesión                                  |
 
 ### Credenciales producción (orion-rp.com)
 
@@ -42,7 +64,8 @@ La conexión Drizzle→Supabase en Vercel **ya funciona**. Fix aplicado:
 
 - **Supabase DB password actual:** `Holiboli2026123456789`
 - **Supabase proyecto:** `aycraotcdbunybfjzlmq` (sa-east-1), org `orionrp-hub`
-- **Último commit prod:** `e28c3f1` — "docs(adr): handoff sesión 2026-06-02"
+- **Último commit prod:** `c7e7201` — "feat(ui): responsive layout + violet brand color para demo 4-jun"
+- **DB bloqueador:** RESUELTO — pooler `aws-1-sa-east-1.pooler.supabase.com:6543`, `prepare: false`
 
 ---
 
