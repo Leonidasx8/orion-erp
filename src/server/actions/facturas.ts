@@ -95,7 +95,7 @@ export async function crearFactura(
           tipoDocumento: data.tipoDocumento,
           serie: data.serie,
           numero,
-          numeroCompleto,
+          // numeroCompleto es GENERATED ALWAYS AS en la DB — no insertar
           fechaEmision: data.fechaEmision,
           fechaVencimiento: data.fechaVencimiento,
           clienteId: data.clienteId,
