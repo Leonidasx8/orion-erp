@@ -82,7 +82,7 @@ export async function reencolarConBackoff(
   };
 
   const result = await db.execute<{ send: number }>(sql`
-    SELECT pgmq.send('sunat_outbox', ${JSON.stringify(payload)}::jsonb, ${delay}) AS send
+    SELECT pgmq.send('sunat_outbox', ${JSON.stringify(payload)}::jsonb, ${delay}::integer) AS send
   `);
 
   const row = (result as unknown as { send: number }[])[0];

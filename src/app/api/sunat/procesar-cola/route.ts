@@ -397,7 +397,10 @@ export async function POST(req: Request) {
 }
 
 async function ackMensaje(msgId: number) {
-  await db.execute(sql`SELECT pgmq.delete('sunat_outbox', ${msgId})`);
+  // pgmq.delete está sobrecargada (bigint | bigint[]); sin cast explícito
+  // postgres.js manda el parámetro sin tipo y Postgres lanza
+  // "function pgmq.delete(unknown, unknown) is not unique". El ::bigint resuelve.
+  await db.execute(sql`SELECT pgmq.delete('sunat_outbox', ${msgId}::bigint)`);
 }
 
 async function marcarErrorDefinitivo(documentoTipo: string, documentoId: string, mensaje: string) {
