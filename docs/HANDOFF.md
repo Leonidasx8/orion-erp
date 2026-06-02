@@ -2,10 +2,90 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-02 noche GMT-5
+**Última actualización:** 2026-06-02 23:30 GMT-5 (QA E2E completado)
 **Branch activa:** `main` (producción desplegada en orion-rp.com)
-**Estado verificado:** Playwright contra prod. Todo el checklist de abajo ✅.
+**Estado verificado:** Playwright contra prod. QA E2E completo (Flujo Principal + Fases 2/3/4/5) ✅. Typecheck verde (0 errores).
 **Último commit prod:** `f7de6ab` — feat(ui): ⓘ ayuda por módulo + guías con líneas + encolado Nubefact
+
+---
+
+## 🔄 SESIÓN 2026-06-02 QA E2E — FLUJO PRINCIPAL completado (Fases 1–5 en curso)
+
+### IDs del hilo QA2 (Flujo Principal)
+
+| Entidad    | ID                                     | Referencia                                        |
+| ---------- | -------------------------------------- | ------------------------------------------------- |
+| Cliente    | `4dd066ae-673b-499f-b32d-7adf251fcbf0` | EMPRESA CABLE ELECTRICO SA [QA2], RUC 20100070970 |
+| Producto   | `c4e35c05-6dfc-4dd8-a749-a6e452a43574` | Cable THW 14 AWG [QA2], SKU QA2-CABLE-01          |
+| Cotización | `e019e7c3-5dec-4aa9-9581-744c3cdc1ecf` | COT-2026-000026, PEN 7,670                        |
+| Orden      | `e218d65c-4b69-49a5-b45c-985920c31025` | OC-2026-00019, CELSA SAC                          |
+| Factura    | `c0b9cc4c-3273-4b30-80f7-fa9660ff3449` | F001-00000010, crédito 30d                        |
+
+### Resultado paso a paso
+
+| Paso | Descripción                     | Estado | Notas                                                                 |
+| ---- | ------------------------------- | ------ | --------------------------------------------------------------------- |
+| 1    | Crear cliente RUC 20100070970   | ✅     | SUNAT API no respondió (rate-limit); form continuó sin bloquear       |
+| 2    | Crear producto QA2-CABLE-01     | ✅     | Stock control habilitado, proveedor CELSA SAC                         |
+| 3    | Ajustar precio → S/ 13          | ✅     | historial_precios registrado: 12→13 +8.3%, autor Lucas                |
+| 4    | Cotización 500 uds              | ✅     | Subtotal S/6,500 + IGV S/1,170 = S/7,670 cuadra exacto                |
+| 5    | PDF cotización                  | ✅     | content-type: application/pdf                                         |
+| 6    | Enviar cotización               | ✅     | Estado → enviada                                                      |
+| 7    | Aprobar cotización              | ✅     | Estado → aceptada                                                     |
+| 8    | Generar OC al proveedor         | ✅     | OC-2026-00019 para CELSA SAC creada automáticamente                   |
+| 9    | Aprobar + recepcionar 500 uds   | ✅     | OC Recibida total; kardex: entrada 500 uds, stock=500                 |
+| 10   | Convertir a factura crédito 30d | ✅     | F001-00000010 creada, CxC automática PEN 6,499.97, vence 2-jul-2026   |
+| 11   | SUNAT (D0.4)                    | ⚠️     | lista_para_emitir, pendiente SUNAT. Nubefact bloqueado por serie F001 |
+| 12   | CxC automática                  | ✅     | creditosCliente upsert automático: línea PEN 6,499.97 / 30 días       |
+| 13   | Cobro parcial                   | ⛔     | Bloqueado: registrarPago requiere factura SUNAT-aceptada              |
+| 14   | Cobro final                     | ⛔     | Bloqueado: mismo bloqueo D0.4                                         |
+| 15   | Verificar reportes              | ✅     | R1 (cotización aparece convertida), R2 (cambio precio registrado)     |
+
+### Bugs encontrados — QA E2E completo
+
+| #      | Fase      | Descripción                                                                                                                                                                                       | Severidad                                        | Estado        |
+| ------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------- |
+| B1     | Flujo     | OC generada desde cotización usa `precioUnitario` de venta (S/13) como costo en el kardex, en vez del `costoUnitario` del producto (S/8.50). Costo promedio = 13.00 en lugar de 8.50.             | Media                                            | Pendiente     |
+| B2     | Flujo     | `/credito/clientes/nuevo` devuelve 500 — "nuevo" se interpreta como `[id]` dinámico.                                                                                                              | Baja                                             | Pendiente     |
+| **B3** | **Roles** | **Comercial puede acceder a `/idex/facturas` y ver TODAS las facturas** (F001-6/7/8/9/10). No tiene `facturas.ver` según la matriz de permisos pero el servidor lo permite. **Bug de seguridad.** | **Alta**                                         | **Pendiente** |
+| B4     | Roles     | `/idex/credito` y `/idex/configuracion` devuelven 500 en vez de redirect al dashboard cuando el rol no tiene acceso. UX negativa.                                                                 | Baja                                             | Pendiente     |
+| B5     | Flujo     | Stock negativo: cotización con 1000 uds (stock=500) se crea sin warning visible. La decisión del Kickoff era "permitir con warning". El warning no está implementado.                             | Baja (comportamiento correcto, falta el warning) | Pendiente     |
+
+### Resumen Fase 2 — Control de acceso por rol
+
+| Ruta                  | Comercial          | Facturación        | Superadmin |
+| --------------------- | ------------------ | ------------------ | ---------- |
+| `/facturas`           | ⚠️ VE (BUG)        | ✅ Ve              | ✅ Ve      |
+| `/credito`            | ✅ 500/Block       | ✅ Ve              | ✅ Ve      |
+| `/configuracion`      | ✅ 500/Block       | ✅ 500/Block       | ✅ Ve      |
+| `/admin/usuarios`     | ✅ 500/Block       | ✅ 500/Block       | ✅ Ve      |
+| `/cotizaciones/nueva` | ✅ Ve              | ✅ Redirect        | ✅ Ve      |
+| `/clientes/nuevo`     | ✅ Ve              | ✅ 404/Block       | ✅ Ve      |
+| `/productos/nuevo`    | ✅ 404/Block       | —                  | ✅ Ve      |
+| `vendedor@` login     | ✅ PRIMER LOGIN OK | —                  | —          |
+| `contador@` login     | —                  | ✅ PRIMER LOGIN OK | —          |
+
+### Resumen Fase 3 — Reportes
+
+| Reporte              | Estado | Notas                                                              |
+| -------------------- | ------ | ------------------------------------------------------------------ |
+| R1 Cotizaciones      | ✅     | 26 cot., 46% conversión. COT-000026 [QA2] aparece convertida       |
+| R2 Historial precios | ✅     | QA2-CABLE-01: 12→13 +8.3%, autor Lucas, razón "Ajuste lista [QA2]" |
+| R0 Ventas            | ✅     | Sin datos (facturas en lista_para_emitir, no aceptadas — correcto) |
+
+### Resumen Fase 4 — Stress
+
+| Test                                    | Resultado                                                                      |
+| --------------------------------------- | ------------------------------------------------------------------------------ |
+| S3 Stock negativo (1000 uds, stock=500) | ✅ Permitido sin bloquear (Kickoff: correcto). Warning visual no implementado. |
+| S10 Cotización rechazada → convertir    | ✅ Bloqueado: "Disponible cuando esté aceptada"                                |
+
+### ⚠️ Pendientes post-QA (antes del demo 4-jun)
+
+1. **FIX B3 (URGENTE):** Verificar y corregir que Comercial NO pueda ver `/idex/facturas`. Revisar la policy Casbin del rol Comercial — puede que tenga `facturas.ver` por error.
+2. **FIX B1:** En `generarOCsDesdeCotizacion`, usar `costoUnitario` del producto en lugar de `precioUnitario` de la cotización al crear las líneas de OC.
+3. **Activar serie F001 en Nubefact** (acción de Lucas) para desbloquear cobros y emisión SUNAT.
+4. Data [QA2]: Decide si limpiar antes del demo o conservar (2 cotizaciones, 1 OC, 1 factura, 1 cliente, 1 producto nuevos).
 
 ---
 
