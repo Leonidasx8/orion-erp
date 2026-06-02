@@ -11,6 +11,7 @@ import {
   seriesDocumentos,
   cotizaciones,
   cotizacionItems,
+  creditosCliente,
 } from '@/lib/db/schema';
 import { crearFacturaSchema, calcularLinea, calcularTotalesFactura } from '@/lib/schemas/factura';
 import type { CrearFacturaInput } from '@/lib/schemas/factura';
@@ -199,7 +200,10 @@ export async function anularFactura(facturaId: string, motivo: string): Promise<
 
 export async function convertirCotizacionAFactura(
   cotizacionId: string,
-  opcionesOverride?: Pick<CrearFacturaInput, 'tipoDocumento' | 'serie'>
+  opcionesOverride?: Partial<Pick<CrearFacturaInput, 'tipoDocumento' | 'serie'>> & {
+    formaPago?: 'contado' | 'credito';
+    plazoDias?: number;
+  }
 ): Promise<ActionResult<{ facturaId: string; numeroCompleto: string }>> {
   try {
     const { tenant } = await requirePermission('facturas.crear');
@@ -223,15 +227,26 @@ export async function convertirCotizacionAFactura(
 
     const tipoDocumento = opcionesOverride?.tipoDocumento ?? '01';
     const serie = opcionesOverride?.serie ?? (tipoDocumento === '01' ? 'F001' : 'B001');
+    const formaPago = opcionesOverride?.formaPago ?? 'contado';
+    const plazoDias = opcionesOverride?.plazoDias ?? 30;
+
+    const fechaEmision = new Date().toISOString().split('T')[0];
+    let fechaVencimiento: string | undefined;
+    if (formaPago === 'credito') {
+      const venc = new Date();
+      venc.setDate(venc.getDate() + plazoDias);
+      fechaVencimiento = venc.toISOString().split('T')[0];
+    }
 
     const input: CrearFacturaInput = {
       tipoDocumento,
       serie,
       clienteId: cot.clienteId,
-      fechaEmision: new Date().toISOString().split('T')[0],
+      fechaEmision,
+      fechaVencimiento,
       moneda: cot.moneda as 'PEN' | 'USD',
       tipoCambio: cot.tipoCambio ? Number(cot.tipoCambio) : undefined,
-      formaPago: 'contado',
+      formaPago,
       cotizacionOrigenId: cotizacionId,
       items: items.map((it) => ({
         productoId: it.productoId ?? undefined,
@@ -240,18 +255,39 @@ export async function convertirCotizacionAFactura(
         unidadMedida: it.unidadMedida ?? 'NIU',
         cantidad: Number(it.cantidad),
         precioUnitario: Number(it.precioUnitario),
-        tipoAfectacionIgv: '10' as const,
+        tipoAfectacionIgv: it.afectaIgv ? ('10' as const) : ('20' as const),
       })),
     };
 
     const result = await crearFactura(input);
 
     if (result.success) {
-      // Marcar cotización como convertida
       await db
         .update(cotizaciones)
         .set({ estado: 'convertida', updatedAt: new Date() })
         .where(eq(cotizaciones.id, cotizacionId));
+
+      // D2: auto-crear/actualizar línea de crédito cuando forma_pago = crédito
+      if (formaPago === 'credito') {
+        const totalFactura = calcularTotalesFactura(input.items).total;
+        await db
+          .insert(creditosCliente)
+          .values({
+            clienteId: cot.clienteId,
+            tenantId: tenant.id,
+            lineaCredito: String(Math.max(totalFactura, 0)),
+            moneda: (cot.moneda as 'PEN' | 'USD') ?? 'PEN',
+            plazoDias,
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: creditosCliente.clienteId,
+            set: {
+              plazoDias,
+              updatedAt: new Date(),
+            },
+          });
+      }
     }
 
     return result;

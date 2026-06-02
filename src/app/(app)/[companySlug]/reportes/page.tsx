@@ -25,6 +25,26 @@ export default async function ReportesPage({
             </CardContent>
           </Card>
         </Link>
+        <Link href={`/${companySlug}/reportes/cotizaciones`}>
+          <Card className="cursor-pointer transition-colors hover:bg-accent">
+            <CardContent className="p-4">
+              <p className="text-sm font-medium">Cotizaciones por comercial</p>
+              <p className="mt-1 text-xs text-orion-fg-muted">
+                Seguimiento y panel de control de cotizaciones generadas
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href={`/${companySlug}/reportes/precios`}>
+          <Card className="cursor-pointer transition-colors hover:bg-accent">
+            <CardContent className="p-4">
+              <p className="text-sm font-medium">Historial de precios</p>
+              <p className="mt-1 text-xs text-orion-fg-muted">
+                Cambios de precio por producto, autor y razón
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         <Link href={`/${companySlug}/credito`}>
           <Card className="cursor-pointer transition-colors hover:bg-accent">
             <CardContent className="p-4">
