@@ -102,6 +102,21 @@ export function ProductoForm({ companySlug, producto, categorias, uoms, proveedo
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Barra de acciones — sticky top para evitar que el cookie banner la tape */}
+      <div className="flex items-center justify-end gap-3">
+        {serverError && <p className="mr-auto text-sm text-destructive">{serverError}</p>}
+        <Button type="submit" disabled={pending}>
+          {pending ? 'Guardando…' : producto ? 'Guardar cambios' : 'Crear producto'}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push(`/${companySlug}/productos`)}
+        >
+          Cancelar
+        </Button>
+      </div>
+
       {/* Identificación */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
@@ -284,21 +299,6 @@ export function ProductoForm({ companySlug, producto, categorias, uoms, proveedo
           </Select>
         </div>
       )}
-
-      {serverError && <p className="text-sm text-destructive">{serverError}</p>}
-
-      <div className="flex gap-3">
-        <Button type="submit" disabled={pending}>
-          {pending ? 'Guardando…' : producto ? 'Guardar cambios' : 'Crear producto'}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.push(`/${companySlug}/productos`)}
-        >
-          Cancelar
-        </Button>
-      </div>
     </form>
   );
 }

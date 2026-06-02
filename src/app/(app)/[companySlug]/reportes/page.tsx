@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { requirePermission } from '@/lib/auth/require-permission';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHead } from '@/components/shared/PageHead';
 
@@ -11,7 +10,6 @@ export default async function ReportesPage({
   params: Promise<{ companySlug: string }>;
 }) {
   const { companySlug } = await params;
-  await requirePermission('reportes.ver');
 
   return (
     <div className="space-y-4">

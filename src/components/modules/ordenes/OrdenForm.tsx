@@ -122,6 +122,29 @@ export function OrdenForm({ companySlug, proveedores, productos }: Props) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      {/* Barra de acciones — top para evitar que el cookie banner bloquee */}
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={pending}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-tenant-accent px-4 text-[13px] font-medium text-white hover:brightness-95 disabled:opacity-60"
+        >
+          {pending ? 'Guardando…' : 'Crear orden'}
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push(`/${companySlug}/ordenes`)}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-4 text-[13px] font-medium text-orion-fg hover:bg-orion-bg-muted"
+        >
+          Cancelar
+        </button>
+        {serverError && (
+          <div className="ml-auto rounded-md border border-danger bg-danger-soft px-3 py-2 text-[13px] text-danger-fg">
+            {serverError}
+          </div>
+        )}
+      </div>
+
       <Card>
         <CardHead>
           <CardTitle>Cabecera</CardTitle>
@@ -334,29 +357,6 @@ export function OrdenForm({ companySlug, proveedores, productos }: Props) {
             </div>
           </div>
         </Card>
-      </div>
-
-      {serverError && (
-        <div className="rounded-md border border-danger bg-danger-soft px-3 py-2 text-[13px] text-danger-fg">
-          {serverError}
-        </div>
-      )}
-
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-tenant-accent px-4 text-[13px] font-medium text-white hover:brightness-95 disabled:opacity-60"
-        >
-          {pending ? 'Guardando…' : 'Crear orden'}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push(`/${companySlug}/ordenes`)}
-          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-4 text-[13px] font-medium text-orion-fg hover:bg-orion-bg-muted"
-        >
-          Cancelar
-        </button>
       </div>
     </form>
   );
