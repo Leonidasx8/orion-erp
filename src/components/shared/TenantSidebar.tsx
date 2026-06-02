@@ -60,7 +60,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Análisis',
     items: [
-      { href: '/reportes', label: 'Reportes', icon: BarChart3, disabled: true },
+      { href: '/reportes', label: 'Reportes', icon: BarChart3 },
       { href: '/auditoria', label: 'Auditoría', icon: History, disabled: true },
     ],
   },
