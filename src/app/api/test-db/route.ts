@@ -11,6 +11,10 @@ export async function GET() {
     return NextResponse.json({ ok: true, url_redacted: url, result });
   } catch (err: unknown) {
     const e = err as Error;
-    return NextResponse.json({ ok: false, url_redacted: url, error: e.message }, { status: 500 });
+    const cause = (e as unknown as { cause?: { message?: string; code?: string } }).cause;
+    return NextResponse.json(
+      { ok: false, url_redacted: url, error: e.message, cause: cause?.message, code: cause?.code },
+      { status: 500 }
+    );
   }
 }
