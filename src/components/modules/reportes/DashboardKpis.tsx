@@ -85,7 +85,7 @@ export function DashboardKpis({
         <KpiCard label="CxC total" value={Number(cxcTotales?.total ?? 0)} format="currency" />
       </Link>
       <Link
-        href={`/${companySlug}/inventario?filter=critico`}
+        href={`/${companySlug}/inventario?estado=critico`}
         className="block rounded-lg transition-opacity hover:opacity-80"
       >
         <KpiCard label="Stock crítico" value={stockCritico} />
