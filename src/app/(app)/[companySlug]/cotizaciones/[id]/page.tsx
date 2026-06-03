@@ -47,6 +47,9 @@ export default async function CotizacionDetallePage({
       clienteRazon: clientes.razonSocial,
       clienteNombres: clientes.nombres,
       clienteApellidoPaterno: clientes.apellidoPaterno,
+      clienteTelefono: clientes.telefono,
+      clienteEmail: clientes.email,
+      contactoEmail: cotizaciones.contactoClienteEmail,
     })
     .from(cotizaciones)
     .leftJoin(clientes, eq(clientes.id, cotizaciones.clienteId))
@@ -113,6 +116,8 @@ export default async function CotizacionDetallePage({
       duplicar: canDuplicar,
       reenviar: canReenviar && row.estado === 'enviada',
     },
+    clienteTelefono: row.clienteTelefono ?? null,
+    clienteEmail: row.contactoEmail ?? row.clienteEmail ?? null,
   };
 
   return <CotizacionDetalle data={data} tenantSlug={tenant.slug} />;

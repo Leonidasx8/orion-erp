@@ -53,6 +53,8 @@ export type CotizacionDetalleData = {
     duplicar: boolean;
     reenviar: boolean;
   };
+  clienteTelefono?: string | null;
+  clienteEmail?: string | null;
 };
 
 export function CotizacionDetalle({
@@ -103,6 +105,10 @@ export function CotizacionDetalle({
             estado={data.estado}
             tenantSlug={tenantSlug}
             permissions={data.permissions}
+            clienteTelefono={data.clienteTelefono}
+            clienteEmail={data.clienteEmail}
+            numeroCotizacion={data.numero}
+            totalDisplay={`${data.moneda} ${data.totales.total.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`}
           />
         </div>
       </div>

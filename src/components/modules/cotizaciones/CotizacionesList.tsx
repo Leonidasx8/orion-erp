@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Kanban,
+  LayoutList,
   MoreHorizontal,
   Plus,
   Search,
@@ -103,6 +105,7 @@ export function CotizacionesList({
   pageSize = 9,
 }: CotizacionesListProps) {
   const base = `/${tenantSlug}/cotizaciones`;
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
   const [query, setQuery] = useState('');
   const [filtroFecha, setFiltroFecha] = useState<string | null>(null);
   const [filtroComercial, setFiltroComercial] = useState<string | null>(null);
@@ -268,102 +271,216 @@ export function CotizacionesList({
             ))
           )}
         </FilterDropdown>
-      </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-b-lg border border-orion-border bg-orion-bg shadow-orion-1">
-        <table className="w-full border-collapse text-[12.5px]">
-          <thead>
-            <tr>
-              <Th width={32}>
-                <CheckboxStub />
-              </Th>
-              <Th>Número</Th>
-              <Th>Cliente</Th>
-              <Th>Estado</Th>
-              <Th>Emisión</Th>
-              <Th>Vence</Th>
-              <Th align="right">Items</Th>
-              <Th align="right">Total</Th>
-              <Th>Comercial</Th>
-              <Th width={32} />
-            </tr>
-          </thead>
-          <tbody>
-            {visibleRows.length === 0 ? (
-              <tr>
-                <td colSpan={10} className="py-12 text-center text-orion-fg-muted">
-                  {q ? 'Sin resultados para esa búsqueda.' : 'Sin cotizaciones que mostrar.'}
-                </td>
-              </tr>
-            ) : (
-              visibleRows.map((r) => (
-                <tr
-                  key={r.id}
-                  className="border-b border-orion-border last:border-0 hover:bg-orion-bg-subtle"
-                >
-                  <Td>
-                    <CheckboxStub />
-                  </Td>
-                  <Td className="font-mono text-[11.5px]">
-                    <Link href={`${base}/${r.id}`} className="hover:text-tenant-accent-fg">
-                      {r.numero}
-                    </Link>
-                  </Td>
-                  <Td className="max-w-[220px] truncate">{r.cliente}</Td>
-                  <Td>
-                    <EstadoBadge estado={r.estado} />
-                  </Td>
-                  <Td className="whitespace-nowrap text-orion-fg-muted">{r.fechaEmision}</Td>
-                  <Td
-                    className={cn(
-                      'whitespace-nowrap',
-                      r.estado === 'vencida' ? 'font-medium text-warn-fg' : 'text-orion-fg-muted'
-                    )}
-                  >
-                    {r.fechaVencimiento ?? '—'}
-                  </Td>
-                  <Td align="right">{r.items}</Td>
-                  <Td align="right">
-                    <Money value={r.total} ccy={r.moneda} dp={2} />
-                  </Td>
-                  <Td className="text-orion-fg-muted">{r.comercial}</Td>
-                  <Td>
-                    <button
-                      type="button"
-                      className="grid h-6 w-6 place-items-center rounded-md text-orion-fg-faint hover:bg-orion-bg-muted hover:text-orion-fg"
-                    >
-                      <MoreHorizontal size={14} />
-                    </button>
-                  </Td>
-                </tr>
-              ))
+        {/* Toggle lista/kanban */}
+        <div className="ml-auto flex items-center gap-1 rounded-md border border-orion-border p-0.5">
+          <button
+            type="button"
+            onClick={() => setViewMode('list')}
+            className={cn(
+              'grid h-6 w-6 place-items-center rounded-sm transition-colors',
+              viewMode === 'list'
+                ? 'bg-tenant-accent-soft text-tenant-accent-fg'
+                : 'text-orion-fg-faint hover:text-orion-fg'
             )}
-          </tbody>
-        </table>
-
-        <div className="flex items-center gap-2 border-t border-orion-border bg-orion-bg-subtle px-4 py-2">
-          <span className="text-[12px] text-orion-fg-muted">
-            {rows.length === 0
-              ? '0 de 0'
-              : `${(page - 1) * pageSize + 1}–${(page - 1) * pageSize + rows.length} de ${counts.total}`}
-          </span>
-          <div className="ml-auto flex items-center gap-1">
-            <PageBtn href={page > 1 ? buildHref(base, filtroActivo, page - 1) : null}>
-              <ChevronLeft size={12} />
-            </PageBtn>
-            <span className="inline-flex h-7 min-w-[28px] items-center justify-center rounded-md border border-orion-border bg-orion-bg px-1.5 text-[12px] font-medium text-orion-fg">
-              {page}
-            </span>
-            <PageBtn
-              href={page * pageSize < counts.total ? buildHref(base, filtroActivo, page + 1) : null}
-            >
-              <ChevronRight size={12} />
-            </PageBtn>
-          </div>
+            title="Vista lista"
+          >
+            <LayoutList size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('kanban')}
+            className={cn(
+              'grid h-6 w-6 place-items-center rounded-sm transition-colors',
+              viewMode === 'kanban'
+                ? 'bg-tenant-accent-soft text-tenant-accent-fg'
+                : 'text-orion-fg-faint hover:text-orion-fg'
+            )}
+            title="Vista kanban"
+          >
+            <Kanban size={13} />
+          </button>
         </div>
       </div>
+
+      {/* Kanban */}
+      {viewMode === 'kanban' && <CotizacionesKanban rows={visibleRows} base={base} />}
+
+      {/* Table */}
+      {viewMode === 'list' && (
+        <div className="overflow-x-auto rounded-b-lg border border-orion-border bg-orion-bg shadow-orion-1">
+          <table className="w-full border-collapse text-[12.5px]">
+            <thead>
+              <tr>
+                <Th width={32}>
+                  <CheckboxStub />
+                </Th>
+                <Th>Número</Th>
+                <Th>Cliente</Th>
+                <Th>Estado</Th>
+                <Th>Emisión</Th>
+                <Th>Vence</Th>
+                <Th align="right">Items</Th>
+                <Th align="right">Total</Th>
+                <Th>Comercial</Th>
+                <Th width={32} />
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRows.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-orion-fg-muted">
+                    {q ? 'Sin resultados para esa búsqueda.' : 'Sin cotizaciones que mostrar.'}
+                  </td>
+                </tr>
+              ) : (
+                visibleRows.map((r) => (
+                  <tr
+                    key={r.id}
+                    className="border-b border-orion-border last:border-0 hover:bg-orion-bg-subtle"
+                  >
+                    <Td>
+                      <CheckboxStub />
+                    </Td>
+                    <Td className="font-mono text-[11.5px]">
+                      <Link href={`${base}/${r.id}`} className="hover:text-tenant-accent-fg">
+                        {r.numero}
+                      </Link>
+                    </Td>
+                    <Td className="max-w-[220px] truncate">{r.cliente}</Td>
+                    <Td>
+                      <EstadoBadge estado={r.estado} />
+                    </Td>
+                    <Td className="whitespace-nowrap text-orion-fg-muted">{r.fechaEmision}</Td>
+                    <Td
+                      className={cn(
+                        'whitespace-nowrap',
+                        r.estado === 'vencida' ? 'font-medium text-warn-fg' : 'text-orion-fg-muted'
+                      )}
+                    >
+                      {r.fechaVencimiento ?? '—'}
+                    </Td>
+                    <Td align="right">{r.items}</Td>
+                    <Td align="right">
+                      <Money value={r.total} ccy={r.moneda} dp={2} />
+                    </Td>
+                    <Td className="text-orion-fg-muted">{r.comercial}</Td>
+                    <Td>
+                      <button
+                        type="button"
+                        className="grid h-6 w-6 place-items-center rounded-md text-orion-fg-faint hover:bg-orion-bg-muted hover:text-orion-fg"
+                      >
+                        <MoreHorizontal size={14} />
+                      </button>
+                    </Td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+
+          <div className="flex items-center gap-2 border-t border-orion-border bg-orion-bg-subtle px-4 py-2">
+            <span className="text-[12px] text-orion-fg-muted">
+              {rows.length === 0
+                ? '0 de 0'
+                : `${(page - 1) * pageSize + 1}–${(page - 1) * pageSize + rows.length} de ${counts.total}`}
+            </span>
+            <div className="ml-auto flex items-center gap-1">
+              <PageBtn href={page > 1 ? buildHref(base, filtroActivo, page - 1) : null}>
+                <ChevronLeft size={12} />
+              </PageBtn>
+              <span className="inline-flex h-7 min-w-[28px] items-center justify-center rounded-md border border-orion-border bg-orion-bg px-1.5 text-[12px] font-medium text-orion-fg">
+                {page}
+              </span>
+              <PageBtn
+                href={
+                  page * pageSize < counts.total ? buildHref(base, filtroActivo, page + 1) : null
+                }
+              >
+                <ChevronRight size={12} />
+              </PageBtn>
+            </div>
+          </div>
+        </div>
+      )}
     </>
+  );
+}
+
+// ─── Vista Kanban ─────────────────────────────────────────────────────────────
+
+const KANBAN_COLS: { estado: 'todas' | Estado; label: string; color: string }[] = [
+  { estado: 'borrador', label: 'Borrador', color: 'bg-orion-bg-muted text-orion-fg-muted' },
+  { estado: 'enviada', label: 'Enviada', color: 'bg-blue-100 text-blue-700' },
+  { estado: 'aceptada', label: 'Aceptada', color: 'bg-success-soft text-success-fg' },
+  { estado: 'rechazada', label: 'Rechazada', color: 'bg-danger-soft text-danger-fg' },
+  { estado: 'vencida', label: 'Vencida', color: 'bg-warn-soft text-warn-fg' },
+  { estado: 'convertida', label: 'Convertida', color: 'bg-purple-100 text-purple-700' },
+];
+
+function CotizacionesKanban({ rows, base }: { rows: CotizacionRow[]; base: string }) {
+  const byEstado = new Map<string, CotizacionRow[]>();
+  for (const col of KANBAN_COLS) byEstado.set(col.estado, []);
+  for (const r of rows) {
+    const bucket = byEstado.get(r.estado) ?? byEstado.get('borrador')!;
+    bucket.push(r);
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-b-lg border border-orion-border bg-orion-bg-subtle pb-2 shadow-orion-1">
+      <div className="flex min-w-[900px] gap-3 p-3">
+        {KANBAN_COLS.map((col) => {
+          const colRows = byEstado.get(col.estado) ?? [];
+          return (
+            <div key={col.estado} className="flex w-52 shrink-0 flex-col gap-2">
+              {/* Column header */}
+              <div className="flex items-center justify-between px-1">
+                <span
+                  className={cn('rounded-full px-2 py-0.5 text-[11px] font-semibold', col.color)}
+                >
+                  {col.label}
+                </span>
+                <span className="text-[11px] tabular-nums text-orion-fg-faint">
+                  {colRows.length}
+                </span>
+              </div>
+
+              {/* Cards */}
+              <div className="flex flex-col gap-2">
+                {colRows.length === 0 && (
+                  <div className="rounded-lg border border-dashed border-orion-border py-4 text-center text-[11px] text-orion-fg-faint">
+                    Sin cotizaciones
+                  </div>
+                )}
+                {colRows.map((r) => (
+                  <Link
+                    key={r.id}
+                    href={`${base}/${r.id}`}
+                    className="hover:border-tenant-accent/40 block rounded-lg border border-orion-border bg-orion-bg p-3 shadow-orion-1 transition-colors hover:bg-orion-bg-hover"
+                  >
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="font-mono text-[11px] font-medium text-orion-fg">
+                        {r.numero}
+                      </span>
+                      <span className="text-[10px] text-orion-fg-faint">{r.fechaEmision}</span>
+                    </div>
+                    <div className="mb-2 truncate text-[12px] text-orion-fg">{r.cliente}</div>
+                    <div className="flex items-center justify-between">
+                      <Money value={r.total} ccy={r.moneda} dp={0} />
+                      {r.comercial && r.comercial !== '—' && (
+                        <span className="max-w-[80px] truncate text-[10px] text-orion-fg-faint">
+                          {r.comercial.split(' ')[0]}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

@@ -2,7 +2,17 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Check, Copy, FileText, Send, ShoppingCart, X } from 'lucide-react';
+import {
+  Bell,
+  Check,
+  Copy,
+  FileText,
+  Mail,
+  MessageCircle,
+  Send,
+  ShoppingCart,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import {
   enviarCotizacion,
@@ -25,14 +35,28 @@ interface Props {
     reenviar: boolean;
     generarOC?: boolean;
   };
+  clienteTelefono?: string | null;
+  clienteEmail?: string | null;
+  numeroCotizacion?: string;
+  totalDisplay?: string;
 }
 
-export function CotizacionActions({ cotizacionId, estado, tenantSlug, permissions }: Props) {
+export function CotizacionActions({
+  cotizacionId,
+  estado,
+  tenantSlug,
+  permissions,
+  clienteTelefono,
+  clienteEmail,
+  numeroCotizacion,
+  totalDisplay,
+}: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [rechazandoMotivo, setRechazandoMotivo] = useState('');
   const [showRechazo, setShowRechazo] = useState(false);
+  const [showEnviarModal, setShowEnviarModal] = useState(false);
 
   const esBorrador = estado === 'borrador';
   const esEnviada = estado === 'enviada';
@@ -138,7 +162,7 @@ export function CotizacionActions({ cotizacionId, estado, tenantSlug, permission
       {puedeEnviar && (
         <button
           type="button"
-          onClick={handleEnviar}
+          onClick={() => setShowEnviarModal(true)}
           disabled={pending}
           className={cn(
             btnCls,
@@ -200,6 +224,21 @@ export function CotizacionActions({ cotizacionId, estado, tenantSlug, permission
         </button>
       )}
 
+      {/* Modal envío: WhatsApp + Email */}
+      {showEnviarModal && (
+        <EnviarModal
+          cotizacionId={cotizacionId}
+          tenantSlug={tenantSlug}
+          numeroCotizacion={numeroCotizacion}
+          totalDisplay={totalDisplay}
+          clienteTelefono={clienteTelefono}
+          clienteEmail={clienteEmail}
+          pending={pending}
+          onEnviar={handleEnviar}
+          onClose={() => setShowEnviarModal(false)}
+        />
+      )}
+
       {/* Modal rechazo inline */}
       {showRechazo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -243,3 +282,140 @@ export function CotizacionActions({ cotizacionId, estado, tenantSlug, permission
 
 const btnCls =
   'inline-flex h-8 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-3 text-[13px] font-medium text-orion-fg hover:bg-orion-bg-muted disabled:opacity-60';
+
+// ─── Modal de envío ──────────────────────────────────────────────────────────
+
+function EnviarModal({
+  cotizacionId,
+  tenantSlug,
+  numeroCotizacion,
+  totalDisplay,
+  clienteTelefono,
+  clienteEmail,
+  pending,
+  onEnviar,
+  onClose,
+}: {
+  cotizacionId: string;
+  tenantSlug: string;
+  numeroCotizacion?: string;
+  totalDisplay?: string;
+  clienteTelefono?: string | null;
+  clienteEmail?: string | null;
+  pending: boolean;
+  onEnviar: () => void;
+  onClose: () => void;
+}) {
+  function buildPdfUrl() {
+    if (typeof window === 'undefined') return '';
+    return `${window.location.origin}/api/${tenantSlug}/cotizaciones/${cotizacionId}/pdf`;
+  }
+
+  function handleWhatsApp() {
+    const phone = (clienteTelefono ?? '').replace(/\D/g, '');
+    const pdfUrl = buildPdfUrl();
+    const msg = encodeURIComponent(
+      `Hola, le enviamos la cotización ${numeroCotizacion ?? ''}${totalDisplay ? ` por ${totalDisplay}` : ''}.\n\nDescargue el PDF aquí: ${pdfUrl}`
+    );
+    const fullPhone = phone.startsWith('51') ? phone : `51${phone}`;
+    window.open(`https://wa.me/${fullPhone}?text=${msg}`, '_blank');
+    onEnviar();
+    onClose();
+  }
+
+  function handleEmail() {
+    const pdfUrl = buildPdfUrl();
+    const subject = encodeURIComponent(`Cotización ${numeroCotizacion ?? ''}`);
+    const body = encodeURIComponent(
+      `Estimado cliente,\n\nAdjuntamos la cotización ${numeroCotizacion ?? ''}${totalDisplay ? ` por ${totalDisplay}` : ''}.\n\nDescargue el PDF aquí: ${pdfUrl}\n\nQuedamos a su disposición.`
+    );
+    const to = clienteEmail ?? '';
+    window.open(`mailto:${to}?subject=${subject}&body=${body}`, '_self');
+    onEnviar();
+    onClose();
+  }
+
+  function handleSoloEstado() {
+    onEnviar();
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="w-full max-w-sm rounded-xl border border-orion-border bg-orion-bg p-5 shadow-xl">
+        <div className="mb-1 flex items-center justify-between">
+          <h2 className="text-[14px] font-semibold text-orion-fg">Enviar cotización</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-6 w-6 place-items-center rounded-md text-orion-fg-faint hover:bg-orion-bg-muted"
+          >
+            <X size={14} />
+          </button>
+        </div>
+        <p className="mb-4 text-[12px] text-orion-fg-muted">
+          Elige cómo enviar la cotización al cliente. El estado cambiará a <strong>Enviada</strong>{' '}
+          en todos los casos.
+        </p>
+
+        <div className="space-y-2">
+          {/* WhatsApp */}
+          <button
+            type="button"
+            onClick={handleWhatsApp}
+            disabled={pending}
+            className="flex w-full items-center gap-3 rounded-lg border border-orion-border bg-orion-bg px-4 py-3 text-left transition-colors hover:bg-orion-bg-hover disabled:opacity-60"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366]/10">
+              <MessageCircle size={18} className="text-[#25D366]" />
+            </span>
+            <div>
+              <div className="text-[13px] font-medium text-orion-fg">Enviar por WhatsApp</div>
+              <div className="text-[11px] text-orion-fg-faint">
+                {clienteTelefono
+                  ? `+${clienteTelefono.replace(/\D/g, '').startsWith('51') ? '' : '51'}${clienteTelefono.replace(/\D/g, '')}`
+                  : 'Sin teléfono registrado'}
+              </div>
+            </div>
+          </button>
+
+          {/* Email */}
+          <button
+            type="button"
+            onClick={handleEmail}
+            disabled={pending}
+            className="flex w-full items-center gap-3 rounded-lg border border-orion-border bg-orion-bg px-4 py-3 text-left transition-colors hover:bg-orion-bg-hover disabled:opacity-60"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500/10">
+              <Mail size={18} className="text-blue-500" />
+            </span>
+            <div>
+              <div className="text-[13px] font-medium text-orion-fg">Enviar por correo</div>
+              <div className="text-[11px] text-orion-fg-faint">
+                {clienteEmail ?? 'Sin correo registrado'}
+              </div>
+            </div>
+          </button>
+
+          {/* Solo cambiar estado */}
+          <button
+            type="button"
+            onClick={handleSoloEstado}
+            disabled={pending}
+            className="flex w-full items-center gap-3 rounded-lg border border-orion-border bg-orion-bg-subtle px-4 py-3 text-left transition-colors hover:bg-orion-bg-hover disabled:opacity-60"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orion-bg-muted">
+              <Check size={18} className="text-orion-fg-muted" />
+            </span>
+            <div>
+              <div className="text-[13px] font-medium text-orion-fg">Solo cambiar estado</div>
+              <div className="text-[11px] text-orion-fg-faint">
+                Marcar como enviada sin notificar al cliente
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
