@@ -2,10 +2,82 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-03 02:00 GMT-5 (Auditoría + B1 + B4 + limpieza QA2)
+**Última actualización:** 2026-06-03 madrugada GMT-5 (UI sweep Claude Design + diagnóstico reportes)
 **Branch activa:** `main` (producción desplegada en orion-rp.com)
-**Estado verificado:** Typecheck verde (0 errores). Deploy prod OK (commit 5e96eb4).
-**Último commit prod:** `5e96eb4` — feat(admin): módulo Auditoría + fix B1 costo OC + fix B4 redirect
+**Estado verificado:** Typecheck verde (0 errores). Deploy prod OK (commit `06a1496`).
+**Último commit prod:** `06a1496` — feat(ui): política de precios + roles toggles + usuarios rediseño
+
+---
+
+## 🔴 BLOQUEADOR ACTIVO — Reportes y Dashboard rotos (vistas materializadas faltan en prod)
+
+**Síntoma:** El usuario reporta "el módulo reportes no está funcionando". Dashboard muestra KPIs en 0.
+
+**Causa raíz (CONFIRMADA por consulta a prod 2026-06-03):** Las migrations `0039`, `0041`, `0042`, `0043`, `0043b` **NUNCA se aplicaron a producción** (Supabase `aycraotcdbunybfjzlmq`). Estas crean vistas materializadas + función que el código consulta directamente:
+
+| Vista/Objeto faltante             | Migration                             | Quién la consume                                                                                          |
+| --------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `cuentas_por_cobrar` (matview)    | `0039_cuentas_por_cobrar_matview.sql` | `/credito/page.tsx`, `/reportes/page.tsx`, `notifications.ts`, `reportes/page` (vía `cuentas_por_cobrar`) |
+| `factura_esta_vencida()` (func)   | `0041_factura_vencimiento.sql`        | dependencia de la matview CxC                                                                             |
+| `dashboard_metricas` (matview)    | `0042_dashboard_views.sql`            | `/[companySlug]/page.tsx` (dashboard)                                                                     |
+| `pipeline_cotizaciones` (matview) | `0042_dashboard_views.sql`            | dashboard                                                                                                 |
+| `top_clientes` (matview)          | `0043_top_views.sql`                  | dashboard `TopClientesList`                                                                               |
+| `top_productos` (matview)         | `0043_top_views.sql`                  | dashboard `TopProductosList`                                                                              |
+| índices únicos top\_\*            | `0043b_top_views_unique_idx.sql`      | refresh CONCURRENTLY                                                                                      |
+
+**Vistas que SÍ existen en prod:** `aging_cxc`, `stock_actual`, `stock_critico`, `vw_user_tenant_access`.
+
+⚠️ **OJO — discrepancia de nombres:** el código de `/credito/page.tsx` consulta `cuentas_por_cobrar` (matview de 0039, NO aplicada) pero en prod existe `aging_cxc` (columnas: `tenant_id, cliente_id, razon_social, bucket_0_30, bucket_31_60, bucket_61_90, bucket_90_plus`). NO son la misma vista. Verificar qué espera cada página antes de aplicar.
+
+### FIX (próxima sesión — PRIORIDAD 1):
+
+1. **Aplicar las migrations faltantes a prod** vía Supabase MCP (`apply_migration` o `execute_sql`), EN ORDEN: `0039` → `0041` → `0042` → `0043` → `0043b`.
+   - Revisar primero cada `.sql` completo (algunas usan `pg_cron` para refresh cada 5 min — el cron job vive en `0032_sunat_cron.sql`, verificar que esté activo o el refresh será manual).
+   - Las matviews arrancan vacías: tras crearlas, ejecutar `REFRESH MATERIALIZED VIEW <nombre>` una vez para poblarlas.
+2. **Verificar** que `/idex/reportes`, `/idex/reportes/ventas`, `/idex/reportes/cotizaciones`, `/idex/reportes/precios`, `/idex` (dashboard) y `/idex/credito` cargan sin 500.
+3. Las sub-páginas `reportes/ventas`, `reportes/cotizaciones`, `reportes/precios` usan server actions que consultan **tablas reales** (`cotizaciones`, `facturas`, `historial_precios`) — esas NO dependen de matviews y deberían funcionar; confirmar.
+4. **Alternativa si las matviews dan problemas:** reescribir las queries del dashboard/reportes-index/credito para consultar tablas base directamente (como ya hacen las sub-páginas de reportes). Más lento pero sin dependencia de matviews + cron.
+
+---
+
+## ✅ SESIÓN 2026-06-03 madrugada — UI sweep masivo + implementación Claude Design
+
+Sesión larga de feedback iterativo del usuario sobre funcionalidad rota y fidelidad al diseño Claude Design. **Todo desplegado a prod.** Commits `5e96eb4` → `06a1496`.
+
+### Lo entregado (en orden cronológico)
+
+| #   | Feature                                                                                                                                                                                                                                                                                                                                                                                                               | Commit    |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| 1   | **Auditoría tenant** habilitada en sidebar + `/[slug]/auditoria` (log de 4 fuentes: historial_precios, cotizaciones, facturas, kardex). **FIX B1** (OC usa `costoUnitario` no precio venta). **FIX B4** (`requirePermissionPage` redirige en vez de 500).                                                                                                                                                             | `5e96eb4` |
+| 2   | **Limpieza data [QA2]** en prod (cliente, producto, 2 cot, OC, factura, kardex borrados)                                                                                                                                                                                                                                                                                                                              | — (SQL)   |
+| 3   | **Buscador global ⌘K** funcional (productos/clientes/cotizaciones) — `GlobalSearch.tsx` + `search.ts` action                                                                                                                                                                                                                                                                                                          | `0388d6d` |
+| 4   | **Filtros cotizaciones** Fecha/Comercial/Cliente funcionales (eran decorativos)                                                                                                                                                                                                                                                                                                                                       | `c829c66` |
+| 5   | **Menú ⋯ órdenes de compra** con transiciones de estado reales (enviar/aprobar/recibir/cerrar/eliminar)                                                                                                                                                                                                                                                                                                               | `d61b57c` |
+| 6   | **Facturas: crear** (botones Nueva factura/boleta + `FacturaForm` + `/facturas/nueva`). Columna "Cotización origen". **CxC: botón Registrar pago** por cliente. **Reportes index: datos reales** en tarjetas. Permiso `admin.auditoria.ver` agregado a casbin superadmin (SQL prod).                                                                                                                                  | `c8a42f0` |
+| 7   | **Cotizaciones: modal Enviar** (WhatsApp `wa.me` + Email `mailto` + solo-estado). **Vista Kanban** toggle lista/kanban (6 columnas por estado).                                                                                                                                                                                                                                                                       | `32c5708` |
+| 8   | **Pipeline de ventas** `/[slug]/pipeline` (kanban cross-módulo 8 etapas, detecta etapa vía EXISTS en OC/factura/guía). **Notificaciones** (campana con dropdown lazy: CxC vencida/factura error/OC pendiente/cotiz vencida). **Menú usuario** (Cambiar empresa/Config/Cerrar sesión + `/api/auth/logout`).                                                                                                            | `9c2904a` |
+| 9   | **Cotización form rediseño** layout 3fr/2fr (panel Margen + Totales con costo/utilidad + PDF preview), columna Margen por línea coloreada vs margenMinimo. `ProductoOption` +costoUnitario +margenMinimo.                                                                                                                                                                                                             | `faa089d` |
+| 10  | **Breadcrumbs automáticos** `SmartBreadcrumbs` (genera jerarquía desde `usePathname()` en todos los módulos, sin config por página)                                                                                                                                                                                                                                                                                   | `43037d7` |
+| 11  | **Claude Design pendientes:** Facturas lista strip SUNAT health (5 KPIs). Facturas nueva layout 3fr/2fr + validación SUNAT + "al emitir". CxC aging 5 buckets + barra proporcional + ClientesSaldos Uso%. Roles layout 220px sidebar + matriz.                                                                                                                                                                        | `ccb79b7` |
+| 12  | **Política de precios** editable (margen mínimo/aprobación/IGV/descuentos toggles) — migration `0044` + schema + `actualizarPoliticaPrecios` + `PoliticaPreciosForm`. **PermissionsMatrix** rediseñada tabla Ver/Crear/Editar/Eliminar con toggle switches (era lista de checkboxes). **Usuarios** rediseño completo (avatar, email real vía `createServerAdminClient` + auth.admin.listUsers, MFA, acceso relativo). | `06a1496` |
+
+### ⚠️ DB cambios aplicados directamente a prod esta sesión (fuera de migrations versionadas hasta 0044)
+
+- `admin.auditoria.ver` insertado en tabla `casbin` para rol superadmin de idex (`311a03d8…` / tenant `1611fbf1…`).
+- Migration `0044_tenant_politica_precios.sql` (4 columnas) aplicada a prod vía MCP **Y** commiteada como archivo.
+- Limpieza [QA2]: DELETE de cliente/producto/cotizaciones/OC/factura/kardex.
+
+### 📐 Referencia de diseño Claude Design
+
+Bundle desempaquetado en `/tmp/orion-handoff/orion-erp/` (efímero — re-extraer de `~/Downloads/Orion ERP-handoff.zip` si se borra). También hay PDF `Sistema Orión · Print.pdf` en la raíz del repo (commiteado). El JSX fuente por pantalla está en `project/screens/*.jsx`. **Sistema de diseño activo: V1 Slate** (tokens `orion-*` en `globals.css`/`tailwind.config.ts` ya alineados). Las 6 variantes (V1–V6) son propuestas; V1 es la firmada.
+
+### 🔜 PENDIENTES tras esta sesión (prioridad)
+
+1. **🔴 ARREGLAR REPORTES/DASHBOARD** — aplicar matviews faltantes (ver bloqueador arriba). **DEMO-CRÍTICO.**
+2. Verificar que el rediseño de Usuarios carga en prod (usa `auth.admin.listUsers` — requiere `SUPABASE_SERVICE_ROLE_KEY` en Vercel env; confirmar que está seteada).
+3. B2 (`/credito/clientes/nuevo` → 500), B5 (warning stock en cotización) siguen pendientes.
+4. Serie F001 Nubefact — acción externa de Lucas.
+5. Pantallas Claude Design aún no verificadas pixel a pixel contra prod (solo implementadas).
 
 ---
 
