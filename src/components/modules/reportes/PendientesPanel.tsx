@@ -41,7 +41,7 @@ export function PendientesPanel({ ocPendientes, stockCritico, companySlug }: Pen
         )}
         {stockCritico > 0 && (
           <Link
-            href={`/${companySlug}/inventario?filtro=critico`}
+            href={`/${companySlug}/inventario?estado=critico`}
             className="flex items-center gap-3 px-4 py-3 hover:bg-orion-bg-muted"
           >
             <AlertTriangle size={15} className="shrink-0 text-danger-fg" />
