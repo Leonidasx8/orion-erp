@@ -15,6 +15,7 @@ import {
   BarChart3,
   Settings,
   History,
+  ShieldCheck,
   TrendingUp,
 } from 'lucide-react';
 import type { Tenant } from '@/lib/db/schema';
@@ -70,6 +71,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Administración',
     items: [
       { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
+      { href: '/admin/roles', label: 'Roles', icon: ShieldCheck },
       { href: '/configuracion', label: 'Configuración', icon: Settings },
     ],
   },
