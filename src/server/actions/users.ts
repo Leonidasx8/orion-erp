@@ -67,3 +67,16 @@ export async function suspenderUsuario(targetUserId: string) {
   revalidatePath(`/${tenant.slug}/admin/usuarios`);
   return { success: true as const, data: null };
 }
+
+export async function reactivarUsuario(targetUserId: string) {
+  const { tenant } = await requirePermission('admin.usuarios.suspender');
+
+  await db
+    .update(tenantMembers)
+    .set({ estado: 'activo' })
+    .where(and(eq(tenantMembers.userId, targetUserId), eq(tenantMembers.tenantId, tenant.id)));
+
+  await syncTenantToCasbin(tenant.id);
+  revalidatePath(`/${tenant.slug}/admin/usuarios`);
+  return { success: true as const, data: null };
+}

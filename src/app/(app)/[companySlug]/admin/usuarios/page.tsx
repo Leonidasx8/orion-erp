@@ -1,20 +1,13 @@
 import { and, eq } from 'drizzle-orm';
-import {
-  Search,
-  Shield,
-  Check,
-  AlertTriangle,
-  MoreHorizontal,
-  Download,
-  UserPlus,
-} from 'lucide-react';
+import { Search, Shield, Check, AlertTriangle, Download, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { tenantMembers } from '@/lib/db/schema';
+import { tenantMembers, roles } from '@/lib/db/schema';
 import { createServerAdminClient } from '@/lib/supabase/serverAdminClient';
 import { PageHead } from '@/components/shared/PageHead';
+import { UsuarioActionsDropdown } from '@/components/modules/admin/UsuarioActionsDropdown';
 import { cn } from '@/lib/utils';
 
 export const metadata = { title: 'Usuarios' };
@@ -70,14 +63,17 @@ export default async function UsuariosPage({
   await requirePermissionPage('admin.usuarios.ver', companySlug);
   const tenant = await getCurrentTenant();
 
-  const [members, adminClient] = await Promise.all([
+  const [members, adminClient, tenantRoles] = await Promise.all([
     db
       .select()
       .from(tenantMembers)
       .where(and(eq(tenantMembers.tenantId, tenant.id)))
       .orderBy(tenantMembers.invitedAt),
     createServerAdminClient(),
+    db.select({ nombre: roles.nombre }).from(roles).where(eq(roles.tenantId, tenant.id)),
   ]);
+
+  const rolesDisponibles = tenantRoles.map((r) => r.nombre);
 
   // Fetch auth users to get email + metadata + MFA factors
   const {
@@ -234,9 +230,12 @@ export default async function UsuariosPage({
 
                 {/* Actions */}
                 <td className="px-4 py-2.5">
-                  <button className="grid h-6 w-6 place-items-center rounded-md text-orion-fg-faint hover:bg-orion-bg-muted hover:text-orion-fg">
-                    <MoreHorizontal size={14} />
-                  </button>
+                  <UsuarioActionsDropdown
+                    userId={r.userId}
+                    estado={r.estado}
+                    rolActual={r.rol}
+                    rolesDisponibles={rolesDisponibles}
+                  />
                 </td>
               </tr>
             ))}

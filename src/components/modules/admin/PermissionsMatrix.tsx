@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Check, Minus } from 'lucide-react';
+import { Check, Copy, Lock, Minus, Save } from 'lucide-react';
 import { actualizarPermisosDeRol } from '@/server/actions/roles';
 import type { PermisoDefinido, Rol } from '@/lib/db/schema';
 import { cn } from '@/lib/utils';
@@ -82,11 +82,13 @@ export function PermissionsMatrix({
   rol,
   permisosActuales,
   readOnly,
+  userCount,
 }: {
   permisosDef: PermisoDefinido[];
   rol: Rol;
   permisosActuales: string[];
   readOnly: boolean;
+  userCount?: number;
 }) {
   const [selected, setSelected] = useState(new Set(permisosActuales));
   const [pending, startTransition] = useTransition();
@@ -137,8 +139,57 @@ export function PermissionsMatrix({
     });
   }
 
+  const totalAcciones = Array.from(modules.values()).reduce(
+    (acc, m) =>
+      acc +
+      (m.ver ? 1 : 0) +
+      (m.crear ? 1 : 0) +
+      (m.editar ? 1 : 0) +
+      (m.eliminar ? 1 : 0) +
+      m.others.length,
+    0
+  );
+
   return (
     <div>
+      {/* Header con título y botones */}
+      <div className="flex items-start justify-between border-b border-orion-border px-4 py-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-[15px] font-semibold text-orion-fg">Rol: {rol.nombre}</h2>
+            {readOnly && <Lock size={12} className="text-orion-fg-faint" />}
+          </div>
+          <p className="mt-0.5 text-[11.5px] text-orion-fg-muted">
+            {userCount != null ? `${userCount} usuario${userCount !== 1 ? 's' : ''} · ` : ''}
+            {totalAcciones} acciones · {modules.size} módulos
+            {!rol.esPredefinido && (
+              <span className="ml-1 text-tenant-accent-fg">· personalizado</span>
+            )}
+          </p>
+        </div>
+        {!readOnly && (
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => toast.info('Próximamente: duplicar rol')}
+              className="inline-flex h-7 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-3 text-[12px] font-medium text-orion-fg hover:bg-orion-bg-muted"
+            >
+              <Copy size={11} />
+              Duplicar rol
+            </button>
+            <button
+              type="button"
+              onClick={guardar}
+              disabled={pending}
+              className="inline-flex h-7 items-center gap-1.5 rounded-md bg-tenant-accent px-3 text-[12px] font-medium text-white hover:brightness-95 disabled:opacity-60"
+            >
+              <Save size={11} />
+              {pending ? 'Guardando…' : saved ? '✓ Guardado' : 'Guardar cambios'}
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[12px]">
           <thead>
@@ -241,20 +292,6 @@ export function PermissionsMatrix({
           </tbody>
         </table>
       </div>
-
-      {!readOnly && (
-        <div className="mt-3 flex items-center gap-3 border-t border-orion-border pt-3">
-          <button
-            type="button"
-            onClick={guardar}
-            disabled={pending}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-tenant-accent px-4 text-[13px] font-medium text-white hover:brightness-95 disabled:opacity-60"
-          >
-            {pending ? 'Guardando…' : 'Guardar cambios'}
-          </button>
-          {saved && <span className="text-[12px] text-success-fg">Guardado</span>}
-        </div>
-      )}
     </div>
   );
 }
