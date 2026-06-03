@@ -90,19 +90,35 @@ export function InventarioList({
         </div>
       </div>
 
-      {/* Critical alert */}
+      {/* Reposición banner */}
       {(counts.sin_stock > 0 || counts.critico > 0) && (
-        <div className="border-warn-border flex items-start gap-3 rounded-lg border bg-warn-soft px-4 py-3 text-[13px] text-warn-fg">
-          <AlertTriangle size={15} className="mt-0.5 shrink-0" />
-          <div>
-            <span className="font-medium">
-              {counts.sin_stock > 0 && `${counts.sin_stock} sin stock`}
-              {counts.sin_stock > 0 && counts.critico > 0 && ' · '}
-              {counts.critico > 0 && `${counts.critico} bajo mínimo`}
-            </span>
-            <span className="text-warn-fg/75 ml-1">
-              — revisa las compras a proveedores pendientes.
-            </span>
+        <div className="border-danger-border rounded-lg border bg-danger-soft px-4 py-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={15} className="mt-0.5 shrink-0 text-danger-fg" />
+            <div className="flex-1">
+              <p className="text-[13px] font-semibold text-danger-fg">
+                {counts.sin_stock + counts.critico} producto
+                {counts.sin_stock + counts.critico !== 1 ? 's' : ''} necesitan reposición de stock
+              </p>
+              <p className="text-danger-fg/80 mt-0.5 text-[12.5px]">
+                Para agregar stock, crea una Orden de Compra y registra la recepción cuando llegue
+                la mercadería. El inventario se actualiza automáticamente.
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <Link
+                  href={`/${tenantSlug}/ordenes/nueva`}
+                  className="inline-flex h-7 items-center gap-1.5 rounded-md bg-danger-fg px-3 text-[12px] font-medium text-white hover:brightness-95"
+                >
+                  + Nueva orden de compra
+                </Link>
+                <Link
+                  href={`/${tenantSlug}/ordenes?estado=pendiente_recepcion`}
+                  className="border-danger-fg/30 hover:bg-danger-fg/10 inline-flex h-7 items-center gap-1.5 rounded-md border px-3 text-[12px] font-medium text-danger-fg"
+                >
+                  Ver OC pendientes →
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       )}
