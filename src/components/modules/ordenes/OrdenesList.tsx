@@ -59,7 +59,7 @@ export type OrdenesListProps = {
   };
   pendienteUsd: number;
   canCreate: boolean;
-  filtroActivo: 'todas' | Estado;
+  filtroActivo: 'todas' | Estado | 'pendiente_recepcion';
   page: number;
   pageSize: number;
 };

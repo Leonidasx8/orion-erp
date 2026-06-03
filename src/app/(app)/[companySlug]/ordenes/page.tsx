@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { userHasPermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
@@ -26,15 +26,24 @@ export default async function OrdenesPage({
 }) {
   const tenant = await getCurrentTenant();
   const sp = await searchParams;
-  const filtroActivo = (
-    sp.estado && ESTADO_FILTROS.has(sp.estado as Estado) ? (sp.estado as Estado) : 'todas'
-  ) as 'todas' | Estado;
+  const rawEstado = sp.estado ?? '';
+  const filtroActivo: 'todas' | Estado | 'pendiente_recepcion' =
+    rawEstado === 'pendiente_recepcion'
+      ? 'pendiente_recepcion'
+      : rawEstado && ESTADO_FILTROS.has(rawEstado as Estado)
+        ? (rawEstado as Estado)
+        : 'todas';
   const page = Math.max(1, Number(sp.page) || 1);
 
   const where =
-    filtroActivo === 'todas'
-      ? eq(ordenesCompra.tenantId, tenant.id)
-      : and(eq(ordenesCompra.tenantId, tenant.id), eq(ordenesCompra.estado, filtroActivo));
+    filtroActivo === 'pendiente_recepcion'
+      ? and(
+          eq(ordenesCompra.tenantId, tenant.id),
+          inArray(ordenesCompra.estado, ['aprobada', 'recibida_parcial'])
+        )
+      : filtroActivo === 'todas'
+        ? eq(ordenesCompra.tenantId, tenant.id)
+        : and(eq(ordenesCompra.tenantId, tenant.id), eq(ordenesCompra.estado, filtroActivo));
 
   const [canCreate, rowsRaw, countsRaw] = await Promise.all([
     userHasPermission('ordenes.crear'),
