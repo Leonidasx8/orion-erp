@@ -11,6 +11,7 @@ import { PipelineChart } from '@/components/modules/reportes/PipelineChart';
 import { TopClientesList } from '@/components/modules/reportes/TopClientesList';
 import { TopProductosList } from '@/components/modules/reportes/TopProductosList';
 import { PageHead } from '@/components/shared/PageHead';
+import { PendientesPanel } from '@/components/modules/reportes/PendientesPanel';
 
 export default async function DashboardPage({
   params,
@@ -20,10 +21,17 @@ export default async function DashboardPage({
   const { companySlug } = await params;
   const { tenant } = await requirePermission('reportes.ver');
 
-  const [metricasRaw, pipelineRaw, topClientesRaw, topProductosRaw, cxcRaw, stockRaw] =
-    await Promise.all([
-      // Ventas por mes — últimos 12 meses desde dashboard_metricas
-      db.execute<MetricasRow>(sql`
+  const [
+    metricasRaw,
+    pipelineRaw,
+    topClientesRaw,
+    topProductosRaw,
+    cxcRaw,
+    stockRaw,
+    ocPendientesRaw,
+  ] = await Promise.all([
+    // Ventas por mes — últimos 12 meses desde dashboard_metricas
+    db.execute<MetricasRow>(sql`
         SELECT
           mes::text,
           ventas_total::text,
@@ -36,15 +44,15 @@ export default async function DashboardPage({
         ORDER BY mes
       `),
 
-      // Pipeline de cotizaciones por estado
-      db.execute<{ estado: string; cantidad: string; valor_total: string }>(sql`
+    // Pipeline de cotizaciones por estado
+    db.execute<{ estado: string; cantidad: string; valor_total: string }>(sql`
         SELECT estado, cantidad::text, valor_total::text
         FROM pipeline_cotizaciones
         WHERE tenant_id = ${tenant.id}
       `),
 
-      // Top 10 clientes por monto facturado
-      db.execute<{ cliente_id: string; razon_social: string; monto_total: string }>(sql`
+    // Top 10 clientes por monto facturado
+    db.execute<{ cliente_id: string; razon_social: string; monto_total: string }>(sql`
         SELECT cliente_id::text, razon_social, monto_total::text
         FROM top_clientes
         WHERE tenant_id = ${tenant.id}
@@ -52,8 +60,8 @@ export default async function DashboardPage({
         LIMIT 10
       `),
 
-      // Top 20 productos por monto facturado
-      db.execute<{ producto_id: string; nombre: string; monto_total: string }>(sql`
+    // Top 20 productos por monto facturado
+    db.execute<{ producto_id: string; nombre: string; monto_total: string }>(sql`
         SELECT producto_id::text, nombre, monto_total::text
         FROM top_productos
         WHERE tenant_id = ${tenant.id}
@@ -61,8 +69,8 @@ export default async function DashboardPage({
         LIMIT 20
       `),
 
-      // CxC totales agregados
-      db.execute<CxCRow>(sql`
+    // CxC totales agregados
+    db.execute<CxCRow>(sql`
         SELECT
           COALESCE(SUM(saldo_total), 0)::text   AS total,
           COALESCE(SUM(saldo_vencido), 0)::text AS vencido
@@ -70,13 +78,23 @@ export default async function DashboardPage({
         WHERE tenant_id = ${tenant.id}
       `),
 
-      // Stock crítico — view hereda tenant_id desde productos
-      db.execute<{ critico: string }>(sql`
+    // Stock crítico — view hereda tenant_id desde productos
+    db.execute<{ critico: string }>(sql`
         SELECT COUNT(*)::text AS critico
         FROM stock_critico
         WHERE tenant_id = ${tenant.id}
       `),
-    ]);
+
+    // OC listas para recibir (aprobada + recibida_parcial)
+    db.execute<{ count: string; numeros: string | null }>(sql`
+        SELECT
+          COUNT(*)::text AS count,
+          array_to_string(array_agg(numero ORDER BY created_at DESC), ',') AS numeros
+        FROM ordenes_compra
+        WHERE tenant_id = ${tenant.id}
+          AND estado IN ('aprobada', 'recibida_parcial')
+      `),
+  ]);
 
   const metricas = Array.from(metricasRaw);
   const pipeline = Array.from(pipelineRaw);
@@ -84,6 +102,10 @@ export default async function DashboardPage({
   const topProductos = Array.from(topProductosRaw);
   const cxcTotales: CxCRow | null = cxcRaw[0] ?? null;
   const stockCritico = Number(stockRaw[0]?.critico ?? 0);
+  const ocPendientesCount = Number(ocPendientesRaw[0]?.count ?? 0);
+  const ocPendientesNumeros = ocPendientesRaw[0]?.numeros
+    ? ocPendientesRaw[0].numeros.split(',').filter(Boolean)
+    : [];
 
   function formatSubtitle() {
     const now = new Date();
@@ -119,6 +141,12 @@ export default async function DashboardPage({
       <DashboardKpis
         metricas={metricas}
         cxcTotales={cxcTotales}
+        stockCritico={stockCritico}
+        companySlug={companySlug}
+      />
+
+      <PendientesPanel
+        ocPendientes={{ count: ocPendientesCount, numeros: ocPendientesNumeros }}
         stockCritico={stockCritico}
         companySlug={companySlug}
       />
