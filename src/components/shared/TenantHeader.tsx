@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { Bell, ChevronDown, ChevronRight, HelpCircle, Search } from 'lucide-react';
+import { Bell, ChevronDown, ChevronRight, HelpCircle } from 'lucide-react';
 import type { Tenant } from '@/lib/db/schema';
+import { GlobalSearch } from './GlobalSearch';
 
 export function TenantHeader({
   tenant,
@@ -41,13 +42,7 @@ export function TenantHeader({
       </nav>
 
       {/* Search */}
-      <div className="ml-auto flex h-8 w-72 items-center gap-2 rounded-md border border-orion-border bg-orion-bg-subtle px-2.5 text-xs text-orion-fg-faint">
-        <Search size={14} />
-        <span className="flex-1 truncate">Buscar productos, clientes, cotizaciones…</span>
-        <kbd className="rounded-sm border border-b-2 border-orion-border bg-orion-bg px-1.5 py-px font-mono text-[10px] text-orion-fg-muted">
-          ⌘K
-        </kbd>
-      </div>
+      <GlobalSearch />
 
       {/* Help */}
       <button
