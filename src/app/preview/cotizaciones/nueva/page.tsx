@@ -64,6 +64,7 @@ const MOCK_PRODUCTOS: ProductoOption[] = [
     margenMinimo: 15,
     tieneIgv: true,
     unidadMedida: 'NIU',
+    stockActual: null,
   },
   {
     id: 'p-2',
@@ -74,6 +75,7 @@ const MOCK_PRODUCTOS: ProductoOption[] = [
     margenMinimo: 10,
     tieneIgv: true,
     unidadMedida: 'NIU',
+    stockActual: null,
   },
   {
     id: 'p-3',
@@ -84,6 +86,7 @@ const MOCK_PRODUCTOS: ProductoOption[] = [
     margenMinimo: null,
     tieneIgv: true,
     unidadMedida: 'NIU',
+    stockActual: null,
   },
 ];
 

@@ -23,6 +23,7 @@ export type ProductoOption = {
   margenMinimo: number | null;
   tieneIgv: boolean;
   unidadMedida: string;
+  stockActual: number | null;
 };
 
 export type CotizacionFormInitial = {
@@ -89,6 +90,7 @@ export function CotizacionForm({
   // costosByIdx: Map<lineIndex, costoUnitario> — for margin display only, not submitted
   const [costosByIdx, setCostosByIdx] = useState<Map<number, number>>(() => new Map());
   const [margenMinimoByIdx, setMargenMinimoByIdx] = useState<Map<number, number>>(() => new Map());
+  const [stockByIdx, setStockByIdx] = useState<Map<number, number>>(() => new Map());
   const [targetMargen, setTargetMargen] = useState<5 | 10 | 15 | 'custom'>(10);
 
   const productosById = useMemo(() => {
@@ -211,13 +213,18 @@ export function CotizacionForm({
     const opts = { shouldDirty: true };
     if (productoId === '__manual__') {
       setValue(`items.${idx}.productoId`, undefined, opts);
-      // Clear cost tracking for this line
+      // Clear cost/stock tracking for this line
       setCostosByIdx((prev) => {
         const next = new Map(prev);
         next.delete(idx);
         return next;
       });
       setMargenMinimoByIdx((prev) => {
+        const next = new Map(prev);
+        next.delete(idx);
+        return next;
+      });
+      setStockByIdx((prev) => {
         const next = new Map(prev);
         next.delete(idx);
         return next;
@@ -246,6 +253,15 @@ export function CotizacionForm({
       setMargenMinimoByIdx((prev) => new Map(prev).set(idx, p.margenMinimo!));
     } else {
       setMargenMinimoByIdx((prev) => {
+        const next = new Map(prev);
+        next.delete(idx);
+        return next;
+      });
+    }
+    if (p.stockActual != null) {
+      setStockByIdx((prev) => new Map(prev).set(idx, p.stockActual!));
+    } else {
+      setStockByIdx((prev) => {
         const next = new Map(prev);
         next.delete(idx);
         return next;
@@ -467,6 +483,21 @@ export function CotizacionForm({
                             {...register(`items.${idx}.cantidad`)}
                             className={cn(inputCls, 'h-8 text-right text-[12.5px] tabular-nums')}
                           />
+                          {(() => {
+                            const stock = stockByIdx.get(idx);
+                            const qty = Number(itemsW[idx]?.cantidad) || 0;
+                            if (stock != null && qty > stock) {
+                              return (
+                                <p
+                                  className="mt-0.5 text-[10px] text-warn-fg"
+                                  title={`Stock disponible: ${stock}`}
+                                >
+                                  ⚠ stock: {stock}
+                                </p>
+                              );
+                            }
+                            return null;
+                          })()}
                         </Td>
                         {/* Precio */}
                         <Td align="right" className="w-[100px]">

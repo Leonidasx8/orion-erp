@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { userHasPermission } from '@/lib/auth/require-permission';
@@ -49,6 +49,9 @@ export default async function NuevaCotizacionPage({
         tieneIgv: productos.tieneIgv,
         unidadMedida: productos.unidadMedida,
         activo: productos.activo,
+        stockActual: sql<
+          number | null
+        >`(SELECT stock FROM stock_actual WHERE producto_id = ${productos.id})`,
       })
       .from(productos)
       .where(eq(productos.tenantId, tenant.id))
@@ -71,6 +74,7 @@ export default async function NuevaCotizacionPage({
       margenMinimo: p.margenMinimo != null ? Number(p.margenMinimo) : null,
       tieneIgv: p.tieneIgv,
       unidadMedida: p.unidadMedida,
+      stockActual: p.stockActual != null ? Number(p.stockActual) : null,
     }));
 
   return (
