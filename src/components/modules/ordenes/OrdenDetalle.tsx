@@ -6,7 +6,12 @@ import { useRouter } from 'next/navigation';
 import { Check, Copy, FileText, PackageCheck, Pencil, Send, X } from 'lucide-react';
 import { Money } from '@/components/shared/Money';
 import { EstadoBadge, type Estado } from '@/components/shared/EstadoBadge';
-import { aprobarOrden, enviarOrden, recibirParcial } from '@/server/actions/ordenes-compra';
+import {
+  aprobarOrden,
+  cerrarOrden,
+  enviarOrden,
+  recibirParcial,
+} from '@/server/actions/ordenes-compra';
 import { cn } from '@/lib/utils';
 
 export type OrdenDetalleLinea = {
@@ -36,6 +41,7 @@ export type OrdenDetalleData = {
     enviar: boolean;
     aprobar: boolean;
     recibir: boolean;
+    cerrar: boolean;
     editar: boolean;
   };
 };
@@ -50,6 +56,7 @@ export function OrdenDetalle({ data, tenantSlug }: { data: OrdenDetalleData; ten
   const puedeAprobar = data.estado === 'enviada' && data.permissions.aprobar;
   const puedeRecibir =
     (data.estado === 'aprobada' || data.estado === 'recibida_parcial') && data.permissions.recibir;
+  const puedeCerrar = data.estado === 'recibida_total' && data.permissions.cerrar;
   const esEditable = data.estado === 'borrador';
 
   const totalPedido = data.lineas.reduce((acc, l) => acc + l.cantidad, 0);
@@ -74,6 +81,17 @@ export function OrdenDetalle({ data, tenantSlug }: { data: OrdenDetalleData; ten
 
   return (
     <>
+      <OrdenStepper estado={data.estado} />
+      <BannerSiguientePaso
+        estado={data.estado}
+        puedeEnviar={puedeEnviar}
+        puedeRecibir={puedeRecibir}
+        puedeCerrar={puedeCerrar}
+        onEnviar={() => handleAccion(() => enviarOrden(data.id), 'Orden enviada')}
+        onRecibir={() => setShowRecepcion(true)}
+        onCerrar={() => handleAccion(() => cerrarOrden(data.id), 'Orden cerrada')}
+        pending={pending}
+      />
       <div className="mb-4 flex items-start gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2.5">
@@ -500,6 +518,147 @@ function Termino({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-[11px] text-orion-fg-muted">{label}</div>
       <div className="text-orion-fg">{value}</div>
+    </div>
+  );
+}
+
+const STEPPER_STEPS = ['Borrador', 'Enviada', 'Aprobada', 'Recibir', 'Cerrada'];
+const STEPPER_INDEX: Partial<Record<Estado, number>> = {
+  borrador: 0,
+  enviada: 1,
+  aprobada: 2,
+  recibida_parcial: 3,
+  recibida_total: 3,
+  cerrada: 4,
+};
+
+function OrdenStepper({ estado }: { estado: Estado }) {
+  const current = STEPPER_INDEX[estado] ?? 0;
+  return (
+    <div className="mb-5 flex items-center gap-0">
+      {STEPPER_STEPS.map((label, i) => {
+        const done = i < current;
+        const active = i === current;
+        return (
+          <div key={label} className="flex flex-1 items-center">
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={cn(
+                  'flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold',
+                  done
+                    ? 'bg-success text-white'
+                    : active
+                      ? 'bg-tenant-accent text-white'
+                      : 'bg-orion-bg-muted text-orion-fg-faint'
+                )}
+              >
+                {done ? <Check size={11} /> : i + 1}
+              </div>
+              <span
+                className={cn(
+                  'whitespace-nowrap text-[10.5px]',
+                  active ? 'font-semibold text-orion-fg' : 'text-orion-fg-muted'
+                )}
+              >
+                {label}
+              </span>
+            </div>
+            {i < STEPPER_STEPS.length - 1 && (
+              <div
+                className={cn('mb-4 h-px flex-1', i < current ? 'bg-success' : 'bg-orion-border')}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function BannerSiguientePaso({
+  estado,
+  puedeEnviar,
+  puedeRecibir,
+  puedeCerrar,
+  onEnviar,
+  onRecibir,
+  onCerrar,
+  pending,
+}: {
+  estado: Estado;
+  puedeEnviar: boolean;
+  puedeRecibir: boolean;
+  puedeCerrar: boolean;
+  onEnviar: () => void;
+  onRecibir: () => void;
+  onCerrar: () => void;
+  pending: boolean;
+}) {
+  type BannerConfig = {
+    colorClass: string;
+    mensaje: string;
+    boton?: { label: string; onClick: () => void; show: boolean };
+  };
+
+  const cfg: BannerConfig | null = (() => {
+    switch (estado) {
+      case 'borrador':
+        return {
+          colorClass: 'border-orion-border bg-orion-bg-muted text-orion-fg-muted',
+          mensaje: 'Siguiente: enviar la OC al proveedor para su aprobación.',
+          boton: { label: 'Enviar', onClick: onEnviar, show: puedeEnviar },
+        };
+      case 'enviada':
+        return {
+          colorClass: 'border-info-border bg-info-soft text-info-fg',
+          mensaje: 'Esperando aprobación. Una vez aprobada podrás registrar la recepción.',
+        };
+      case 'aprobada':
+        return {
+          colorClass: 'border-warn-border bg-warn-soft text-warn-fg',
+          mensaje:
+            'Siguiente: registrar la recepción cuando llegue la mercadería. El stock se actualizará automáticamente.',
+          boton: { label: 'Registrar recepción', onClick: onRecibir, show: puedeRecibir },
+        };
+      case 'recibida_parcial':
+        return {
+          colorClass: 'border-warn-border bg-warn-soft text-warn-fg',
+          mensaje: 'Recepción parcial registrada. Registra el resto cuando llegue.',
+          boton: { label: 'Registrar recepción', onClick: onRecibir, show: puedeRecibir },
+        };
+      case 'recibida_total':
+        return {
+          colorClass: 'border-success-border bg-success-soft text-success-fg',
+          mensaje: 'Toda la mercadería fue recibida. Puedes cerrar la OC.',
+          boton: { label: 'Cerrar OC', onClick: onCerrar, show: puedeCerrar },
+        };
+      case 'cerrada':
+        return null;
+      default:
+        return null;
+    }
+  })();
+
+  if (!cfg) return null;
+
+  return (
+    <div
+      className={cn(
+        'mb-5 flex items-center gap-3 rounded-lg border px-4 py-3 text-[13px]',
+        cfg.colorClass
+      )}
+    >
+      <span className="flex-1">{cfg.mensaje}</span>
+      {cfg.boton?.show && (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={cfg.boton.onClick}
+          className="border-current/20 inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border bg-white/20 px-3 text-[12px] font-medium hover:bg-white/30 disabled:opacity-60"
+        >
+          {cfg.boton.label}
+        </button>
+      )}
     </div>
   );
 }

@@ -92,6 +92,7 @@ export default async function OrdenDetallePage({ params }: { params: Promise<{ i
       enviar: canEnviar,
       aprobar: canAprobar,
       recibir: canRecibir,
+      cerrar: canAprobar,
       editar: false, // TODO: backend de actualizarOrdenCompra pendiente
     },
   };

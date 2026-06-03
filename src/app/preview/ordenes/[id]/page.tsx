@@ -105,6 +105,7 @@ const MOCK: OrdenDetalleData = {
     enviar: false,
     aprobar: false,
     recibir: true,
+    cerrar: false,
     editar: false,
   },
 };
