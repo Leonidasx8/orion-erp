@@ -48,7 +48,7 @@ export default async function ReportesPage({
 
     // Inventario crítico desde vista stock_actual
     db.execute(
-      sql`SELECT COUNT(*) AS critico FROM stock_actual WHERE tenant_id = ${tenant.id} AND cantidad_actual <= stock_minimo AND stock_minimo > 0`
+      sql`SELECT COUNT(*) AS critico FROM stock_actual WHERE tenant_id = ${tenant.id} AND stock <= stock_minimo AND stock_minimo > 0`
     ),
   ]);
 
