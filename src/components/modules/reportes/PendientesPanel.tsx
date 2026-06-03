@@ -34,7 +34,9 @@ export function PendientesPanel({ ocPendientes, stockCritico, companySlug }: Pen
                 </span>
               )}
             </span>
-            <span className="text-[12px] text-orion-fg-muted">→</span>
+            <span aria-hidden="true" className="text-[12px] text-orion-fg-muted">
+              →
+            </span>
           </Link>
         )}
         {stockCritico > 0 && (
@@ -48,7 +50,9 @@ export function PendientesPanel({ ocPendientes, stockCritico, companySlug }: Pen
                 {stockCritico} producto{stockCritico !== 1 ? 's' : ''} con stock crítico o sin stock
               </span>
             </span>
-            <span className="text-[12px] text-orion-fg-muted">→</span>
+            <span aria-hidden="true" className="text-[12px] text-orion-fg-muted">
+              →
+            </span>
           </Link>
         )}
       </div>
