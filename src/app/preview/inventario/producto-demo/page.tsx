@@ -161,15 +161,7 @@ export default function PreviewKardexPage() {
       style={{ gridTemplateColumns: '240px 1fr', gridTemplateRows: '56px 1fr' }}
     >
       <TenantSidebar tenant={tenant} userName="Lucas Escrivá" userRole="Superadmin" />
-      <TenantHeader
-        tenant={tenant}
-        userName="Lucas Escrivá"
-        crumbs={[
-          { label: 'Idex', href: `/${tenant.slug}` },
-          { label: 'Inventario', href: `/${tenant.slug}/inventario` },
-          { label: 'TER-50AWG-1/4' },
-        ]}
-      />
+      <TenantHeader tenant={tenant} userName="Lucas Escrivá" />
       <main className="col-start-2 row-start-2 overflow-auto bg-orion-bg-subtle p-6">
         <KardexDetalle
           tenantSlug={tenant.slug}

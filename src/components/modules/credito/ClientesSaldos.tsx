@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Inbox, CreditCard } from 'lucide-react';
+import { Inbox, MoreHorizontal } from 'lucide-react';
 import { Money } from '@/components/shared/Money';
 import { cn } from '@/lib/utils';
 
@@ -7,34 +7,12 @@ export type ClienteSaldoRow = {
   clienteId: string;
   nombreCliente: string;
   lineaCredito: number;
-  saldoPendiente: number;
+  saldoPendiente: number; // utilizado = total owed
   saldoVencido: number;
   diasMasVencido: number;
   bloqueado: boolean;
   moneda: string;
 };
-
-function EstadoCreditoBadge({ bloqueado, vencido }: { bloqueado: boolean; vencido: number }) {
-  if (bloqueado) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-medium text-danger-fg">
-        Bloqueado
-      </span>
-    );
-  }
-  if (vencido > 0) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-warn-soft px-2 py-0.5 text-[11px] font-medium text-warn-fg">
-        Con mora
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-medium text-success-fg">
-      Al día
-    </span>
-  );
-}
 
 export function ClientesSaldos({
   rows,
@@ -58,61 +36,131 @@ export function ClientesSaldos({
         <thead>
           <tr className="border-b border-orion-border bg-orion-bg-subtle text-left text-xs uppercase tracking-wide text-orion-fg-muted">
             <th className="px-4 py-3">Cliente</th>
-            <th className="px-4 py-3 text-right">Línea crédito</th>
-            <th className="px-4 py-3 text-right">Saldo pendiente</th>
-            <th className="px-4 py-3 text-right">Saldo vencido</th>
-            <th className="px-4 py-3 text-right">Días más vencido</th>
-            <th className="px-4 py-3">Estado</th>
+            <th className="px-4 py-3 text-right">Línea</th>
+            <th className="px-4 py-3 text-right">Utilizado</th>
+            <th className="px-4 py-3">Uso</th>
+            <th className="px-4 py-3 text-right">Por vencer</th>
+            <th className="px-4 py-3 text-right">Vencido</th>
+            <th className="px-4 py-3 text-right">Días vencido</th>
+            <th className="px-4 py-3 text-right">Total</th>
             <th className="px-4 py-3">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-orion-border">
-          {rows.map((r) => (
-            <tr key={r.clienteId} className="transition-colors hover:bg-orion-bg-subtle">
-              <td className="px-4 py-3">
-                <Link
-                  href={`/${companySlug}/credito/clientes/${r.clienteId}`}
-                  className="text-orion-accent font-medium hover:underline"
+          {rows.map((r) => {
+            const pct =
+              r.lineaCredito > 0
+                ? Math.min(100, Math.round((r.saldoPendiente / r.lineaCredito) * 100))
+                : 0;
+            const barColor = pct >= 90 ? 'bg-danger' : pct >= 70 ? 'bg-warn' : 'bg-success';
+
+            const porVencer = Math.max(0, r.saldoPendiente - r.saldoVencido);
+
+            const diasColor =
+              r.diasMasVencido > 60
+                ? 'text-danger-fg'
+                : r.diasMasVencido >= 30
+                  ? 'text-warn-fg'
+                  : 'text-orion-fg';
+
+            return (
+              <tr key={r.clienteId} className="transition-colors hover:bg-orion-bg-subtle">
+                {/* Cliente */}
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/${companySlug}/credito/clientes/${r.clienteId}`}
+                    className="text-orion-accent font-medium hover:underline"
+                  >
+                    {r.nombreCliente}
+                  </Link>
+                </td>
+
+                {/* Línea crédito */}
+                <td className="px-4 py-3 text-right">
+                  <Money value={r.lineaCredito} ccy={r.moneda as 'PEN' | 'USD'} />
+                </td>
+
+                {/* Utilizado */}
+                <td className="px-4 py-3 text-right font-medium">
+                  <Money value={r.saldoPendiente} ccy={r.moneda as 'PEN' | 'USD'} />
+                </td>
+
+                {/* Uso: progress bar + % */}
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-16 overflow-hidden rounded-full bg-orion-bg-muted">
+                      <div
+                        className={cn('h-full rounded-full', barColor)}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span
+                      className={cn(
+                        'text-[11.5px] tabular-nums',
+                        pct >= 90
+                          ? 'text-danger-fg'
+                          : pct >= 70
+                            ? 'text-warn-fg'
+                            : 'text-orion-fg-muted'
+                      )}
+                    >
+                      {pct}%
+                    </span>
+                  </div>
+                </td>
+
+                {/* Por vencer */}
+                <td className="px-4 py-3 text-right">
+                  {porVencer > 0 ? (
+                    <Money value={porVencer} ccy={r.moneda as 'PEN' | 'USD'} />
+                  ) : (
+                    <span className="text-orion-fg-faint">—</span>
+                  )}
+                </td>
+
+                {/* Vencido */}
+                <td
+                  className={cn(
+                    'px-4 py-3 text-right font-medium',
+                    r.saldoVencido > 0 ? 'text-danger-fg' : 'text-orion-fg-muted'
+                  )}
                 >
-                  {r.nombreCliente}
-                </Link>
-              </td>
-              <td className="px-4 py-3 text-right">
-                <Money value={r.lineaCredito} ccy={r.moneda as 'PEN' | 'USD'} />
-              </td>
-              <td className="px-4 py-3 text-right font-medium">
-                <Money value={r.saldoPendiente} ccy={r.moneda as 'PEN' | 'USD'} />
-              </td>
-              <td
-                className={cn(
-                  'px-4 py-3 text-right font-medium',
-                  r.saldoVencido > 0 ? 'text-danger-fg' : 'text-orion-fg-muted'
-                )}
-              >
-                <Money value={r.saldoVencido} ccy={r.moneda as 'PEN' | 'USD'} />
-              </td>
-              <td
-                className={cn(
-                  'px-4 py-3 text-right tabular-nums',
-                  r.diasMasVencido > 0 ? 'font-medium text-danger-fg' : 'text-orion-fg-muted'
-                )}
-              >
-                {r.diasMasVencido > 0 ? `${r.diasMasVencido}d` : '—'}
-              </td>
-              <td className="px-4 py-3">
-                <EstadoCreditoBadge bloqueado={r.bloqueado} vencido={r.saldoVencido} />
-              </td>
-              <td className="px-4 py-3">
-                <Link
-                  href={`/${companySlug}/credito/pagos/nuevo?clienteId=${r.clienteId}`}
-                  className="inline-flex h-7 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-2 text-[12px] font-medium text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
+                  <Money value={r.saldoVencido} ccy={r.moneda as 'PEN' | 'USD'} />
+                </td>
+
+                {/* Días vencido */}
+                <td
+                  className={cn(
+                    'px-4 py-3 text-right tabular-nums',
+                    r.diasMasVencido > 0 ? diasColor : 'text-orion-fg-muted'
+                  )}
                 >
-                  <CreditCard size={12} />
-                  Registrar pago
-                </Link>
-              </td>
-            </tr>
-          ))}
+                  {r.diasMasVencido > 0 ? `${r.diasMasVencido}d` : '—'}
+                </td>
+
+                {/* Total = saldoPendiente */}
+                <td className="px-4 py-3 text-right font-medium">
+                  <Money value={r.saldoPendiente} ccy={r.moneda as 'PEN' | 'USD'} />
+                </td>
+
+                {/* Acciones */}
+                <td className="px-4 py-3">
+                  {r.saldoVencido > 0 ? (
+                    <Link
+                      href={`/${companySlug}/credito/pagos/nuevo?clienteId=${r.clienteId}`}
+                      className="inline-flex h-7 items-center gap-1.5 rounded-md border border-danger-soft bg-danger-soft px-2.5 text-[12px] font-medium text-danger-fg hover:opacity-80"
+                    >
+                      Cobrar
+                    </Link>
+                  ) : (
+                    <span className="text-orion-fg-faint">
+                      <MoreHorizontal size={14} />
+                    </span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

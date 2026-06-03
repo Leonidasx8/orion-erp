@@ -1,59 +1,55 @@
-import Link from 'next/link';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
-import { requirePermission } from '@/lib/auth/require-permission';
+import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { roles, rolPermisos, permisosDefinidos } from '@/lib/db/schema';
-import { Button } from '@/components/ui/button';
-import { PermissionsMatrix } from '@/components/modules/admin/PermissionsMatrix';
+import { RolesPageLayout } from '@/components/modules/admin/RolesPageLayout';
+import { PageHead } from '@/components/shared/PageHead';
+
+export const metadata = { title: 'Roles y permisos' };
 
 export default async function RolesPage({ params }: { params: Promise<{ companySlug: string }> }) {
   const { companySlug } = await params;
-  await requirePermission('admin.roles.ver');
+  await requirePermissionPage('admin.roles.ver', companySlug);
   const tenant = await getCurrentTenant();
 
-  const tenantRoles = await db.select().from(roles).where(eq(roles.tenantId, tenant.id));
-  const allPermisos = await db.select().from(permisosDefinidos);
+  const [tenantRoles, allPermisos, userCountsRaw] = await Promise.all([
+    db.select().from(roles).where(eq(roles.tenantId, tenant.id)).orderBy(roles.nombre),
+    db.select().from(permisosDefinidos).orderBy(permisosDefinidos.modulo, permisosDefinidos.codigo),
+    db.execute<{ rol: string; n: string }>(sql`
+      SELECT rol, COUNT(*)::text AS n
+      FROM tenant_members
+      WHERE tenant_id = ${tenant.id}
+      GROUP BY rol
+    `),
+  ]);
+
+  const userCounts = userCountsRaw as { rol: string; n: string }[];
+  const userCountMap = Object.fromEntries(userCounts.map((r) => [r.rol, parseInt(r.n, 10)]));
+
+  const rolesWithPerms = await Promise.all(
+    tenantRoles.map(async (rol) => {
+      const perms = await db
+        .select({ codigo: rolPermisos.permisoCodigo })
+        .from(rolPermisos)
+        .where(eq(rolPermisos.rolId, rol.id));
+      return {
+        rol,
+        permisos: perms.map((p) => p.codigo),
+        userCount: userCountMap[rol.nombre] ?? 0,
+      };
+    })
+  );
+
+  const totalUsuarios = Object.values(userCountMap).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Roles y permisos</h1>
-        <Button asChild variant="outline">
-          <Link href={`/${companySlug}/admin/roles/nuevo`}>+ Crear rol</Link>
-        </Button>
-      </div>
-
-      {tenantRoles.map(async (rol) => {
-        const perms = await db
-          .select({ codigo: rolPermisos.permisoCodigo })
-          .from(rolPermisos)
-          .where(eq(rolPermisos.rolId, rol.id));
-
-        const readOnly = rol.nombre === 'Superadmin' && rol.esPredefinido;
-
-        return (
-          <div key={rol.id} className="rounded-lg border p-5">
-            <div className="mb-4">
-              <p className="font-semibold">{rol.nombre}</p>
-              {rol.descripcion && (
-                <p className="text-sm text-muted-foreground">{rol.descripcion}</p>
-              )}
-              {readOnly && <p className="text-xs italic text-muted-foreground">Solo lectura</p>}
-            </div>
-            <PermissionsMatrix
-              permisosDef={allPermisos}
-              rol={rol}
-              permisosActuales={perms.map((p) => p.codigo)}
-              readOnly={readOnly}
-            />
-          </div>
-        );
-      })}
-
-      {tenantRoles.length === 0 && (
-        <p className="text-sm text-muted-foreground">Sin roles configurados.</p>
-      )}
+    <div className="space-y-5">
+      <PageHead
+        title="Roles y permisos"
+        subtitle={`${tenantRoles.length} roles configurados · ${totalUsuarios} usuarios`}
+      />
+      <RolesPageLayout roles={rolesWithPerms} allPermisos={allPermisos} companySlug={companySlug} />
     </div>
   );
 }

@@ -123,15 +123,7 @@ export default function PreviewCotizacionDetallePage() {
       style={{ gridTemplateColumns: '240px 1fr', gridTemplateRows: '56px 1fr' }}
     >
       <TenantSidebar tenant={tenant} userName="Lucas Escrivá" userRole="Superadmin" />
-      <TenantHeader
-        tenant={tenant}
-        userName="Lucas Escrivá"
-        crumbs={[
-          { label: 'Idex', href: `/${tenant.slug}` },
-          { label: 'Cotizaciones', href: `/${tenant.slug}/cotizaciones` },
-          { label: MOCK.numero },
-        ]}
-      />
+      <TenantHeader tenant={tenant} userName="Lucas Escrivá" />
       <main className="col-start-2 row-start-2 overflow-auto bg-orion-bg-subtle p-6">
         <CotizacionDetalle data={MOCK} tenantSlug={tenant.slug} />
       </main>

@@ -2,9 +2,102 @@ import { sql } from 'drizzle-orm'; // noqa
 import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { DashboardCxC, type DashboardCxCData } from '@/components/modules/credito/DashboardCxC';
-import { AgingChart, type AgingBuckets } from '@/components/modules/credito/AgingChart';
 import { ClientesSaldos, type ClienteSaldoRow } from '@/components/modules/credito/ClientesSaldos';
 import { ModuleHelp } from '@/components/shared/ModuleHelp';
+
+type AgingBuckets = {
+  bucket0a30: number;
+  bucket31a60: number;
+  bucket61a90: number;
+  bucket90mas: number;
+};
+
+function AgingReportCard({
+  agingBuckets,
+  totalCxC,
+  clientesConDeuda,
+}: {
+  agingBuckets: AgingBuckets;
+  totalCxC: number;
+  clientesConDeuda: number;
+}) {
+  const porVencer = Math.max(
+    0,
+    totalCxC -
+      (agingBuckets.bucket0a30 +
+        agingBuckets.bucket31a60 +
+        agingBuckets.bucket61a90 +
+        agingBuckets.bucket90mas)
+  );
+  const agingTotal =
+    porVencer +
+    agingBuckets.bucket0a30 +
+    agingBuckets.bucket31a60 +
+    agingBuckets.bucket61a90 +
+    agingBuckets.bucket90mas;
+
+  const buckets = [
+    { label: 'Por vencer', value: porVencer, color: 'var(--success)' },
+    { label: '1-30 días', value: agingBuckets.bucket0a30, color: 'var(--accent)' },
+    { label: '31-60 días', value: agingBuckets.bucket31a60, color: 'var(--warn)' },
+    { label: '61-90 días', value: agingBuckets.bucket61a90, color: '#ea580c' },
+    { label: '+90 días', value: agingBuckets.bucket90mas, color: 'var(--danger)' },
+  ] as const;
+
+  return (
+    <div className="rounded-lg border border-orion-border bg-orion-bg p-4">
+      <div className="mb-3 flex items-center">
+        <span className="text-[13px] font-semibold text-orion-fg">
+          Aging report &middot;{' '}
+          {new Date().toLocaleDateString('es-PE', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          })}
+        </span>
+        <span className="ml-auto text-[11.5px] text-orion-fg-muted">
+          {clientesConDeuda} clientes &middot; S/{' '}
+          {totalCxC.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+        </span>
+      </div>
+
+      <div className="mb-3 grid grid-cols-5 gap-2">
+        {buckets.map((b) => (
+          <div key={b.label} className="rounded-md bg-orion-bg-subtle p-3">
+            <div className="mb-1 flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full" style={{ background: b.color }} />
+              <span className="text-[11.5px] text-orion-fg-muted">{b.label}</span>
+            </div>
+            <div className="text-[18px] font-semibold text-orion-fg">
+              S/{' '}
+              {b.value.toLocaleString('es-PE', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {agingTotal > 0 && (
+        <div className="flex h-2 overflow-hidden rounded-full">
+          {buckets.map(
+            (seg) =>
+              seg.value > 0 && (
+                <div
+                  key={seg.label}
+                  style={{
+                    width: `${(seg.value / agingTotal) * 100}%`,
+                    background: seg.color,
+                  }}
+                />
+              )
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const metadata = { title: 'Crédito y CxC' };
 
@@ -153,11 +246,12 @@ export default async function CreditoPage({
       {/* KPI cards */}
       <DashboardCxC data={dashboardData} />
 
-      {/* Aging chart */}
-      <div className="rounded-lg border border-orion-border p-5">
-        <h2 className="mb-4 text-sm font-semibold text-orion-fg">Aging de cartera (PEN)</h2>
-        <AgingChart buckets={agingBuckets} moneda="PEN" />
-      </div>
+      {/* Aging report card */}
+      <AgingReportCard
+        agingBuckets={agingBuckets}
+        totalCxC={dashboardData.totalCxC}
+        clientesConDeuda={dashboardData.clientesConDeuda}
+      />
 
       {/* Tabla clientes */}
       <div>

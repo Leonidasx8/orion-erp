@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Receipt } from 'lucide-react';
+import { Check, Clock, Cloud, Receipt, X } from 'lucide-react';
 import { EstadoBadge } from '@/components/shared/EstadoBadge';
 import { Money } from '@/components/shared/Money';
 import type { Estado } from '@/components/shared/EstadoBadge';
@@ -34,18 +34,86 @@ export function FacturasList({
   total,
   page,
   companySlug,
+  sunatCounts,
 }: {
   rows: FacturaRow[];
   filtroActivo: string;
   total: number;
   page: number;
   companySlug: string;
+  sunatCounts?: { aceptadas: number; pendientes: number; rechazadas: number; anuladas: number };
 }) {
   const pathname = usePathname();
   const base = `/${companySlug}/facturas`;
 
   return (
     <div className="flex flex-col gap-4">
+      {/* SUNAT health strip */}
+      {sunatCounts && (
+        <div className="grid grid-cols-5 gap-3 rounded-lg border border-orion-border bg-orion-bg p-3">
+          {(
+            [
+              {
+                label: 'Aceptadas',
+                value: sunatCounts.aceptadas,
+                tone: 'success',
+                icon: <Check size={13} />,
+              },
+              {
+                label: 'Pendientes',
+                value: sunatCounts.pendientes,
+                tone: 'warn',
+                icon: <Clock size={13} />,
+              },
+              {
+                label: 'Rechazadas',
+                value: sunatCounts.rechazadas,
+                tone: 'danger',
+                icon: <X size={13} />,
+              },
+              {
+                label: 'Anuladas',
+                value: sunatCounts.anuladas,
+                tone: 'muted',
+                icon: <X size={13} />,
+              },
+              {
+                label: 'Estado SUNAT',
+                value: 'OK',
+                tone: 'success',
+                icon: <Cloud size={13} />,
+                sub: 'conexión activa',
+              },
+            ] as const
+          ).map((k, i) => {
+            const bg =
+              k.tone === 'success'
+                ? 'bg-success-soft text-success-fg'
+                : k.tone === 'warn'
+                  ? 'bg-warn-soft text-warn-fg'
+                  : k.tone === 'danger'
+                    ? 'bg-danger-soft text-danger-fg'
+                    : 'bg-orion-bg-muted text-orion-fg-muted';
+            return (
+              <div key={i}>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded ${bg}`}
+                  >
+                    {k.icon}
+                  </span>
+                  <span className="text-[11.5px] text-orion-fg-muted">{k.label}</span>
+                </div>
+                <div className="mt-1 text-[20px] font-semibold text-orion-fg">{k.value}</div>
+                {'sub' in k && k.sub && (
+                  <div className="text-[10.5px] text-orion-fg-faint">{k.sub}</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Filtros */}
       <div className="flex flex-wrap gap-1.5">
         {FILTROS.map((f) => (

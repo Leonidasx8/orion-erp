@@ -116,15 +116,7 @@ export default function PreviewOrdenDetallePage() {
       style={{ gridTemplateColumns: '240px 1fr', gridTemplateRows: '56px 1fr' }}
     >
       <TenantSidebar tenant={tenant} userName="Lucas Escrivá" userRole="Superadmin" />
-      <TenantHeader
-        tenant={tenant}
-        userName="Lucas Escrivá"
-        crumbs={[
-          { label: 'Idex', href: `/${tenant.slug}` },
-          { label: 'Compras a Proveedores', href: `/${tenant.slug}/ordenes` },
-          { label: MOCK.numero },
-        ]}
-      />
+      <TenantHeader tenant={tenant} userName="Lucas Escrivá" />
       <main className="col-start-2 row-start-2 overflow-auto bg-orion-bg-subtle p-6">
         <OrdenDetalle data={MOCK} tenantSlug={tenant.slug} />
       </main>

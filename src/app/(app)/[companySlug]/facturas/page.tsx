@@ -52,7 +52,7 @@ export default async function FacturasPage({
   if (clienteIdFilter) baseConditions.push(eq(facturas.clienteId, clienteIdFilter));
   const estadoFilter = baseConditions.length === 1 ? baseConditions[0] : and(...baseConditions);
 
-  const [rowsRaw, [{ total }]] = await Promise.all([
+  const [rowsRaw, [{ total }], sunatRaw] = await Promise.all([
     db
       .select({
         id: facturas.id,
@@ -76,7 +76,26 @@ export default async function FacturasPage({
       .select({ total: sql<number>`COUNT(*)::int` })
       .from(facturas)
       .where(estadoFilter),
+    db.execute<{ estado_sunat: string; n: string }>(sql`
+      SELECT estado_sunat, COUNT(*)::text AS n
+      FROM facturas
+      WHERE tenant_id = ${tenant.id}
+      GROUP BY estado_sunat
+    `),
   ]);
+
+  const sunatMap = Object.fromEntries(
+    (sunatRaw as { estado_sunat: string; n: string }[]).map((r) => [
+      r.estado_sunat,
+      parseInt(r.n, 10),
+    ])
+  );
+  const sunatCounts = {
+    aceptadas: sunatMap['aceptada'] ?? 0,
+    pendientes: sunatMap['pendiente'] ?? 0,
+    rechazadas: sunatMap['rechazada'] ?? 0,
+    anuladas: sunatMap['anulada'] ?? 0,
+  };
 
   const rows: FacturaRow[] = rowsRaw.map((r) => ({
     id: r.id,
@@ -132,6 +151,7 @@ export default async function FacturasPage({
         total={total ?? 0}
         page={page}
         companySlug={tenant.slug}
+        sunatCounts={sunatCounts}
       />
     </div>
   );
