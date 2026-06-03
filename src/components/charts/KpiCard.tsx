@@ -9,6 +9,8 @@ interface KpiCardProps {
   format?: 'number' | 'currency' | 'percentage';
   currency?: 'PEN' | 'USD';
   className?: string;
+  subtitle?: string;
+  subtitleClassName?: string;
 }
 
 export function KpiCard({
@@ -18,6 +20,8 @@ export function KpiCard({
   format = 'number',
   currency = 'PEN',
   className,
+  subtitle,
+  subtitleClassName,
 }: KpiCardProps) {
   const formatted =
     format === 'currency'
@@ -36,6 +40,11 @@ export function KpiCard({
       <CardContent className="p-4">
         <CardDescription className="text-xs">{label}</CardDescription>
         <div className="mt-1 text-2xl font-bold">{formatted}</div>
+        {subtitle && (
+          <p className={cn('mt-0.5 text-xs', subtitleClassName ?? 'text-muted-foreground')}>
+            {subtitle}
+          </p>
+        )}
         {delta !== undefined && (
           <div
             className={cn(

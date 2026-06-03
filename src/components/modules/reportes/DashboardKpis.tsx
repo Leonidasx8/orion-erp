@@ -29,6 +29,7 @@ export function DashboardKpis({
 }: DashboardKpisProps) {
   const mesActual = metricas[metricas.length - 1];
   const mesAnterior = metricas[metricas.length - 2];
+  const cxcVencido = Number(cxcTotales?.vencido ?? 0);
 
   const deltaVentas =
     mesAnterior && Number(mesAnterior.ventas_total) > 0
@@ -82,7 +83,17 @@ export function DashboardKpis({
         href={`/${companySlug}/credito`}
         className="block rounded-lg transition-opacity hover:opacity-80"
       >
-        <KpiCard label="CxC total" value={Number(cxcTotales?.total ?? 0)} format="currency" />
+        <KpiCard
+          label="CxC total"
+          value={Number(cxcTotales?.total ?? 0)}
+          format="currency"
+          subtitle={
+            cxcVencido > 0
+              ? `S/ ${cxcVencido.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} vencido`
+              : undefined
+          }
+          subtitleClassName={cxcVencido > 0 ? 'text-red-600 font-medium' : undefined}
+        />
       </Link>
       <Link
         href={`/${companySlug}/inventario?estado=critico`}
