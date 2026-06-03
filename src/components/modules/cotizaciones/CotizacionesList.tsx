@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Calendar,
@@ -13,6 +13,7 @@ import {
   Search,
   User,
   Users,
+  X,
 } from 'lucide-react';
 import { Money } from '@/components/shared/Money';
 import { PageHead } from '@/components/shared/PageHead';
@@ -26,6 +27,7 @@ export type CotizacionRow = {
   cliente: string;
   estado: Estado;
   fechaEmision: string; // texto display: "27 abr"
+  fechaEmisionRaw: string; // ISO date "YYYY-MM-DD" para filtrado
   fechaVencimiento: string | null; // "30 abr" o null/"—"
   items: number;
   total: number;
@@ -62,6 +64,34 @@ const FILTROS: { key: 'todas' | Estado; label: string }[] = [
   { key: 'convertida', label: 'Convertidas' },
 ];
 
+const FECHA_OPCIONES = [
+  { key: null, label: 'Todo' },
+  { key: 'hoy', label: 'Hoy' },
+  { key: 'semana', label: 'Esta semana' },
+  { key: 'mes', label: 'Este mes' },
+  { key: 'mes_anterior', label: 'Mes anterior' },
+] as const;
+
+function matchFecha(raw: string, filtro: string | null): boolean {
+  if (!filtro || !raw) return true;
+  const hoy = new Date();
+  const d = new Date(raw + 'T12:00:00');
+  if (filtro === 'hoy') return d.toDateString() === hoy.toDateString();
+  if (filtro === 'semana') {
+    const lunes = new Date(hoy);
+    lunes.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
+    lunes.setHours(0, 0, 0, 0);
+    return d >= lunes;
+  }
+  if (filtro === 'mes')
+    return d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth();
+  if (filtro === 'mes_anterior') {
+    const mes = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    return d.getFullYear() === mes.getFullYear() && d.getMonth() === mes.getMonth();
+  }
+  return true;
+}
+
 export function CotizacionesList({
   tenantSlug,
   rows,
@@ -74,15 +104,28 @@ export function CotizacionesList({
 }: CotizacionesListProps) {
   const base = `/${tenantSlug}/cotizaciones`;
   const [query, setQuery] = useState('');
+  const [filtroFecha, setFiltroFecha] = useState<string | null>(null);
+  const [filtroComercial, setFiltroComercial] = useState<string | null>(null);
+  const [filtroCliente, setFiltroCliente] = useState<string | null>(null);
+
   const q = query.trim().toLowerCase();
-  const visibleRows = q
-    ? rows.filter(
-        (r) =>
-          r.numero.toLowerCase().includes(q) ||
-          r.cliente.toLowerCase().includes(q) ||
-          r.comercial.toLowerCase().includes(q)
-      )
-    : rows;
+
+  const comerciales = [...new Set(rows.map((r) => r.comercial).filter((c) => c !== '—'))].sort();
+  const clientesUnicos = [...new Set(rows.map((r) => r.cliente).filter((c) => c !== '—'))].sort();
+
+  const visibleRows = rows.filter((r) => {
+    if (
+      q &&
+      !r.numero.toLowerCase().includes(q) &&
+      !r.cliente.toLowerCase().includes(q) &&
+      !r.comercial.toLowerCase().includes(q)
+    )
+      return false;
+    if (filtroFecha && !matchFecha(r.fechaEmisionRaw, filtroFecha)) return false;
+    if (filtroComercial && r.comercial !== filtroComercial) return false;
+    if (filtroCliente && r.cliente !== filtroCliente) return false;
+    return true;
+  });
   const subtitle = `${counts.total} totales · ${counts.borrador + counts.enviada} abiertas · USD ${pipelineUsd.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} en pipeline`;
   const totalAbiertas = counts.borrador + counts.enviada;
   void totalAbiertas;
@@ -164,9 +207,67 @@ export function CotizacionesList({
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <ToolbarBtn icon={<Calendar size={12} />} label="Fecha emisión" />
-        <ToolbarBtn icon={<User size={12} />} label="Comercial" />
-        <ToolbarBtn icon={<Users size={12} />} label="Cliente" />
+        <FilterDropdown
+          icon={<Calendar size={12} />}
+          label="Fecha emisión"
+          active={filtroFecha}
+          activeLabel={FECHA_OPCIONES.find((o) => o.key === filtroFecha)?.label ?? null}
+          onClear={() => setFiltroFecha(null)}
+        >
+          {FECHA_OPCIONES.map((o) => (
+            <DropdownItem
+              key={String(o.key)}
+              selected={filtroFecha === o.key}
+              onClick={() => setFiltroFecha(o.key)}
+            >
+              {o.label}
+            </DropdownItem>
+          ))}
+        </FilterDropdown>
+
+        <FilterDropdown
+          icon={<User size={12} />}
+          label="Comercial"
+          active={filtroComercial}
+          activeLabel={filtroComercial}
+          onClear={() => setFiltroComercial(null)}
+        >
+          {comerciales.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-orion-fg-faint">Sin datos</div>
+          ) : (
+            comerciales.map((c) => (
+              <DropdownItem
+                key={c}
+                selected={filtroComercial === c}
+                onClick={() => setFiltroComercial(c)}
+              >
+                {c}
+              </DropdownItem>
+            ))
+          )}
+        </FilterDropdown>
+
+        <FilterDropdown
+          icon={<Users size={12} />}
+          label="Cliente"
+          active={filtroCliente}
+          activeLabel={filtroCliente}
+          onClear={() => setFiltroCliente(null)}
+        >
+          {clientesUnicos.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-orion-fg-faint">Sin datos</div>
+          ) : (
+            clientesUnicos.map((c) => (
+              <DropdownItem
+                key={c}
+                selected={filtroCliente === c}
+                onClick={() => setFiltroCliente(c)}
+              >
+                {c}
+              </DropdownItem>
+            ))
+          )}
+        </FilterDropdown>
       </div>
 
       {/* Table */}
@@ -266,15 +367,96 @@ export function CotizacionesList({
   );
 }
 
-function ToolbarBtn({ icon, label }: { icon: React.ReactNode; label: string }) {
+function FilterDropdown({
+  icon,
+  label,
+  active,
+  activeLabel,
+  onClear,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active: string | null;
+  activeLabel: string | null;
+  onClear: () => void;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          'inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-[12px] font-medium transition-colors',
+          active
+            ? 'border-tenant-accent bg-tenant-accent-soft text-tenant-accent-fg'
+            : 'border-orion-border bg-orion-bg text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg'
+        )}
+      >
+        {icon}
+        <span>{active ? activeLabel : label}</span>
+        {active ? (
+          <span
+            role="button"
+            aria-label="Limpiar filtro"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClear();
+              setOpen(false);
+            }}
+            className="hover:bg-tenant-accent/20 ml-0.5 rounded-full p-px"
+          >
+            <X size={10} />
+          </span>
+        ) : (
+          <ChevronDown size={11} />
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-30 mt-1 min-w-[160px] rounded-lg border border-orion-border bg-orion-bg py-1 shadow-orion-2">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DropdownItem({
+  children,
+  selected,
+  onClick,
+}: {
+  children: React.ReactNode;
+  selected: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
-      className="inline-flex h-7 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-2 text-[12px] font-medium text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
+      onClick={onClick}
+      className={cn(
+        'flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] transition-colors',
+        selected
+          ? 'bg-tenant-accent-soft font-medium text-tenant-accent-fg'
+          : 'text-orion-fg hover:bg-orion-bg-hover'
+      )}
     >
-      {icon}
-      {label}
-      <ChevronDown size={11} />
+      {selected && <span className="text-[10px]">✓</span>}
+      {children}
     </button>
   );
 }

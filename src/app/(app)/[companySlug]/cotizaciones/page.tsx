@@ -104,6 +104,7 @@ export default async function CotizacionesPage({
     cliente: clienteDisplay(r),
     estado: r.estado as Estado,
     fechaEmision: formatDate(r.fechaEmision) ?? '—',
+    fechaEmisionRaw: r.fechaEmision ?? '',
     fechaVencimiento: formatDate(r.fechaVencimiento),
     items: r.items ?? 0,
     total: Number(r.total),
