@@ -57,6 +57,7 @@ export function CotizacionActions({
   const [rechazandoMotivo, setRechazandoMotivo] = useState('');
   const [showRechazo, setShowRechazo] = useState(false);
   const [showEnviarModal, setShowEnviarModal] = useState(false);
+  const [soloCompartir, setSoloCompartir] = useState(false);
 
   const esBorrador = estado === 'borrador';
   const esEnviada = estado === 'enviada';
@@ -145,12 +146,15 @@ export function CotizacionActions({
         PDF
       </button>
 
-      {/* Reenviar email */}
+      {/* Reenviar (compartir de nuevo sin cambiar estado) */}
       {permissions.reenviar && (
         <button
           type="button"
           disabled={pending}
-          onClick={() => toast.info('Envío de email — próximamente')}
+          onClick={() => {
+            setSoloCompartir(true);
+            setShowEnviarModal(true);
+          }}
           className={btnCls}
         >
           <Bell size={13} />
@@ -162,7 +166,10 @@ export function CotizacionActions({
       {puedeEnviar && (
         <button
           type="button"
-          onClick={() => setShowEnviarModal(true)}
+          onClick={() => {
+            setSoloCompartir(false);
+            setShowEnviarModal(true);
+          }}
           disabled={pending}
           className={cn(
             btnCls,
@@ -224,7 +231,7 @@ export function CotizacionActions({
         </button>
       )}
 
-      {/* Modal envío: WhatsApp + Email */}
+      {/* Modal envío: WhatsApp + Gmail */}
       {showEnviarModal && (
         <EnviarModal
           cotizacionId={cotizacionId}
@@ -233,6 +240,7 @@ export function CotizacionActions({
           totalDisplay={totalDisplay}
           clienteTelefono={clienteTelefono}
           clienteEmail={clienteEmail}
+          soloCompartir={soloCompartir}
           pending={pending}
           onEnviar={handleEnviar}
           onClose={() => setShowEnviarModal(false)}
@@ -292,6 +300,7 @@ function EnviarModal({
   totalDisplay,
   clienteTelefono,
   clienteEmail,
+  soloCompartir,
   pending,
   onEnviar,
   onClose,
@@ -302,36 +311,57 @@ function EnviarModal({
   totalDisplay?: string;
   clienteTelefono?: string | null;
   clienteEmail?: string | null;
+  soloCompartir: boolean;
   pending: boolean;
   onEnviar: () => void;
   onClose: () => void;
 }) {
-  function buildPdfUrl() {
-    if (typeof window === 'undefined') return '';
-    return `${window.location.origin}/api/${tenantSlug}/cotizaciones/${cotizacionId}/pdf`;
+  const telDigits = (clienteTelefono ?? '').replace(/\D/g, '');
+  const tieneTelefono = telDigits.length > 0;
+  const tieneEmail = Boolean(clienteEmail);
+
+  /** Descarga el PDF al equipo para poder adjuntarlo manualmente en el canal. */
+  function descargarPdf() {
+    if (typeof window === 'undefined') return;
+    const url = `${window.location.origin}/api/${tenantSlug}/cotizaciones/${cotizacionId}/pdf`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Cotizacion-${numeroCotizacion ?? cotizacionId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  /** Marca como enviada solo si estamos en el flujo de envío (no en reenviar). */
+  function marcarEnviada() {
+    if (!soloCompartir) onEnviar();
   }
 
   function handleWhatsApp() {
-    const phone = (clienteTelefono ?? '').replace(/\D/g, '');
-    const pdfUrl = buildPdfUrl();
+    descargarPdf();
+    const fullPhone = telDigits.startsWith('51') ? telDigits : `51${telDigits}`;
     const msg = encodeURIComponent(
-      `Hola, le enviamos la cotización ${numeroCotizacion ?? ''}${totalDisplay ? ` por ${totalDisplay}` : ''}.\n\nDescargue el PDF aquí: ${pdfUrl}`
+      `Hola, le compartimos la cotización ${numeroCotizacion ?? ''}${totalDisplay ? ` por ${totalDisplay}` : ''}. Adjuntamos el PDF en este chat.`
     );
-    const fullPhone = phone.startsWith('51') ? phone : `51${phone}`;
     window.open(`https://wa.me/${fullPhone}?text=${msg}`, '_blank');
-    onEnviar();
+    toast.success('PDF descargado — adjúntalo en el chat de WhatsApp');
+    marcarEnviada();
     onClose();
   }
 
   function handleEmail() {
-    const pdfUrl = buildPdfUrl();
-    const subject = encodeURIComponent(`Cotización ${numeroCotizacion ?? ''}`);
+    descargarPdf();
+    const to = encodeURIComponent(clienteEmail ?? '');
+    const su = encodeURIComponent(`Cotización ${numeroCotizacion ?? ''}`);
     const body = encodeURIComponent(
-      `Estimado cliente,\n\nAdjuntamos la cotización ${numeroCotizacion ?? ''}${totalDisplay ? ` por ${totalDisplay}` : ''}.\n\nDescargue el PDF aquí: ${pdfUrl}\n\nQuedamos a su disposición.`
+      `Estimado cliente,\n\nAdjuntamos la cotización ${numeroCotizacion ?? ''}${totalDisplay ? ` por ${totalDisplay}` : ''} en formato PDF.\n\nQuedamos atentos a sus comentarios.\n\nSaludos cordiales.`
     );
-    const to = clienteEmail ?? '';
-    window.open(`mailto:${to}?subject=${subject}&body=${body}`, '_self');
-    onEnviar();
+    window.open(
+      `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}&body=${body}`,
+      '_blank'
+    );
+    toast.success('PDF descargado — adjúntalo en el correo de Gmail');
+    marcarEnviada();
     onClose();
   }
 
@@ -344,7 +374,9 @@ function EnviarModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-sm rounded-xl border border-orion-border bg-orion-bg p-5 shadow-xl">
         <div className="mb-1 flex items-center justify-between">
-          <h2 className="text-[14px] font-semibold text-orion-fg">Enviar cotización</h2>
+          <h2 className="text-[14px] font-semibold text-orion-fg">
+            {soloCompartir ? 'Reenviar cotización' : 'Enviar cotización'}
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -354,8 +386,14 @@ function EnviarModal({
           </button>
         </div>
         <p className="mb-4 text-[12px] text-orion-fg-muted">
-          Elige cómo enviar la cotización al cliente. El estado cambiará a <strong>Enviada</strong>{' '}
-          en todos los casos.
+          {soloCompartir ? (
+            'Se descargará el PDF y se abrirá el canal con el mensaje listo. Adjunta el PDF descargado antes de enviar.'
+          ) : (
+            <>
+              Se descargará el PDF y se abrirá el canal con el mensaje listo; adjunta el PDF
+              descargado. El estado cambiará a <strong>Enviada</strong>.
+            </>
+          )}
         </p>
 
         <div className="space-y-2">
@@ -363,8 +401,8 @@ function EnviarModal({
           <button
             type="button"
             onClick={handleWhatsApp}
-            disabled={pending}
-            className="flex w-full items-center gap-3 rounded-lg border border-orion-border bg-orion-bg px-4 py-3 text-left transition-colors hover:bg-orion-bg-hover disabled:opacity-60"
+            disabled={pending || !tieneTelefono}
+            className="flex w-full items-center gap-3 rounded-lg border border-orion-border bg-orion-bg px-4 py-3 text-left transition-colors hover:bg-orion-bg-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366]/10">
               <MessageCircle size={18} className="text-[#25D366]" />
@@ -372,48 +410,50 @@ function EnviarModal({
             <div>
               <div className="text-[13px] font-medium text-orion-fg">Enviar por WhatsApp</div>
               <div className="text-[11px] text-orion-fg-faint">
-                {clienteTelefono
-                  ? `+${clienteTelefono.replace(/\D/g, '').startsWith('51') ? '' : '51'}${clienteTelefono.replace(/\D/g, '')}`
+                {tieneTelefono
+                  ? `+${telDigits.startsWith('51') ? '' : '51'}${telDigits}`
                   : 'Sin teléfono registrado'}
               </div>
             </div>
           </button>
 
-          {/* Email */}
+          {/* Gmail */}
           <button
             type="button"
             onClick={handleEmail}
-            disabled={pending}
-            className="flex w-full items-center gap-3 rounded-lg border border-orion-border bg-orion-bg px-4 py-3 text-left transition-colors hover:bg-orion-bg-hover disabled:opacity-60"
+            disabled={pending || !tieneEmail}
+            className="flex w-full items-center gap-3 rounded-lg border border-orion-border bg-orion-bg px-4 py-3 text-left transition-colors hover:bg-orion-bg-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500/10">
               <Mail size={18} className="text-blue-500" />
             </span>
             <div>
-              <div className="text-[13px] font-medium text-orion-fg">Enviar por correo</div>
+              <div className="text-[13px] font-medium text-orion-fg">Enviar por correo (Gmail)</div>
               <div className="text-[11px] text-orion-fg-faint">
                 {clienteEmail ?? 'Sin correo registrado'}
               </div>
             </div>
           </button>
 
-          {/* Solo cambiar estado */}
-          <button
-            type="button"
-            onClick={handleSoloEstado}
-            disabled={pending}
-            className="flex w-full items-center gap-3 rounded-lg border border-orion-border bg-orion-bg-subtle px-4 py-3 text-left transition-colors hover:bg-orion-bg-hover disabled:opacity-60"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orion-bg-muted">
-              <Check size={18} className="text-orion-fg-muted" />
-            </span>
-            <div>
-              <div className="text-[13px] font-medium text-orion-fg">Solo cambiar estado</div>
-              <div className="text-[11px] text-orion-fg-faint">
-                Marcar como enviada sin notificar al cliente
+          {/* Solo cambiar estado (solo en flujo de envío) */}
+          {!soloCompartir && (
+            <button
+              type="button"
+              onClick={handleSoloEstado}
+              disabled={pending}
+              className="flex w-full items-center gap-3 rounded-lg border border-orion-border bg-orion-bg-subtle px-4 py-3 text-left transition-colors hover:bg-orion-bg-hover disabled:opacity-60"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orion-bg-muted">
+                <Check size={18} className="text-orion-fg-muted" />
+              </span>
+              <div>
+                <div className="text-[13px] font-medium text-orion-fg">Solo cambiar estado</div>
+                <div className="text-[11px] text-orion-fg-faint">
+                  Marcar como enviada sin notificar al cliente
+                </div>
               </div>
-            </div>
-          </button>
+            </button>
+          )}
         </div>
       </div>
     </div>
