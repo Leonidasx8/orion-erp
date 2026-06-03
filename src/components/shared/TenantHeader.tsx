@@ -1,47 +1,29 @@
-import Link from 'next/link';
-import { ChevronRight, HelpCircle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import type { Tenant } from '@/lib/db/schema';
 import { GlobalSearch } from './GlobalSearch';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { UserMenu } from './UserMenu';
+import { SmartBreadcrumbs } from './SmartBreadcrumbs';
 
 export function TenantHeader({
   tenant,
-  crumbs,
   userName,
   className,
 }: {
   tenant: Tenant;
-  crumbs?: { label: string; href?: string }[];
   userName?: string;
   className?: string;
+  /** @deprecated — solo para páginas /preview. En prod usa SmartBreadcrumbs automático. */
+  crumbs?: { label: string; href?: string }[];
 }) {
-  const trail: { label: string; href?: string }[] = crumbs ?? [
-    { label: tenant.razonSocial.split(/\s+/)[0], href: `/${tenant.slug}` },
-  ];
+  const tenantName = tenant.razonSocial.split(/\s+/)[0];
 
   return (
     <header
       className={`flex h-14 shrink-0 items-center gap-4 border-b border-orion-border bg-orion-bg px-6 ${className ?? ''}`}
     >
-      {/* Breadcrumbs */}
-      <nav className="flex min-w-0 items-center gap-1.5 text-[13px] text-orion-fg-muted">
-        {trail.map((c, i) => {
-          const isLast = i === trail.length - 1;
-          return (
-            <span key={`${c.label}-${i}`} className="flex items-center gap-1.5">
-              {i > 0 && <ChevronRight size={12} className="text-orion-fg-faint" />}
-              {c.href && !isLast ? (
-                <Link href={c.href} className="hover:text-orion-fg">
-                  {c.label}
-                </Link>
-              ) : (
-                <span className={isLast ? 'font-medium text-orion-fg' : undefined}>{c.label}</span>
-              )}
-            </span>
-          );
-        })}
-      </nav>
+      {/* Breadcrumbs — auto-generated from URL */}
+      <SmartBreadcrumbs tenantSlug={tenant.slug} tenantName={tenantName} />
 
       {/* Search */}
       <GlobalSearch />
