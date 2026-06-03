@@ -8,6 +8,7 @@ import { tenants, seriesDocumentos, tenantMembers } from '@/lib/db/schema';
 import { ConfigSunatForm } from '@/components/modules/configuracion/ConfigSunatForm';
 import { EmpresaForm } from '@/components/modules/configuracion/EmpresaForm';
 import { ComercialForm } from '@/components/modules/configuracion/ComercialForm';
+import { PoliticaPreciosForm } from '@/components/modules/configuracion/PoliticaPreciosForm';
 import { ConfigTabBar, type TabId } from '@/components/modules/configuracion/ConfigTabBar';
 import { PageHead } from '@/components/shared/PageHead';
 
@@ -56,20 +57,37 @@ export default async function ConfiguracionPage({
       <ConfigTabBar active={activeTab} />
 
       {activeTab === 'empresa' && (
-        <SectionCard
-          title="Información de la empresa"
-          description="Nombre, logo y datos de contacto que aparecen en PDFs y en el sistema."
-        >
-          <EmpresaForm
-            razonSocial={tenantRow?.razonSocial ?? ''}
-            ruc={tenantRow?.ruc ?? ''}
-            direccionFiscal={tenantRow?.direccionFiscal ?? null}
-            logoUrl={tenantRow?.logoUrl ?? null}
-            web={tenantRow?.web ?? null}
-            telefono={tenantRow?.telefono ?? null}
-            contactoEmail={tenantRow?.contactoEmail ?? null}
-          />
-        </SectionCard>
+        <>
+          <SectionCard
+            title="Información de la empresa"
+            description="Nombre, logo y datos de contacto que aparecen en PDFs y en el sistema."
+          >
+            <EmpresaForm
+              razonSocial={tenantRow?.razonSocial ?? ''}
+              ruc={tenantRow?.ruc ?? ''}
+              direccionFiscal={tenantRow?.direccionFiscal ?? null}
+              logoUrl={tenantRow?.logoUrl ?? null}
+              web={tenantRow?.web ?? null}
+              telefono={tenantRow?.telefono ?? null}
+              contactoEmail={tenantRow?.contactoEmail ?? null}
+            />
+          </SectionCard>
+
+          <SectionCard
+            title="Política de precios y márgenes"
+            description="Reglas globales que aplican a cotizaciones y control de márgenes."
+            tag="Solo Superadmin"
+          >
+            <PoliticaPreciosForm
+              initial={{
+                margenMinimoGlobal: Number(tenantRow?.margenMinimoGlobal ?? 10),
+                aprobacionMontoMaximo: Number(tenantRow?.aprobacionMontoMaximo ?? 5000),
+                igvAutomatico: tenantRow?.igvAutomatico ?? true,
+                descuentosPorLinea: tenantRow?.descuentosPorLinea ?? true,
+              }}
+            />
+          </SectionCard>
+        </>
       )}
 
       {activeTab === 'comercial' && (
@@ -253,11 +271,13 @@ async function TabUsuarios({ companySlug, tenantId }: { companySlug: string; ten
 function SectionCard({
   title,
   description,
+  tag,
   action,
   children,
 }: {
   title: string;
   description: string;
+  tag?: string;
   action?: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -265,7 +285,14 @@ function SectionCard({
     <div className="rounded-xl border border-orion-border bg-orion-bg p-6 shadow-orion-1">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-[15px] font-semibold text-orion-fg">{title}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-[15px] font-semibold text-orion-fg">{title}</h2>
+            {tag && (
+              <span className="rounded-md bg-orion-bg-muted px-2 py-0.5 text-[10.5px] font-medium text-orion-fg-muted">
+                {tag}
+              </span>
+            )}
+          </div>
           <p className="mt-0.5 text-[12px] text-orion-fg-muted">{description}</p>
         </div>
         {action}

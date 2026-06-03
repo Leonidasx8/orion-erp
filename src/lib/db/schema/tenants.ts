@@ -44,6 +44,13 @@ export const tenants = pgTable('tenants', {
   comercialNombre: text('comercial_nombre'),
   comercialCargo: text('comercial_cargo'),
   comercialTelefono: text('comercial_telefono'),
+  // Política de precios y márgenes
+  margenMinimoGlobal: numeric('margen_minimo_global', { precision: 5, scale: 2 }).default('10'),
+  aprobacionMontoMaximo: numeric('aprobacion_monto_maximo', { precision: 14, scale: 2 }).default(
+    '5000'
+  ),
+  igvAutomatico: boolean('igv_automatico').notNull().default(true),
+  descuentosPorLinea: boolean('descuentos_por_linea').notNull().default(true),
 });
 
 export const tenantUsageMetrics = pgTable(

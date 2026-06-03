@@ -41,6 +41,10 @@ const MOCK_TENANT: Tenant = {
   comercialNombre: null,
   comercialCargo: null,
   comercialTelefono: null,
+  margenMinimoGlobal: null,
+  aprobacionMontoMaximo: null,
+  igvAutomatico: true,
+  descuentosPorLinea: true,
 };
 
 const MOCK_PROVEEDORES: ProveedorOption[] = [
