@@ -533,9 +533,10 @@ const STEPPER_INDEX: Partial<Record<Estado, number>> = {
 };
 
 function OrdenStepper({ estado }: { estado: Estado }) {
-  const current = STEPPER_INDEX[estado] ?? 0;
+  const current = STEPPER_INDEX[estado];
+  if (current === undefined) return null;
   return (
-    <div className="mb-5 flex items-center gap-0">
+    <div className="mb-5 flex items-center">
       {STEPPER_STEPS.map((label, i) => {
         const done = i < current;
         const active = i === current;
@@ -654,7 +655,7 @@ function BannerSiguientePaso({
           type="button"
           disabled={pending}
           onClick={cfg.boton.onClick}
-          className="border-current/20 inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border bg-white/20 px-3 text-[12px] font-medium hover:bg-white/30 disabled:opacity-60"
+          className="border-current/20 bg-current/10 hover:bg-current/20 inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border px-3 text-[12px] font-medium disabled:opacity-60"
         >
           {cfg.boton.label}
         </button>
