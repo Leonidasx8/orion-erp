@@ -9,34 +9,15 @@
 
 ---
 
-## 🔴 BLOQUEADOR ACTIVO — Reportes y Dashboard rotos (vistas materializadas faltan en prod)
+## ✅ RESUELTO 2026-06-03 — Reportes 500 + B2 + B5
 
-**Síntoma:** El usuario reporta "el módulo reportes no está funcionando". Dashboard muestra KPIs en 0.
+**Causa real del 500 en `/idex/reportes`:** las migrations 0039–0043 YA estaban aplicadas en prod. El bug era `cantidad_actual` (no existe en `stock_actual`, columna real: `stock`) en la query de inventario crítico — `reportes/page.tsx:51`. Commit `dfadcda`.
 
-**Causa raíz (CONFIRMADA por consulta a prod 2026-06-03):** Las migrations `0039`, `0041`, `0042`, `0043`, `0043b` **NUNCA se aplicaron a producción** (Supabase `aycraotcdbunybfjzlmq`). Estas crean vistas materializadas + función que el código consulta directamente:
+**B2 resuelto:** guard UUID en `/credito/clientes/[id]/page.tsx` — `notFound()` si `id` no es UUID válido. Commit `a0da159`.
 
-| Vista/Objeto faltante             | Migration                             | Quién la consume                                                                                          |
-| --------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `cuentas_por_cobrar` (matview)    | `0039_cuentas_por_cobrar_matview.sql` | `/credito/page.tsx`, `/reportes/page.tsx`, `notifications.ts`, `reportes/page` (vía `cuentas_por_cobrar`) |
-| `factura_esta_vencida()` (func)   | `0041_factura_vencimiento.sql`        | dependencia de la matview CxC                                                                             |
-| `dashboard_metricas` (matview)    | `0042_dashboard_views.sql`            | `/[companySlug]/page.tsx` (dashboard)                                                                     |
-| `pipeline_cotizaciones` (matview) | `0042_dashboard_views.sql`            | dashboard                                                                                                 |
-| `top_clientes` (matview)          | `0043_top_views.sql`                  | dashboard `TopClientesList`                                                                               |
-| `top_productos` (matview)         | `0043_top_views.sql`                  | dashboard `TopProductosList`                                                                              |
-| índices únicos top\_\*            | `0043b_top_views_unique_idx.sql`      | refresh CONCURRENTLY                                                                                      |
+**B5 resuelto:** warning "⚠ stock: N" inline bajo campo cantidad en `CotizacionForm` cuando `cantidad > stockActual`. `stockActual` se carga vía subquery correlated en `stock_actual`. Commit `eaef859`.
 
-**Vistas que SÍ existen en prod:** `aging_cxc`, `stock_actual`, `stock_critico`, `vw_user_tenant_access`.
-
-⚠️ **OJO — discrepancia de nombres:** el código de `/credito/page.tsx` consulta `cuentas_por_cobrar` (matview de 0039, NO aplicada) pero en prod existe `aging_cxc` (columnas: `tenant_id, cliente_id, razon_social, bucket_0_30, bucket_31_60, bucket_61_90, bucket_90_plus`). NO son la misma vista. Verificar qué espera cada página antes de aplicar.
-
-### FIX (próxima sesión — PRIORIDAD 1):
-
-1. **Aplicar las migrations faltantes a prod** vía Supabase MCP (`apply_migration` o `execute_sql`), EN ORDEN: `0039` → `0041` → `0042` → `0043` → `0043b`.
-   - Revisar primero cada `.sql` completo (algunas usan `pg_cron` para refresh cada 5 min — el cron job vive en `0032_sunat_cron.sql`, verificar que esté activo o el refresh será manual).
-   - Las matviews arrancan vacías: tras crearlas, ejecutar `REFRESH MATERIALIZED VIEW <nombre>` una vez para poblarlas.
-2. **Verificar** que `/idex/reportes`, `/idex/reportes/ventas`, `/idex/reportes/cotizaciones`, `/idex/reportes/precios`, `/idex` (dashboard) y `/idex/credito` cargan sin 500.
-3. Las sub-páginas `reportes/ventas`, `reportes/cotizaciones`, `reportes/precios` usan server actions que consultan **tablas reales** (`cotizaciones`, `facturas`, `historial_precios`) — esas NO dependen de matviews y deberían funcionar; confirmar.
-4. **Alternativa si las matviews dan problemas:** reescribir las queries del dashboard/reportes-index/credito para consultar tablas base directamente (como ya hacen las sub-páginas de reportes). Más lento pero sin dependencia de matviews + cron.
+**Estado post-sesión:** `/idex/reportes` ✅, `/idex` dashboard ✅, `/idex/credito` ✅. KPIs en 0 es correcto (no hay facturas SUNAT-aceptadas — bloqueado por serie F001 Nubefact).
 
 ---
 
@@ -73,11 +54,12 @@ Bundle desempaquetado en `/tmp/orion-handoff/orion-erp/` (efímero — re-extrae
 
 ### 🔜 PENDIENTES tras esta sesión (prioridad)
 
-1. **🔴 ARREGLAR REPORTES/DASHBOARD** — aplicar matviews faltantes (ver bloqueador arriba). **DEMO-CRÍTICO.**
-2. Verificar que el rediseño de Usuarios carga en prod (usa `auth.admin.listUsers` — requiere `SUPABASE_SERVICE_ROLE_KEY` en Vercel env; confirmar que está seteada).
-3. B2 (`/credito/clientes/nuevo` → 500), B5 (warning stock en cotización) siguen pendientes.
-4. Serie F001 Nubefact — acción externa de Lucas.
-5. Pantallas Claude Design aún no verificadas pixel a pixel contra prod (solo implementadas).
+1. ~~🔴 ARREGLAR REPORTES/DASHBOARD~~ ✅ RESUELTO (`dfadcda`)
+2. ~~B2 `/credito/clientes/nuevo` → 500~~ ✅ RESUELTO (`a0da159`)
+3. ~~B5 warning stock en cotización~~ ✅ RESUELTO (`eaef859`)
+4. `SUPABASE_SERVICE_ROLE_KEY` en Vercel ✅ ya estaba seteada — Usuarios carga OK.
+5. **Serie F001 Nubefact** — acción externa de Lucas. Sin esto KPIs ventas = 0 (correcto).
+6. Pantallas Claude Design aún no verificadas pixel a pixel contra prod (solo implementadas).
 
 ---
 
