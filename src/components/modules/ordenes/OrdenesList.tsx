@@ -1,17 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { ModuleHelp } from '@/components/shared/ModuleHelp';
 import Link from 'next/link';
 import {
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Download,
+  ExternalLink,
+  Loader2,
   MoreHorizontal,
+  PackageCheck,
   Plus,
   Search,
+  SendHorizonal,
+  Trash2,
   User,
+  XCircle,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import {
+  enviarOrden,
+  aprobarOrden,
+  cerrarOrden,
+  eliminarOrden,
+} from '@/server/actions/ordenes-compra';
 import { Money } from '@/components/shared/Money';
 import { EstadoBadge, type Estado } from '@/components/shared/EstadoBadge';
 import { cn } from '@/lib/utils';
@@ -235,12 +250,7 @@ export function OrdenesList({
                 <Td className="whitespace-nowrap text-orion-fg-muted">{r.fechaEmision}</Td>
                 <Td className="whitespace-nowrap text-orion-fg-muted">{r.fechaEntrega ?? '—'}</Td>
                 <Td>
-                  <button
-                    type="button"
-                    className="grid h-7 w-7 place-items-center rounded-md text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
-                  >
-                    <MoreHorizontal size={14} />
-                  </button>
+                  <OrdenActionsMenu row={r} base={base} />
                 </Td>
               </tr>
             ))}
@@ -265,6 +275,145 @@ export function OrdenesList({
     </div>
   );
 }
+
+// ─── Menú contextual por fila ────────────────────────────────────────────────
+
+function OrdenActionsMenu({ row, base }: { row: OrdenRow; base: string }) {
+  const [open, setOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  function doAction(
+    action: () => Promise<{ success: boolean; error?: string }>,
+    successMsg: string
+  ) {
+    setOpen(false);
+    startTransition(async () => {
+      const res = await action();
+      if (res.success) {
+        toast.success(successMsg);
+        router.refresh();
+      } else {
+        toast.error(res.error ?? 'Error al procesar la operación');
+      }
+    });
+  }
+
+  const href = `${base}/${row.id}`;
+  const { estado } = row;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={() => setOpen((v) => !v)}
+        className="grid h-7 w-7 place-items-center rounded-md text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg disabled:opacity-40"
+      >
+        {isPending ? <Loader2 size={14} className="animate-spin" /> : <MoreHorizontal size={14} />}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-30 mt-1 min-w-[190px] rounded-lg border border-orion-border bg-orion-bg py-1 shadow-orion-2">
+          <ActionItem href={href} icon={<ExternalLink size={13} />}>
+            Ver detalle
+          </ActionItem>
+
+          {estado === 'borrador' && (
+            <ActionItem
+              icon={<SendHorizonal size={13} />}
+              onClick={() => doAction(() => enviarOrden(row.id), 'OC enviada al proveedor')}
+            >
+              Enviar al proveedor
+            </ActionItem>
+          )}
+
+          {estado === 'enviada' && (
+            <ActionItem
+              icon={<CheckCircle2 size={13} />}
+              onClick={() => doAction(() => aprobarOrden(row.id), 'OC aprobada')}
+            >
+              Aprobar OC
+            </ActionItem>
+          )}
+
+          {(estado === 'aprobada' || estado === 'recibida_parcial') && (
+            <ActionItem href={href} icon={<PackageCheck size={13} />}>
+              Recepcionar mercadería
+            </ActionItem>
+          )}
+
+          {estado === 'recibida_total' && (
+            <ActionItem
+              icon={<XCircle size={13} />}
+              onClick={() => doAction(() => cerrarOrden(row.id), 'OC cerrada')}
+            >
+              Cerrar OC
+            </ActionItem>
+          )}
+
+          {estado === 'borrador' && (
+            <>
+              <div className="my-1 border-t border-orion-border" />
+              <ActionItem
+                icon={<Trash2 size={13} />}
+                danger
+                onClick={() => doAction(() => eliminarOrden(row.id), 'OC eliminada')}
+              >
+                Eliminar
+              </ActionItem>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ActionItem({
+  children,
+  href,
+  onClick,
+  icon,
+  danger,
+}: {
+  children: React.ReactNode;
+  href?: string;
+  onClick?: () => void;
+  icon?: React.ReactNode;
+  danger?: boolean;
+}) {
+  const cls = cn(
+    'flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] transition-colors',
+    danger ? 'text-danger-fg hover:bg-danger/10' : 'text-orion-fg hover:bg-orion-bg-hover'
+  );
+  if (href) {
+    return (
+      <Link href={href} className={cls}>
+        {icon}
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={cls}>
+      {icon}
+      {children}
+    </button>
+  );
+}
+
+// ─── Tabla helpers ────────────────────────────────────────────────────────────
 
 function Th({ children, align }: { children?: React.ReactNode; align?: 'right' }) {
   return (
