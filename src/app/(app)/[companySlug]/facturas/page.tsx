@@ -1,9 +1,12 @@
+import Link from 'next/link';
 import { and, eq, sql } from 'drizzle-orm';
 import { requirePermission } from '@/lib/auth/require-permission';
+import { userHasPermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { facturas } from '@/lib/db/schema';
+import { facturas, cotizaciones } from '@/lib/db/schema';
 import { FacturasList, type FacturaRow } from '@/components/modules/facturas/FacturasList';
 import { ModuleHelp } from '@/components/shared/ModuleHelp';
+import { Plus } from 'lucide-react';
 
 export const metadata = { title: 'Facturas' };
 
@@ -38,6 +41,7 @@ export default async function FacturasPage({
   searchParams: Promise<{ estado?: string; page?: string; clienteId?: string }>;
 }) {
   const { tenant } = await requirePermission('facturas.ver');
+  const canCreate = await userHasPermission('facturas.crear');
   const sp = await searchParams;
   const filtroActivo = sp.estado && ESTADOS_VALIDOS.has(sp.estado) ? sp.estado : 'todas';
   const page = Math.max(1, Number(sp.page) || 1);
@@ -60,8 +64,10 @@ export default async function FacturasPage({
         total: facturas.total,
         estado: facturas.estado,
         estadoSunat: facturas.estadoSunat,
+        cotizacionNumero: cotizaciones.numeroCompleto,
       })
       .from(facturas)
+      .leftJoin(cotizaciones, eq(cotizaciones.id, facturas.cotizacionOrigenId))
       .where(estadoFilter)
       .orderBy(sql`${facturas.createdAt} DESC`)
       .limit(PAGE_SIZE)
@@ -82,6 +88,7 @@ export default async function FacturasPage({
     total: r.total,
     estado: r.estado,
     estadoSunat: r.estadoSunat,
+    cotizacionNumero: r.cotizacionNumero ?? null,
   }));
 
   return (
@@ -100,6 +107,24 @@ export default async function FacturasPage({
             ]}
           />
         </div>
+        {canCreate && (
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/${tenant.slug}/facturas/nueva?tipo=03`}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-3 text-[13px] font-medium text-orion-fg hover:bg-orion-bg-muted"
+            >
+              <Plus size={13} />
+              Nueva boleta
+            </Link>
+            <Link
+              href={`/${tenant.slug}/facturas/nueva`}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-tenant-accent px-3 text-[13px] font-medium text-white hover:brightness-95"
+            >
+              <Plus size={13} />
+              Nueva factura
+            </Link>
+          </div>
+        )}
       </div>
       <FacturasList
         rows={rows}

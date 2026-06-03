@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Inbox } from 'lucide-react';
+import { Inbox, CreditCard } from 'lucide-react';
 import { Money } from '@/components/shared/Money';
 import { cn } from '@/lib/utils';
 
@@ -63,6 +63,7 @@ export function ClientesSaldos({
             <th className="px-4 py-3 text-right">Saldo vencido</th>
             <th className="px-4 py-3 text-right">Días más vencido</th>
             <th className="px-4 py-3">Estado</th>
+            <th className="px-4 py-3">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-orion-border">
@@ -100,6 +101,15 @@ export function ClientesSaldos({
               </td>
               <td className="px-4 py-3">
                 <EstadoCreditoBadge bloqueado={r.bloqueado} vencido={r.saldoVencido} />
+              </td>
+              <td className="px-4 py-3">
+                <Link
+                  href={`/${companySlug}/credito/pagos/nuevo?clienteId=${r.clienteId}`}
+                  className="inline-flex h-7 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-2 text-[12px] font-medium text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
+                >
+                  <CreditCard size={12} />
+                  Registrar pago
+                </Link>
               </td>
             </tr>
           ))}

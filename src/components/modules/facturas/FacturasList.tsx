@@ -17,6 +17,7 @@ export type FacturaRow = {
   total: string;
   estado: string;
   estadoSunat: string;
+  cotizacionNumero?: string | null;
 };
 
 const FILTROS = [
@@ -77,6 +78,7 @@ export function FacturasList({
               <tr className="border-b border-orion-border bg-orion-bg-subtle text-left text-xs uppercase tracking-wide text-orion-fg-muted">
                 <th className="px-4 py-3">Número</th>
                 <th className="px-4 py-3">Cliente</th>
+                <th className="px-4 py-3">Cotización origen</th>
                 <th className="px-4 py-3">Fecha</th>
                 <th className="px-4 py-3 text-right">Total</th>
                 <th className="px-4 py-3">Estado doc.</th>
@@ -101,6 +103,9 @@ export function FacturasList({
                     </span>
                   </td>
                   <td className="max-w-48 truncate px-4 py-3 text-orion-fg">{r.clienteRazon}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-orion-fg-muted">
+                    {r.cotizacionNumero ?? '—'}
+                  </td>
                   <td className="px-4 py-3 text-orion-fg-muted">{r.fechaEmision}</td>
                   <td className="px-4 py-3 text-right font-medium">
                     <Money value={parseFloat(r.total)} ccy={r.moneda as 'PEN' | 'USD'} />
