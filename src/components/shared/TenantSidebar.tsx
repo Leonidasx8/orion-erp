@@ -15,6 +15,7 @@ import {
   BarChart3,
   Settings,
   History,
+  TrendingUp,
 } from 'lucide-react';
 import type { Tenant } from '@/lib/db/schema';
 import { cn } from '@/lib/utils';
@@ -60,6 +61,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Análisis',
     items: [
+      { href: '/pipeline', label: 'Pipeline', icon: TrendingUp },
       { href: '/reportes', label: 'Reportes', icon: BarChart3 },
       { href: '/auditoria', label: 'Auditoría', icon: History },
     ],

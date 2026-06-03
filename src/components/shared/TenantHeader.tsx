@@ -1,7 +1,9 @@
 import Link from 'next/link';
-import { Bell, ChevronDown, ChevronRight, HelpCircle } from 'lucide-react';
+import { ChevronRight, HelpCircle } from 'lucide-react';
 import type { Tenant } from '@/lib/db/schema';
 import { GlobalSearch } from './GlobalSearch';
+import { NotificationsDropdown } from './NotificationsDropdown';
+import { UserMenu } from './UserMenu';
 
 export function TenantHeader({
   tenant,
@@ -53,31 +55,10 @@ export function TenantHeader({
       </button>
 
       {/* Notifications */}
-      <button
-        type="button"
-        className="grid h-8 w-8 place-items-center rounded-md text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
-      >
-        <Bell size={16} />
-      </button>
+      <NotificationsDropdown />
 
-      {/* User pill */}
-      <Link
-        href="/seleccionar-empresa"
-        className="flex items-center gap-2 rounded-md px-2 py-1 text-[13px] text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
-      >
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-orion-bg-muted text-[11px] font-semibold text-orion-fg-muted">
-          {userInitials(userName)}
-        </span>
-        <span className="font-medium text-orion-fg">{userName ?? 'Usuario'}</span>
-        <ChevronDown size={12} className="text-orion-fg-faint" />
-      </Link>
+      {/* User menu */}
+      <UserMenu userName={userName} tenantSlug={tenant.slug} />
     </header>
   );
-}
-
-function userInitials(name?: string): string {
-  if (!name) return '?';
-  const words = name.trim().split(/\s+/);
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
