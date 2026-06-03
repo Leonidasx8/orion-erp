@@ -4,12 +4,13 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFieldArray, useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, ExternalLink, Plus, Send, Trash2 } from 'lucide-react';
 import { cotizacionSchema, type CotizacionInput } from '@/lib/schemas/cotizacion';
 import { calcularTotales } from '@/lib/cotizaciones/calculo';
 import { crearCotizacion, actualizarCotizacion } from '@/server/actions/cotizaciones';
 import { Money } from '@/components/shared/Money';
 import { ProductoCombobox } from '@/components/shared/ProductoCombobox';
+import { EstadoBadge } from '@/components/shared/EstadoBadge';
 import { cn } from '@/lib/utils';
 
 export type ClienteOption = { id: string; label: string };
@@ -18,6 +19,8 @@ export type ProductoOption = {
   codigo: string;
   nombre: string;
   precio: number;
+  costoUnitario: number | null;
+  margenMinimo: number | null;
   tieneIgv: boolean;
   unidadMedida: string;
 };
@@ -57,6 +60,7 @@ interface Props {
   productos: ProductoOption[];
   initial?: CotizacionFormInitial;
   defaultClienteId?: string;
+  numero?: string;
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -66,16 +70,26 @@ const plusDaysIso = (days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
+const btnPrimary =
+  'inline-flex h-9 items-center gap-1.5 rounded-md bg-tenant-accent px-4 text-[13px] font-medium text-white hover:brightness-95 disabled:opacity-60';
+const btnSecondary =
+  'inline-flex h-9 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-4 text-[13px] font-medium text-orion-fg hover:bg-orion-bg-muted disabled:opacity-60';
+
 export function CotizacionForm({
   companySlug,
   clientes,
   productos,
   initial,
   defaultClienteId,
+  numero,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
+  // costosByIdx: Map<lineIndex, costoUnitario> — for margin display only, not submitted
+  const [costosByIdx, setCostosByIdx] = useState<Map<number, number>>(() => new Map());
+  const [margenMinimoByIdx, setMargenMinimoByIdx] = useState<Map<number, number>>(() => new Map());
+  const [targetMargen, setTargetMargen] = useState<5 | 10 | 15 | 'custom'>(10);
 
   const productosById = useMemo(() => {
     const m = new Map<string, ProductoOption>();
@@ -141,6 +155,7 @@ export function CotizacionForm({
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
 
   const moneda = useWatch({ control, name: 'moneda' });
+  const tipoCambioW = Number(useWatch({ control, name: 'tipoCambio' }) ?? 0);
   const itemsW = useWatch({ control, name: 'items' }) ?? [];
   const descuentoGlobalW = Number(useWatch({ control, name: 'descuentoGlobal' }) ?? 0);
 
@@ -158,10 +173,55 @@ export function CotizacionForm({
     [itemsW, descuentoGlobalW]
   );
 
+  // Compute cost totals for margin panel
+  const costoTotal = useMemo(() => {
+    let total = 0;
+    itemsW.forEach((it, idx) => {
+      const costo = costosByIdx.get(idx);
+      if (costo != null) {
+        total += costo * (Number(it?.cantidad) || 0);
+      }
+    });
+    return total;
+  }, [itemsW, costosByIdx]);
+
+  const hasCostData = costosByIdx.size > 0;
+  const utilidadBruta = totales.subtotal - costoTotal;
+  const margenConsolidado = totales.subtotal > 0 ? (utilidadBruta / totales.subtotal) * 100 : 0;
+
+  // Minimum margin for warning: derive from product data per-line
+  const lineasBajoMargen = useMemo(() => {
+    return fields
+      .map((_, idx) => {
+        const it = itemsW[idx];
+        const precio = Number(it?.precioUnitario) || 0;
+        const costo = costosByIdx.get(idx);
+        const minMargen = margenMinimoByIdx.get(idx);
+        if (costo == null || minMargen == null || precio === 0) return null;
+        const margenActual = ((precio - costo) / precio) * 100;
+        if (margenActual < minMargen) {
+          return { idx, margenActual, minMargen };
+        }
+        return null;
+      })
+      .filter((x): x is { idx: number; margenActual: number; minMargen: number } => x !== null);
+  }, [fields, itemsW, costosByIdx, margenMinimoByIdx]);
+
   const aplicarProducto = (idx: number, productoId: string) => {
     const opts = { shouldDirty: true };
     if (productoId === '__manual__') {
       setValue(`items.${idx}.productoId`, undefined, opts);
+      // Clear cost tracking for this line
+      setCostosByIdx((prev) => {
+        const next = new Map(prev);
+        next.delete(idx);
+        return next;
+      });
+      setMargenMinimoByIdx((prev) => {
+        const next = new Map(prev);
+        next.delete(idx);
+        return next;
+      });
       return;
     }
     const p = productosById.get(productoId);
@@ -172,6 +232,30 @@ export function CotizacionForm({
     setValue(`items.${idx}.unidadMedida`, p.unidadMedida, opts);
     setValue(`items.${idx}.precioUnitario`, p.precio, opts);
     setValue(`items.${idx}.afectaIgv`, p.tieneIgv, opts);
+    // Track cost data for margin display
+    if (p.costoUnitario != null) {
+      setCostosByIdx((prev) => new Map(prev).set(idx, p.costoUnitario!));
+    } else {
+      setCostosByIdx((prev) => {
+        const next = new Map(prev);
+        next.delete(idx);
+        return next;
+      });
+    }
+    if (p.margenMinimo != null) {
+      setMargenMinimoByIdx((prev) => new Map(prev).set(idx, p.margenMinimo!));
+    } else {
+      setMargenMinimoByIdx((prev) => {
+        const next = new Map(prev);
+        next.delete(idx);
+        return next;
+      });
+    }
+  };
+
+  const saveAsDraft = () => {
+    // No-op: draft is the default state, just submit as normal
+    handleSubmit(onSubmit)();
   };
 
   const onSubmit = (data: CotizacionInput) => {
@@ -191,343 +275,537 @@ export function CotizacionForm({
     });
   };
 
+  const monedaSymbol = moneda === 'USD' ? 'USD' : 'PEN';
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-      {/* Cabecera */}
-      <Card>
-        <CardHead>
-          <CardTitle>Cabecera</CardTitle>
-        </CardHead>
-        <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
-          <Field label="Cliente *" error={errors.clienteId?.message}>
-            <select
-              {...register('clienteId')}
-              className={inputCls}
-              defaultValue={initial?.clienteId ?? ''}
-            >
-              <option value="" disabled>
-                Selecciona un cliente
-              </option>
-              {clientes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Moneda *">
-            <select {...register('moneda')} className={inputCls}>
-              <option value="PEN">PEN — Soles</option>
-              <option value="USD">USD — Dólares</option>
-            </select>
-          </Field>
-
-          <Field
-            label={moneda === 'USD' ? 'Tipo de cambio *' : 'Tipo de cambio'}
-            error={errors.tipoCambio?.message}
-          >
-            <input
-              type="number"
-              step="0.0001"
-              min="0"
-              disabled={moneda === 'PEN'}
-              {...register('tipoCambio')}
-              className={cn(inputCls, 'tabular-nums')}
-              placeholder={moneda === 'PEN' ? 'No aplica' : '3.7500'}
-            />
-          </Field>
-
-          <Field label="Fecha emisión *" error={errors.fechaEmision?.message}>
-            <input type="date" {...register('fechaEmision')} className={inputCls} />
-          </Field>
-
-          <Field label="Fecha vencimiento *" error={errors.fechaVencimiento?.message}>
-            <input type="date" {...register('fechaVencimiento')} className={inputCls} />
-          </Field>
+    <form onSubmit={handleSubmit(onSubmit)}>
+      {/* Page-level header */}
+      <div className="mb-4 flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-[22px] font-semibold text-orion-fg">
+              {numero ? numero : 'Nueva cotización'}
+            </h1>
+            <EstadoBadge estado="borrador" />
+          </div>
+          <div className="mt-1 text-[12px] text-orion-fg-muted">
+            {numero
+              ? `${numero} · ${fields.length} items · ${monedaSymbol} ${totales.total.toFixed(2)}`
+              : 'Se generará el correlativo al guardar.'}
+          </div>
         </div>
-      </Card>
-
-      {/* Líneas */}
-      <Card>
-        <CardHead>
-          <CardTitle>Líneas · {fields.length} items</CardTitle>
-          <button
-            type="button"
-            onClick={() =>
-              append({
-                descripcion: '',
-                unidadMedida: 'NIU',
-                cantidad: 1,
-                precioUnitario: 0,
-                descuentoPorcentaje: 0,
-                afectaIgv: true,
-              })
-            }
-            className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-3 text-[13px] font-medium text-orion-fg hover:bg-orion-bg-muted"
-          >
-            <Plus size={13} />
-            Añadir línea
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => router.back()} className={btnSecondary}>
+            Cancelar
           </button>
-        </CardHead>
-
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-[12.5px]">
-            <thead>
-              <tr>
-                <Th>Producto</Th>
-                <Th>Descripción *</Th>
-                <Th align="right">Cant. *</Th>
-                <Th align="right">Precio *</Th>
-                <Th align="right">Desc. %</Th>
-                <Th align="center">IGV</Th>
-                <Th align="right">Subtotal</Th>
-                <Th />
-              </tr>
-            </thead>
-            <tbody>
-              {fields.map((f, idx) => {
-                const it = itemsW[idx];
-                const cantidad = Number(it?.cantidad) || 0;
-                const precio = Number(it?.precioUnitario) || 0;
-                const desc = Number(it?.descuentoPorcentaje) || 0;
-                const subtotal = cantidad * precio * (1 - desc / 100);
-                const itemErr = errors.items?.[idx];
-                return (
-                  <tr key={f.id} className="border-b border-orion-border last:border-0">
-                    <Td className="min-w-[200px]">
-                      <ProductoCombobox
-                        value={it?.productoId}
-                        productos={productos}
-                        onChange={(id) => aplicarProducto(idx, id)}
-                      />
-                    </Td>
-                    <Td className="min-w-[220px]">
-                      <input
-                        {...register(`items.${idx}.descripcion`)}
-                        className={cn(inputCls, 'h-8 text-[12.5px]')}
-                      />
-                      {itemErr?.descripcion && (
-                        <p className="mt-1 text-[10.5px] text-danger-fg">
-                          {itemErr.descripcion.message}
-                        </p>
-                      )}
-                    </Td>
-                    <Td align="right" className="w-[90px]">
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        {...register(`items.${idx}.cantidad`)}
-                        className={cn(inputCls, 'h-8 text-right text-[12.5px] tabular-nums')}
-                      />
-                    </Td>
-                    <Td align="right" className="w-[110px]">
-                      <input
-                        type="number"
-                        step="0.0001"
-                        min="0"
-                        {...register(`items.${idx}.precioUnitario`)}
-                        className={cn(inputCls, 'h-8 text-right text-[12.5px] tabular-nums')}
-                      />
-                    </Td>
-                    <Td align="right" className="w-[80px]">
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        {...register(`items.${idx}.descuentoPorcentaje`)}
-                        className={cn(inputCls, 'h-8 text-right text-[12.5px] tabular-nums')}
-                      />
-                    </Td>
-                    <Td align="center" className="w-[60px]">
-                      <input
-                        type="checkbox"
-                        {...register(`items.${idx}.afectaIgv`)}
-                        className="h-4 w-4 cursor-pointer accent-tenant-accent"
-                      />
-                    </Td>
-                    <Td align="right" className="w-[110px] tabular-nums text-orion-fg">
-                      <Money value={subtotal} ccy={moneda} dp={2} />
-                    </Td>
-                    <Td className="w-10">
-                      <button
-                        type="button"
-                        onClick={() => remove(idx)}
-                        disabled={fields.length === 1}
-                        className="grid h-7 w-7 place-items-center rounded-md text-orion-fg-muted hover:bg-danger-soft hover:text-danger-fg disabled:opacity-40"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </Td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <button type="button" onClick={saveAsDraft} disabled={pending} className={btnSecondary}>
+            Guardar borrador
+          </button>
+          <button type="submit" disabled={pending} className={btnPrimary}>
+            <Send size={13} />
+            {pending ? 'Enviando…' : 'Crear cotización'}
+          </button>
         </div>
-        {errors.items && typeof errors.items.message === 'string' && (
-          <div className="border-t border-orion-border bg-danger-soft px-4 py-2 text-[12px] text-danger-fg">
-            {errors.items.message}
-          </div>
-        )}
-      </Card>
-
-      {/* Totales + términos */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
-        <Card>
-          <CardHead>
-            <CardTitle>Notas y términos</CardTitle>
-          </CardHead>
-          <div className="grid grid-cols-1 gap-4 p-4">
-            <Field label="Notas">
-              <textarea
-                {...register('notas')}
-                rows={3}
-                className={cn(inputCls, 'min-h-[72px] resize-y')}
-              />
-            </Field>
-            <Field label="Términos y condiciones">
-              <textarea
-                {...register('terminosCondiciones')}
-                rows={4}
-                className={cn(inputCls, 'min-h-[96px] resize-y')}
-              />
-            </Field>
-          </div>
-        </Card>
-
-        <Card>
-          <CardHead>
-            <CardTitle>Totales</CardTitle>
-          </CardHead>
-          <div className="flex flex-col gap-2 p-4 text-[12.5px]">
-            <Row label="Subtotal">
-              <Money value={totales.subtotal} ccy={moneda} dp={2} />
-            </Row>
-            <Row label="IGV 18%">
-              <Money value={totales.igv} ccy={moneda} dp={2} />
-            </Row>
-            <div className="my-1 flex items-center gap-2">
-              <label className="text-orion-fg-muted">Descuento global</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                {...register('descuentoGlobal')}
-                className={cn(inputCls, 'ml-auto h-7 w-24 text-right text-[12px] tabular-nums')}
-              />
-            </div>
-            <div className="my-1 h-px bg-orion-border" />
-            <div className="flex items-center">
-              <span className="text-[13px] font-semibold text-orion-fg">Total</span>
-              <span className="ml-auto text-[20px] font-semibold tabular-nums text-orion-fg">
-                <Money value={totales.total} ccy={moneda} dp={2} />
-              </span>
-            </div>
-          </div>
-        </Card>
       </div>
 
-      {/* Condiciones comerciales */}
-      <Card>
-        <CardHead>
-          <CardTitle>Condiciones comerciales</CardTitle>
-        </CardHead>
-        <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
-          <Field label="Forma de pago">
-            <input
-              {...register('formaPago')}
-              placeholder="Ej: 50% anticipo, saldo contra entrega"
-              className={inputCls}
-            />
-          </Field>
-          <Field label="Tiempo de entrega">
-            <input
-              {...register('tiempoEntrega')}
-              placeholder="Ej: 5 días hábiles"
-              className={inputCls}
-            />
-          </Field>
-          <div className="md:col-span-2">
-            <Field label="Lugar de entrega">
-              <input
-                {...register('lugarEntrega')}
-                placeholder="Ej: Almacén del cliente / Recojo en tienda"
-                className={inputCls}
-              />
-            </Field>
-          </div>
-          <div className="flex items-center gap-2 md:col-span-2">
-            <input
-              type="checkbox"
-              id="incluyeIgv"
-              {...register('incluyeIgv')}
-              className="h-4 w-4 cursor-pointer accent-tenant-accent"
-            />
-            <label htmlFor="incluyeIgv" className="cursor-pointer text-[13px] text-orion-fg">
-              Precio unitario incluye IGV
-            </label>
-          </div>
-        </div>
-      </Card>
-
-      {/* Atención de (contacto cliente) */}
-      <Card>
-        <CardHead>
-          <CardTitle>
-            Atención de{' '}
-            <span className="text-[11px] font-normal text-orion-fg-muted">(opcional)</span>
-          </CardTitle>
-        </CardHead>
-        <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
-          <Field label="Nombre contacto">
-            <input
-              {...register('contactoClienteNombre')}
-              placeholder="Nombre del contacto"
-              className={inputCls}
-            />
-          </Field>
-          <Field label="Cargo">
-            <input {...register('contactoClienteCargo')} placeholder="Cargo" className={inputCls} />
-          </Field>
-          <Field label="Email">
-            <input
-              type="email"
-              {...register('contactoClienteEmail')}
-              placeholder="email@empresa.com"
-              className={inputCls}
-            />
-          </Field>
-        </div>
-      </Card>
-
       {serverError && (
-        <div className="rounded-md border border-danger bg-danger-soft px-3 py-2 text-[13px] text-danger-fg">
+        <div className="mb-4 rounded-md border border-danger bg-danger-soft px-3 py-2 text-[13px] text-danger-fg">
           {serverError}
         </div>
       )}
 
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-tenant-accent px-4 text-[13px] font-medium text-white hover:brightness-95 disabled:opacity-60"
-        >
-          {pending ? 'Guardando…' : initial ? 'Guardar cambios' : 'Crear cotización'}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push(`/${companySlug}/cotizaciones`)}
-          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-4 text-[13px] font-medium text-orion-fg hover:bg-orion-bg-muted"
-        >
-          Cancelar
-        </button>
+      {/* Two-column grid: 3fr left, 2fr right */}
+      <div className="grid gap-4" style={{ gridTemplateColumns: '3fr 2fr' }}>
+        {/* LEFT COLUMN */}
+        <div className="flex flex-col gap-4">
+          {/* Card 1: Cliente y términos */}
+          <Card>
+            <CardHead>
+              <CardTitle>Cliente y términos</CardTitle>
+            </CardHead>
+            <div className="flex flex-col gap-4 p-4">
+              {/* Cliente select full width */}
+              <Field label="Cliente *" error={errors.clienteId?.message}>
+                <select
+                  {...register('clienteId')}
+                  className={inputCls}
+                  defaultValue={initial?.clienteId ?? ''}
+                >
+                  <option value="" disabled>
+                    Selecciona un cliente
+                  </option>
+                  {clientes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <p className="text-[11.5px] text-orion-fg-muted">
+                Selecciona un cliente para ver la línea de crédito
+              </p>
+
+              {/* 2-col: Fecha emisión | Fecha vencimiento */}
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Fecha emisión *" error={errors.fechaEmision?.message}>
+                  <input type="date" {...register('fechaEmision')} className={inputCls} />
+                </Field>
+                <Field label="Fecha vencimiento *" error={errors.fechaVencimiento?.message}>
+                  <input type="date" {...register('fechaVencimiento')} className={inputCls} />
+                </Field>
+              </div>
+
+              {/* 2-col: Moneda | Tipo de cambio */}
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Moneda *">
+                  <select {...register('moneda')} className={inputCls}>
+                    <option value="PEN">PEN — Soles</option>
+                    <option value="USD">USD — Dólares</option>
+                  </select>
+                </Field>
+                <Field
+                  label={moneda === 'USD' ? 'Tipo de cambio *' : 'Tipo de cambio'}
+                  error={errors.tipoCambio?.message}
+                >
+                  <input
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    disabled={moneda === 'PEN'}
+                    {...register('tipoCambio')}
+                    className={cn(inputCls, 'tabular-nums')}
+                    placeholder={moneda === 'PEN' ? 'No aplica' : '3.7500'}
+                  />
+                </Field>
+              </div>
+            </div>
+          </Card>
+
+          {/* Card 2: Líneas */}
+          <Card>
+            <CardHead>
+              <CardTitle>Líneas · {fields.length} items</CardTitle>
+              {/* Search input right-aligned, cmd+K style */}
+              <div className="ml-auto flex items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg-subtle px-2.5 py-1 text-[12px] text-orion-fg-muted">
+                <span>Agregar producto…</span>
+                <kbd className="rounded bg-orion-bg px-1 py-0.5 text-[10px] font-medium text-orion-fg-muted shadow-sm">
+                  ⌘K
+                </kbd>
+              </div>
+            </CardHead>
+
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-[12.5px]">
+                <thead>
+                  <tr>
+                    <Th>SKU</Th>
+                    <Th>Descripción</Th>
+                    <Th align="right">Cant.</Th>
+                    <Th align="right">Precio</Th>
+                    <Th align="right">Margen</Th>
+                    <Th align="right">Subtotal</Th>
+                    <Th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {fields.map((f, idx) => {
+                    const it = itemsW[idx];
+                    const cantidad = Number(it?.cantidad) || 0;
+                    const precio = Number(it?.precioUnitario) || 0;
+                    const desc = Number(it?.descuentoPorcentaje) || 0;
+                    const subtotal = cantidad * precio * (1 - desc / 100);
+                    const itemErr = errors.items?.[idx];
+
+                    // Margin computation
+                    const costo = costosByIdx.get(idx);
+                    const minMargen = margenMinimoByIdx.get(idx);
+                    let margenPct: number | null = null;
+                    let margenBelowMin = false;
+                    if (costo != null && precio > 0) {
+                      margenPct = ((precio - costo) / precio) * 100;
+                      if (minMargen != null) {
+                        margenBelowMin = margenPct < minMargen;
+                      }
+                    }
+
+                    // SKU from watched items
+                    const sku = it?.codigo ?? null;
+
+                    return (
+                      <tr key={f.id} className="border-b border-orion-border last:border-0">
+                        {/* SKU */}
+                        <Td className="min-w-[180px]">
+                          <ProductoCombobox
+                            value={it?.productoId}
+                            productos={productos}
+                            onChange={(id) => aplicarProducto(idx, id)}
+                          />
+                          {sku && (
+                            <p className="mt-0.5 font-mono text-[10.5px] text-orion-fg-muted">
+                              {sku}
+                            </p>
+                          )}
+                        </Td>
+                        {/* Descripción */}
+                        <Td className="min-w-[200px]">
+                          <input
+                            {...register(`items.${idx}.descripcion`)}
+                            className={cn(inputCls, 'h-8 text-[12.5px]')}
+                          />
+                          {itemErr?.descripcion && (
+                            <p className="mt-1 text-[10.5px] text-danger-fg">
+                              {itemErr.descripcion.message}
+                            </p>
+                          )}
+                        </Td>
+                        {/* Cant. */}
+                        <Td align="right" className="w-[80px]">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            {...register(`items.${idx}.cantidad`)}
+                            className={cn(inputCls, 'h-8 text-right text-[12.5px] tabular-nums')}
+                          />
+                        </Td>
+                        {/* Precio */}
+                        <Td align="right" className="w-[100px]">
+                          <input
+                            type="number"
+                            step="0.0001"
+                            min="0"
+                            {...register(`items.${idx}.precioUnitario`)}
+                            className={cn(inputCls, 'h-8 text-right text-[12.5px] tabular-nums')}
+                          />
+                        </Td>
+                        {/* Margen */}
+                        <Td align="right" className="w-[80px]">
+                          {margenPct != null ? (
+                            <span
+                              className={cn(
+                                'inline-flex items-center gap-1 tabular-nums',
+                                margenBelowMin ? 'text-warn-fg' : 'text-orion-fg'
+                              )}
+                            >
+                              {margenBelowMin && <AlertTriangle size={10} />}
+                              {margenPct.toFixed(1)}%
+                            </span>
+                          ) : (
+                            <span className="text-orion-fg-muted">—</span>
+                          )}
+                        </Td>
+                        {/* Subtotal */}
+                        <Td
+                          align="right"
+                          className="w-[100px] font-semibold tabular-nums text-orion-fg"
+                        >
+                          <Money value={subtotal} ccy={moneda} dp={2} />
+                        </Td>
+                        {/* Delete */}
+                        <Td className="w-10">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              remove(idx);
+                              // Re-index cost maps: shift entries above removed idx down
+                              setCostosByIdx((prev) => {
+                                const next = new Map<number, number>();
+                                prev.forEach((v, k) => {
+                                  if (k < idx) next.set(k, v);
+                                  else if (k > idx) next.set(k - 1, v);
+                                });
+                                return next;
+                              });
+                              setMargenMinimoByIdx((prev) => {
+                                const next = new Map<number, number>();
+                                prev.forEach((v, k) => {
+                                  if (k < idx) next.set(k, v);
+                                  else if (k > idx) next.set(k - 1, v);
+                                });
+                                return next;
+                              });
+                            }}
+                            disabled={fields.length === 1}
+                            className="grid h-7 w-7 place-items-center rounded-md text-orion-fg-muted hover:bg-danger-soft hover:text-danger-fg disabled:opacity-40"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </Td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {errors.items && typeof errors.items.message === 'string' && (
+              <div className="border-t border-orion-border bg-danger-soft px-4 py-2 text-[12px] text-danger-fg">
+                {errors.items.message}
+              </div>
+            )}
+
+            {/* Card footer */}
+            <div className="border-t border-orion-border px-4 py-3">
+              <button
+                type="button"
+                onClick={() =>
+                  append({
+                    descripcion: '',
+                    unidadMedida: 'NIU',
+                    cantidad: 1,
+                    precioUnitario: 0,
+                    descuentoPorcentaje: 0,
+                    afectaIgv: true,
+                  })
+                }
+                className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-orion-fg-muted hover:text-orion-fg"
+              >
+                <Plus size={13} />
+                Agregar línea manual
+              </button>
+            </div>
+          </Card>
+
+          {/* Card 3: Términos y observaciones */}
+          <Card>
+            <CardHead>
+              <CardTitle>Términos y observaciones</CardTitle>
+            </CardHead>
+            <div className="flex flex-col gap-4 p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Términos de pago">
+                  <input
+                    {...register('formaPago')}
+                    placeholder="Ej: 50% anticipo, saldo contra entrega"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Tiempo de entrega">
+                  <input
+                    {...register('tiempoEntrega')}
+                    placeholder="Ej: 5 días hábiles"
+                    className={inputCls}
+                  />
+                </Field>
+              </div>
+              <Field label="Observaciones (visibles en PDF)">
+                <textarea
+                  {...register('notas')}
+                  rows={2}
+                  placeholder="Observaciones que aparecerán en el PDF de la cotización"
+                  className={cn(inputCls, 'resize-y')}
+                />
+              </Field>
+            </div>
+          </Card>
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className="flex flex-col gap-4">
+          {/* Card 4: Margen general */}
+          <Card>
+            <CardHead>
+              <CardTitle>Margen general</CardTitle>
+            </CardHead>
+            <div className="flex flex-col gap-3 p-4">
+              {/* Margin target buttons */}
+              <div className="grid grid-cols-4 gap-1.5">
+                {([5, 10, 15] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setTargetMargen(v)}
+                    className={cn(
+                      'rounded-md border py-1.5 text-[12.5px] font-medium transition-colors',
+                      targetMargen === v
+                        ? 'border-tenant-accent/50 bg-tenant-accent/10 text-tenant-accent'
+                        : 'border-orion-border bg-orion-bg text-orion-fg hover:bg-orion-bg-muted'
+                    )}
+                  >
+                    {v}%
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setTargetMargen('custom')}
+                  className={cn(
+                    'rounded-md border py-1.5 text-[12.5px] font-medium transition-colors',
+                    targetMargen === 'custom'
+                      ? 'border-tenant-accent/50 bg-tenant-accent/10 text-tenant-accent'
+                      : 'border-orion-border bg-orion-bg text-orion-fg hover:bg-orion-bg-muted'
+                  )}
+                >
+                  Custom
+                </button>
+              </div>
+
+              {/* Warning alert for lines below minimum margin */}
+              {lineasBajoMargen.length > 0 && (
+                <div className="bg-warn-soft/50 rounded-md border border-warn-soft px-3 py-2.5 text-[12px]">
+                  <div className="mb-1.5 flex items-center gap-1.5 font-medium text-warn-fg">
+                    <AlertTriangle size={13} />
+                    {lineasBajoMargen.length} línea(s) por debajo del margen mínimo
+                  </div>
+                  <ul className="space-y-0.5">
+                    {lineasBajoMargen.map(({ idx, margenActual, minMargen }) => {
+                      const it = itemsW[idx];
+                      const label = it?.descripcion || `Línea ${idx + 1}`;
+                      return (
+                        <li key={idx} className="text-warn-fg/80">
+                          {label}: {margenActual.toFixed(1)}% vs mín. {minMargen.toFixed(1)}%
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Card 5: Totales */}
+          <Card>
+            <CardHead>
+              <CardTitle>Totales</CardTitle>
+            </CardHead>
+            <div className="flex flex-col gap-2 p-4 text-[12.5px]">
+              <Row label="Subtotal">
+                <Money value={totales.subtotal} ccy={moneda} dp={2} />
+              </Row>
+
+              {/* Descuento global inline */}
+              <div className="flex items-center gap-2">
+                <span className="text-orion-fg-muted">Descuento global</span>
+                <div className="ml-auto flex items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    {...register('descuentoGlobal')}
+                    className={cn(inputCls, 'h-7 w-20 text-right text-[12px] tabular-nums')}
+                  />
+                  <span className="text-orion-fg-muted">%</span>
+                </div>
+              </div>
+
+              <Row label="Base IGV">
+                <Money value={totales.baseImponible} ccy={moneda} dp={2} />
+              </Row>
+              <Row label="IGV 18%">
+                <Money value={totales.igv} ccy={moneda} dp={2} />
+              </Row>
+
+              <div className="my-1 h-px bg-orion-border" />
+
+              {/* Total large */}
+              <div className="flex items-center">
+                <span className="text-[13px] font-semibold text-orion-fg">Total</span>
+                <span className="ml-auto text-[20px] font-semibold tabular-nums text-orion-fg">
+                  <Money value={totales.total} ccy={moneda} dp={2} />
+                </span>
+              </div>
+
+              {/* USD exchange rate hint */}
+              {moneda === 'USD' && tipoCambioW > 0 && (
+                <p className="text-right text-[11px] text-orion-fg-muted">
+                  ≈ S/ {(totales.total * tipoCambioW).toFixed(2)} al tipo de cambio
+                </p>
+              )}
+
+              <div className="my-1 h-px bg-orion-border" />
+
+              {/* Cost & margin section */}
+              {hasCostData ? (
+                <>
+                  <Row label="Costo total">
+                    <span className="text-orion-fg-muted">
+                      <Money value={costoTotal} ccy={moneda} dp={2} />
+                    </span>
+                  </Row>
+                  <div className="flex items-center">
+                    <span className="text-orion-fg-muted">Utilidad bruta</span>
+                    <span
+                      className={cn(
+                        'ml-auto font-medium tabular-nums',
+                        utilidadBruta > 0 ? 'text-success-fg' : 'text-danger-fg'
+                      )}
+                    >
+                      <Money value={utilidadBruta} ccy={moneda} dp={2} />
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-orion-fg-muted">Margen consolidado</span>
+                    <span
+                      className={cn(
+                        'ml-auto font-medium tabular-nums',
+                        lineasBajoMargen.length > 0 ? 'text-warn-fg' : 'text-success-fg'
+                      )}
+                    >
+                      {margenConsolidado.toFixed(1)}%
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-[11.5px] text-orion-fg-muted">
+                  — (asigna costos en el catálogo para ver utilidad)
+                </p>
+              )}
+            </div>
+          </Card>
+
+          {/* Card 6: Vista previa PDF */}
+          <Card>
+            <CardHead>
+              <CardTitle>Vista previa PDF</CardTitle>
+              <button
+                type="button"
+                className="ml-auto text-orion-fg-muted hover:text-orion-fg"
+                aria-label="Abrir vista previa"
+              >
+                <ExternalLink size={14} />
+              </button>
+            </CardHead>
+            <div className="p-3">
+              {/* Aspect ratio 8.5/11 PDF preview */}
+              <div
+                className="w-full overflow-hidden rounded border border-orion-border bg-orion-bg-subtle p-3"
+                style={{ aspectRatio: '8.5 / 11' }}
+              >
+                {/* Company initials header */}
+                <div className="mb-3 flex items-center gap-2">
+                  <div className="grid h-6 w-6 shrink-0 place-items-center rounded bg-tenant-accent text-[9px] font-bold text-white">
+                    IX
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <div className="h-2 w-24 rounded-sm bg-orion-border" />
+                    <div className="bg-orion-border/60 h-1.5 w-16 rounded-sm" />
+                  </div>
+                </div>
+                {/* Skeleton rows */}
+                <div className="space-y-1.5">
+                  <div className="bg-orion-border/50 h-2 w-full rounded-sm" />
+                  <div className="bg-orion-border/50 h-2 w-[90%] rounded-sm" />
+                  <div className="bg-orion-border/50 h-2 w-[75%] rounded-sm" />
+                  <div className="bg-orion-border/50 h-2 w-[85%] rounded-sm" />
+                  <div className="bg-orion-border/50 h-2 w-[60%] rounded-sm" />
+                  <div className="bg-orion-border/50 h-2 w-[70%] rounded-sm" />
+                </div>
+                {/* Cotización number */}
+                <div className="mt-4">
+                  <span className="font-mono text-[9px] text-orion-fg-muted">
+                    {numero ?? 'COT-XXXX'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </form>
   );
 }
+
+// ---- Sub-components ----
 
 const inputCls =
   'block w-full rounded-md border border-orion-border bg-orion-bg px-2.5 py-1.5 text-[13px] text-orion-fg placeholder:text-orion-fg-subtle focus:border-tenant-accent focus:outline-none focus:ring-2 focus:ring-tenant-accent/30 disabled:bg-orion-bg-subtle disabled:text-orion-fg-muted';
@@ -549,6 +827,7 @@ function Field({
     </div>
   );
 }
+
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center">
@@ -557,6 +836,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
     </div>
   );
 }
+
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <div className="overflow-hidden rounded-lg border border-orion-border bg-orion-bg shadow-orion-1">
@@ -564,6 +844,7 @@ function Card({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
 function CardHead({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 border-b border-orion-border px-4 py-3.5">
@@ -571,9 +852,11 @@ function CardHead({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
 function CardTitle({ children }: { children: React.ReactNode }) {
   return <div className="text-[14px] font-semibold text-orion-fg">{children}</div>;
 }
+
 function Th({ children, align }: { children?: React.ReactNode; align?: 'right' | 'center' }) {
   return (
     <th
@@ -586,6 +869,7 @@ function Th({ children, align }: { children?: React.ReactNode; align?: 'right' |
     </th>
   );
 }
+
 function Td({
   children,
   align,

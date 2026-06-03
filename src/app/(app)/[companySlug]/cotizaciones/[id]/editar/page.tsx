@@ -54,6 +54,8 @@ export default async function EditarCotizacionPage({
         codigo: productos.codigo,
         nombre: productos.nombre,
         precio: productos.precioUnitario,
+        costoUnitario: productos.costoUnitario,
+        margenMinimo: productos.margenMinimo,
         tieneIgv: productos.tieneIgv,
         unidadMedida: productos.unidadMedida,
         activo: productos.activo,
@@ -75,6 +77,8 @@ export default async function EditarCotizacionPage({
       codigo: p.codigo,
       nombre: p.nombre,
       precio: Number(p.precio),
+      costoUnitario: p.costoUnitario != null ? Number(p.costoUnitario) : null,
+      margenMinimo: p.margenMinimo != null ? Number(p.margenMinimo) : null,
       tieneIgv: p.tieneIgv,
       unidadMedida: p.unidadMedida,
     }));
@@ -110,17 +114,12 @@ export default async function EditarCotizacionPage({
 
   return (
     <div className="flex flex-col gap-3">
-      <div>
-        <h1 className="font-mono text-[22px] font-semibold tracking-tight text-orion-fg">
-          {row.numeroCompleto ?? 'Editar cotización'}
-        </h1>
-        <p className="text-[12px] text-orion-fg-muted">Edición sólo permitida en borrador.</p>
-      </div>
       <CotizacionForm
         companySlug={companySlug}
         clientes={clientesOpt}
         productos={productosOpt}
         initial={initial}
+        numero={row.numeroCompleto ?? undefined}
       />
     </div>
   );

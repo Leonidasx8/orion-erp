@@ -44,6 +44,8 @@ export default async function NuevaCotizacionPage({
         codigo: productos.codigo,
         nombre: productos.nombre,
         precio: productos.precioUnitario,
+        costoUnitario: productos.costoUnitario,
+        margenMinimo: productos.margenMinimo,
         tieneIgv: productos.tieneIgv,
         unidadMedida: productos.unidadMedida,
         activo: productos.activo,
@@ -65,18 +67,14 @@ export default async function NuevaCotizacionPage({
       codigo: p.codigo,
       nombre: p.nombre,
       precio: Number(p.precio),
+      costoUnitario: p.costoUnitario != null ? Number(p.costoUnitario) : null,
+      margenMinimo: p.margenMinimo != null ? Number(p.margenMinimo) : null,
       tieneIgv: p.tieneIgv,
       unidadMedida: p.unidadMedida,
     }));
 
   return (
     <div className="flex flex-col gap-3">
-      <div>
-        <h1 className="font-mono text-[22px] font-semibold tracking-tight text-orion-fg">
-          Nueva cotización
-        </h1>
-        <p className="text-[12px] text-orion-fg-muted">Se generará el correlativo al guardar.</p>
-      </div>
       <CotizacionForm
         companySlug={companySlug}
         clientes={clientesOpt}
