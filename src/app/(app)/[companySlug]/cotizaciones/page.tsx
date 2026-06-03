@@ -25,7 +25,14 @@ const ESTADO_FILTROS = new Set<Estado>([
 export default async function CotizacionesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string; page?: string; clienteId?: string }>;
+  searchParams: Promise<{
+    estado?: string;
+    page?: string;
+    clienteId?: string;
+    fecha?: string;
+    comercial?: string;
+    cliente?: string;
+  }>;
 }) {
   const tenant = await getCurrentTenant();
   const sp = await searchParams;
@@ -34,6 +41,9 @@ export default async function CotizacionesPage({
   ) as 'todas' | Estado;
   const page = Math.max(1, Number(sp.page) || 1);
   const clienteIdFilter = sp.clienteId ?? null;
+  const filtroFechaParam = sp.fecha ?? null;
+  const filtroComercialParam = sp.comercial ? decodeURIComponent(sp.comercial) : null;
+  const filtroClienteParam = sp.cliente ? decodeURIComponent(sp.cliente) : null;
 
   const baseConditions = [eq(cotizaciones.tenantId, tenant.id)];
   if (filtroActivo !== 'todas') baseConditions.push(eq(cotizaciones.estado, filtroActivo));
@@ -122,6 +132,9 @@ export default async function CotizacionesPage({
       filtroActivo={filtroActivo}
       page={page}
       pageSize={PAGE_SIZE}
+      filtroFechaInit={filtroFechaParam}
+      filtroComercialInit={filtroComercialParam}
+      filtroClienteInit={filtroClienteParam}
     />
   );
 }

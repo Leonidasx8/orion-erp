@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Calendar,
   ChevronDown,
@@ -54,6 +55,9 @@ export type CotizacionesListProps = {
   filtroActivo?: 'todas' | Estado;
   page?: number;
   pageSize?: number;
+  filtroFechaInit?: string | null;
+  filtroComercialInit?: string | null;
+  filtroClienteInit?: string | null;
 };
 
 const FILTROS: { key: 'todas' | Estado; label: string }[] = [
@@ -103,13 +107,31 @@ export function CotizacionesList({
   filtroActivo = 'todas',
   page = 1,
   pageSize = 9,
+  filtroFechaInit = null,
+  filtroComercialInit = null,
+  filtroClienteInit = null,
 }: CotizacionesListProps) {
   const base = `/${tenantSlug}/cotizaciones`;
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
   const [query, setQuery] = useState('');
-  const [filtroFecha, setFiltroFecha] = useState<string | null>(null);
-  const [filtroComercial, setFiltroComercial] = useState<string | null>(null);
-  const [filtroCliente, setFiltroCliente] = useState<string | null>(null);
+  const [filtroFecha, setFiltroFecha] = useState<string | null>(filtroFechaInit ?? null);
+  const [filtroComercial, setFiltroComercial] = useState<string | null>(
+    filtroComercialInit ?? null
+  );
+  const [filtroCliente, setFiltroCliente] = useState<string | null>(filtroClienteInit ?? null);
+
+  const updateFilter = (key: string, value: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, encodeURIComponent(value));
+    } else {
+      params.delete(key);
+    }
+    params.delete('page'); // reset paginación al filtrar
+    router.push(`${base}?${params.toString()}`);
+  };
 
   const q = query.trim().toLowerCase();
 
@@ -217,13 +239,19 @@ export function CotizacionesList({
           label="Fecha emisión"
           active={filtroFecha}
           activeLabel={FECHA_OPCIONES.find((o) => o.key === filtroFecha)?.label ?? null}
-          onClear={() => setFiltroFecha(null)}
+          onClear={() => {
+            setFiltroFecha(null);
+            updateFilter('fecha', null);
+          }}
         >
           {FECHA_OPCIONES.map((o) => (
             <DropdownItem
               key={String(o.key)}
               selected={filtroFecha === o.key}
-              onClick={() => setFiltroFecha(o.key)}
+              onClick={() => {
+                setFiltroFecha(o.key);
+                updateFilter('fecha', o.key);
+              }}
             >
               {o.label}
             </DropdownItem>
@@ -235,7 +263,10 @@ export function CotizacionesList({
           label="Comercial"
           active={filtroComercial}
           activeLabel={filtroComercial}
-          onClear={() => setFiltroComercial(null)}
+          onClear={() => {
+            setFiltroComercial(null);
+            updateFilter('comercial', null);
+          }}
         >
           {comerciales.length === 0 ? (
             <div className="px-3 py-2 text-xs text-orion-fg-faint">Sin datos</div>
@@ -244,7 +275,10 @@ export function CotizacionesList({
               <DropdownItem
                 key={c}
                 selected={filtroComercial === c}
-                onClick={() => setFiltroComercial(c)}
+                onClick={() => {
+                  setFiltroComercial(c);
+                  updateFilter('comercial', c);
+                }}
               >
                 {c}
               </DropdownItem>
@@ -257,7 +291,10 @@ export function CotizacionesList({
           label="Cliente"
           active={filtroCliente}
           activeLabel={filtroCliente}
-          onClear={() => setFiltroCliente(null)}
+          onClear={() => {
+            setFiltroCliente(null);
+            updateFilter('cliente', null);
+          }}
         >
           {clientesUnicos.length === 0 ? (
             <div className="px-3 py-2 text-xs text-orion-fg-faint">Sin datos</div>
@@ -266,7 +303,10 @@ export function CotizacionesList({
               <DropdownItem
                 key={c}
                 selected={filtroCliente === c}
-                onClick={() => setFiltroCliente(c)}
+                onClick={() => {
+                  setFiltroCliente(c);
+                  updateFilter('cliente', c);
+                }}
               >
                 {c}
               </DropdownItem>
@@ -388,7 +428,17 @@ export function CotizacionesList({
                 : `${(page - 1) * pageSize + 1}–${(page - 1) * pageSize + rows.length} de ${counts.total}`}
             </span>
             <div className="ml-auto flex items-center gap-1">
-              <PageBtn href={page > 1 ? buildHref(base, filtroActivo, page - 1) : null}>
+              <PageBtn
+                href={
+                  page > 1
+                    ? buildHref(base, filtroActivo, page - 1, {
+                        fecha: filtroFecha,
+                        comercial: filtroComercial,
+                        cliente: filtroCliente,
+                      })
+                    : null
+                }
+              >
                 <ChevronLeft size={12} />
               </PageBtn>
               <span className="inline-flex h-7 min-w-[28px] items-center justify-center rounded-md border border-orion-border bg-orion-bg px-1.5 text-[12px] font-medium text-orion-fg">
@@ -396,7 +446,13 @@ export function CotizacionesList({
               </span>
               <PageBtn
                 href={
-                  page * pageSize < counts.total ? buildHref(base, filtroActivo, page + 1) : null
+                  page * pageSize < counts.total
+                    ? buildHref(base, filtroActivo, page + 1, {
+                        fecha: filtroFecha,
+                        comercial: filtroComercial,
+                        cliente: filtroCliente,
+                      })
+                    : null
                 }
               >
                 <ChevronRight size={12} />
@@ -630,10 +686,18 @@ function Td({
   );
 }
 
-function buildHref(base: string, filtroActivo: 'todas' | Estado, targetPage: number) {
+function buildHref(
+  base: string,
+  filtroActivo: 'todas' | Estado,
+  targetPage: number,
+  extras?: { fecha?: string | null; comercial?: string | null; cliente?: string | null }
+) {
   const params = new URLSearchParams();
   if (filtroActivo !== 'todas') params.set('estado', filtroActivo);
   if (targetPage > 1) params.set('page', String(targetPage));
+  if (extras?.fecha) params.set('fecha', encodeURIComponent(extras.fecha));
+  if (extras?.comercial) params.set('comercial', encodeURIComponent(extras.comercial));
+  if (extras?.cliente) params.set('cliente', encodeURIComponent(extras.cliente));
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
 }
