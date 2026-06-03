@@ -2,10 +2,10 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-02 23:45 GMT-5 (QA E2E completo + B3 fix desplegado)
+**Última actualización:** 2026-06-03 02:00 GMT-5 (Auditoría + B1 + B4 + limpieza QA2)
 **Branch activa:** `main` (producción desplegada en orion-rp.com)
-**Estado verificado:** Playwright contra prod. QA E2E completo (Flujo Principal + Fases 2/3/4/5) ✅. Typecheck verde (0 errores).
-**Último commit prod:** `f7de6ab` — feat(ui): ⓘ ayuda por módulo + guías con líneas + encolado Nubefact
+**Estado verificado:** Typecheck verde (0 errores). Deploy prod OK (commit 5e96eb4).
+**Último commit prod:** `5e96eb4` — feat(admin): módulo Auditoría + fix B1 costo OC + fix B4 redirect
 
 ---
 
@@ -43,13 +43,13 @@
 
 ### Bugs encontrados — QA E2E completo
 
-| #      | Fase      | Descripción                                                                                                                                                                                       | Severidad                                        | Estado        |
-| ------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------- |
-| B1     | Flujo     | OC generada desde cotización usa `precioUnitario` de venta (S/13) como costo en el kardex, en vez del `costoUnitario` del producto (S/8.50). Costo promedio = 13.00 en lugar de 8.50.             | Media                                            | Pendiente     |
-| B2     | Flujo     | `/credito/clientes/nuevo` devuelve 500 — "nuevo" se interpreta como `[id]` dinámico.                                                                                                              | Baja                                             | Pendiente     |
-| **B3** | **Roles** | **Comercial puede acceder a `/idex/facturas` y ver TODAS las facturas** (F001-6/7/8/9/10). No tiene `facturas.ver` según la matriz de permisos pero el servidor lo permite. **Bug de seguridad.** | **Alta**                                         | **Pendiente** |
-| B4     | Roles     | `/idex/credito` y `/idex/configuracion` devuelven 500 en vez de redirect al dashboard cuando el rol no tiene acceso. UX negativa.                                                                 | Baja                                             | Pendiente     |
-| B5     | Flujo     | Stock negativo: cotización con 1000 uds (stock=500) se crea sin warning visible. La decisión del Kickoff era "permitir con warning". El warning no está implementado.                             | Baja (comportamiento correcto, falta el warning) | Pendiente     |
+| #      | Fase      | Descripción                                                                                                                                                           | Severidad                                        | Estado                |
+| ------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | --------------------- |
+| ~~B1~~ | Flujo     | OC generada desde cotización usaba `precioUnitario` de venta como costo en el kardex.                                                                                 | Media                                            | ✅ RESUELTO (5e96eb4) |
+| B2     | Flujo     | `/credito/clientes/nuevo` devuelve 500 — "nuevo" se interpreta como `[id]` dinámico.                                                                                  | Baja                                             | Pendiente             |
+| ~~B3~~ | ~~Roles~~ | ~~Comercial podía acceder a `/idex/facturas`.~~                                                                                                                       | ~~Alta~~                                         | ✅ RESUELTO (dc365bb) |
+| ~~B4~~ | Roles     | `/idex/credito` y `/idex/configuracion` devolvían 500 en vez de redirect.                                                                                             | Baja                                             | ✅ RESUELTO (5e96eb4) |
+| B5     | Flujo     | Stock negativo: cotización con 1000 uds (stock=500) se crea sin warning visible. La decisión del Kickoff era "permitir con warning". El warning no está implementado. | Baja (comportamiento correcto, falta el warning) | Pendiente             |
 
 ### Resumen Fase 2 — Control de acceso por rol
 
@@ -84,14 +84,23 @@
 
 `requirePermission('facturas.ver')` en `/facturas` y `/facturas/[id]`. Verificado: Comercial bloqueado.
 
+### ✅ SESIÓN 2026-06-03 — Auditoría + B1 + B4 + limpieza QA2
+
+**Commit:** `5e96eb4` — feat(admin): módulo Auditoría + fix B1 costo OC + fix B4 redirect
+
+| Tarea                                                                                    | Estado |
+| ---------------------------------------------------------------------------------------- | ------ |
+| Auditoría habilitada en sidebar + `/[slug]/auditoria` con log de 4 fuentes               | ✅     |
+| FIX B1: `generarOCsDesdeCotizacion` ahora usa `costoUnitario` del producto               | ✅     |
+| FIX B4: `requirePermissionPage` helper → redirect en vez de 500 en credito/configuracion | ✅     |
+| Limpieza [QA2]: cliente, producto, 2 cots, OC, factura + kardex borrados de prod         | ✅     |
+
 ### 📋 PENDIENTES PRÓXIMA SESIÓN (prioridad descendente)
 
-1. **Auditoría (feature):** Quitar `disabled:true` en `TenantSidebar.tsx:64`. Crear `src/app/(app)/[companySlug]/auditoria/page.tsx` con log de actividad del tenant. Referencia: `/admin/auditoria/page.tsx` existente. Tabla disponible: `audit_permisos` + datos de cotizaciones/facturas/precios para construir el log. Permiso: `admin.auditoria.ver` (solo Superadmin).
-2. **FIX B1:** `generarOCsDesdeCotizacion` usa `precioUnitario` de la cot. como costo de OC → kardex registra costo incorrecto. Fix: usar `costoUnitario` del producto.
-3. **FIX B4:** `requirePermission` sin acceso → 500 en prod. Envolver con try/catch + `redirect('/[slug]')` en layout o page.
-4. **FIX B5:** Warning visual en CotizacionForm cuando cantidad > stock disponible del producto.
-5. **Limpieza data [QA2]:** Decidir si borrar antes del demo (cliente, producto, 2 cotizaciones, 1 OC, 1 factura con sufijo [QA2]).
-6. **Serie F001 Nubefact:** Acción externa de Lucas.
+1. **FIX B2:** `/credito/clientes/nuevo` devuelve 500 — "nuevo" se interpreta como `[id]` dinámico. Fix: mover la ruta a `/credito/nuevo-cliente` o agregar catch en el layout.
+2. **FIX B5:** Warning visual en CotizacionForm cuando cantidad > stock disponible del producto.
+3. **Serie F001 Nubefact:** Acción externa de Lucas — habilitar serie F001 en el panel Nubefact.
+4. **Anular factura (NC):** Probar el botón "Anular" en FacturaDetalle (no se probó en QA).
 
 ### 🔍 Módulos intermitentes (causa: Supabase free pooler)
 
