@@ -115,7 +115,7 @@ export function InventarioList({
                   href={`/${tenantSlug}/ordenes?estado=pendiente_recepcion`}
                   className="border-danger-fg/30 hover:bg-danger-fg/10 inline-flex h-7 items-center gap-1.5 rounded-md border px-3 text-[12px] font-medium text-danger-fg"
                 >
-                  Ver OC pendientes →
+                  Ver OC pendientes <span aria-hidden="true">→</span>
                 </Link>
               </div>
             </div>
