@@ -484,7 +484,7 @@ export async function generarOCsDesdeCotizacion(
       error: `Solo se pueden generar compras desde una cotización aceptada (estado actual: ${cot.estado})`,
     };
 
-  // 2. Fetch ítems + proveedorPrincipalId del producto via LEFT JOIN
+  // 2. Fetch ítems + proveedorPrincipalId + costoUnitario del producto via LEFT JOIN
   const items = await db
     .select({
       productoId: cotizacionItems.productoId,
@@ -495,6 +495,7 @@ export async function generarOCsDesdeCotizacion(
       afectaIgv: cotizacionItems.afectaIgv,
       orden: cotizacionItems.orden,
       proveedorPrincipalId: productos.proveedorPrincipalId,
+      costoUnitarioProducto: productos.costoUnitario,
     })
     .from(cotizacionItems)
     .leftJoin(productos, eq(productos.id, cotizacionItems.productoId))
@@ -541,11 +542,14 @@ export async function generarOCsDesdeCotizacion(
           proveedorId = placeholder.id;
         }
 
-        // Calcular totales del grupo
+        // Calcular totales del grupo usando costo del producto (no precio de venta)
         const totales = calcularTotalesOrden(
           grupoItems.map((it) => ({
             cantidad: Number(it.cantidad),
-            precioUnitario: Number(it.precioUnitario),
+            precioUnitario:
+              it.costoUnitarioProducto != null
+                ? Number(it.costoUnitarioProducto)
+                : Number(it.precioUnitario),
             afectaIgv: it.afectaIgv,
           }))
         );
@@ -582,9 +586,14 @@ export async function generarOCsDesdeCotizacion(
 
         await tx.insert(lineasOrdenCompra).values(
           grupoItems.map((item, idx) => {
+            // Usar costo del producto como precio de OC; fallback al precio de venta
+            const costoUnitario =
+              item.costoUnitarioProducto != null
+                ? Number(item.costoUnitarioProducto)
+                : Number(item.precioUnitario);
             const calc = calcularItem({
               cantidad: Number(item.cantidad),
-              precioUnitario: Number(item.precioUnitario),
+              precioUnitario: costoUnitario,
               descuentoPorcentaje: 0,
               afectaIgv: item.afectaIgv,
             });
@@ -595,7 +604,7 @@ export async function generarOCsDesdeCotizacion(
               skuSnapshot: item.codigo ?? item.descripcion.slice(0, 100),
               descripcion: item.descripcion,
               cantidad: item.cantidad,
-              precioUnitario: item.precioUnitario,
+              precioUnitario: String(costoUnitario),
               afectaIgv: item.afectaIgv,
               subtotal: String(calc.subtotal),
               igv: String(calc.igv),

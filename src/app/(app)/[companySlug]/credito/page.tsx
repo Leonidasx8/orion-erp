@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'; // noqa
-import { requirePermission } from '@/lib/auth/require-permission';
+import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { DashboardCxC, type DashboardCxCData } from '@/components/modules/credito/DashboardCxC';
 import { AgingChart, type AgingBuckets } from '@/components/modules/credito/AgingChart';
@@ -8,8 +8,13 @@ import { ModuleHelp } from '@/components/shared/ModuleHelp';
 
 export const metadata = { title: 'Crédito y CxC' };
 
-export default async function CreditoPage() {
-  const { tenant } = await requirePermission('credito.ver');
+export default async function CreditoPage({
+  params,
+}: {
+  params: Promise<{ companySlug: string }>;
+}) {
+  const { companySlug } = await params;
+  const { tenant } = await requirePermissionPage('credito.ver', companySlug);
 
   // Queries paralelas sobre vistas materializadas / vistas normales
   const [totalesRaw, agingRaw, clientesRaw] = await Promise.all([

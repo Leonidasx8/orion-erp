@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { and, eq } from 'drizzle-orm';
 import { UserPlus } from 'lucide-react';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
-import { requirePermission } from '@/lib/auth/require-permission';
+import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { tenants, seriesDocumentos, tenantMembers } from '@/lib/db/schema';
 import { ConfigSunatForm } from '@/components/modules/configuracion/ConfigSunatForm';
@@ -41,7 +41,7 @@ export default async function ConfiguracionPage({
   const { tab } = await searchParams;
   const activeTab: TabId = (VALID_TABS.includes(tab as TabId) ? tab : 'empresa') as TabId;
 
-  await requirePermission('admin.config.editar');
+  await requirePermissionPage('admin.config.editar', companySlug);
   const tenant = await getCurrentTenant();
 
   const [tenantRow] = await db.select().from(tenants).where(eq(tenants.id, tenant.id));
