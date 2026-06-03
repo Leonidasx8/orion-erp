@@ -65,6 +65,11 @@ export default async function ClienteCxCDetallePage({
   params: Promise<{ companySlug: string; id: string }>;
 }) {
   const { companySlug, id } = await params;
+
+  // Guard: Next.js enruta "nuevo" a este [id] — redirigir antes de tocar la DB
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(id)) notFound();
+
   const { tenant } = await requirePermission('credito.ver');
 
   const [canOtorgar, canPago] = await Promise.all([
