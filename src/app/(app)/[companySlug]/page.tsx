@@ -29,6 +29,7 @@ export default async function DashboardPage({
     cxcRaw,
     stockRaw,
     ocPendientesRaw,
+    cotVencidasRaw,
   ] = await Promise.all([
     // Ventas por mes — últimos 12 meses desde dashboard_metricas
     db.execute<MetricasRow>(sql`
@@ -94,6 +95,14 @@ export default async function DashboardPage({
         WHERE tenant_id = ${tenant.id}
           AND estado IN ('aprobada', 'recibida_parcial')
       `),
+
+    // Cotizaciones vencidas sin acción
+    db.execute<{ count: string }>(sql`
+      SELECT COUNT(*)::text AS count
+      FROM cotizaciones
+      WHERE tenant_id = ${tenant.id}
+        AND estado = 'vencida'
+    `),
   ]);
 
   const metricas = Array.from(metricasRaw);
@@ -106,6 +115,7 @@ export default async function DashboardPage({
   const ocPendientesNumeros = ocPendientesRaw[0]?.numeros
     ? ocPendientesRaw[0].numeros.split(',').filter(Boolean)
     : [];
+  const cotVencidas = Number(cotVencidasRaw[0]?.count ?? 0);
 
   function formatSubtitle() {
     const now = new Date();
@@ -148,6 +158,7 @@ export default async function DashboardPage({
       <PendientesPanel
         ocPendientes={{ count: ocPendientesCount, numeros: ocPendientesNumeros }}
         stockCritico={stockCritico}
+        cotVencidas={cotVencidas}
         companySlug={companySlug}
       />
 

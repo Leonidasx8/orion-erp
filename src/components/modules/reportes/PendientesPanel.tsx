@@ -1,15 +1,21 @@
 // src/components/modules/reportes/PendientesPanel.tsx
 import Link from 'next/link';
-import { AlertTriangle, PackageCheck } from 'lucide-react';
+import { AlertTriangle, FileX, PackageCheck } from 'lucide-react';
 
 export type PendientesPanelProps = {
   ocPendientes: { count: number; numeros: string[] };
   stockCritico: number;
+  cotVencidas: number;
   companySlug: string;
 };
 
-export function PendientesPanel({ ocPendientes, stockCritico, companySlug }: PendientesPanelProps) {
-  if (ocPendientes.count === 0 && stockCritico === 0) return null;
+export function PendientesPanel({
+  ocPendientes,
+  stockCritico,
+  cotVencidas,
+  companySlug,
+}: PendientesPanelProps) {
+  if (ocPendientes.count === 0 && stockCritico === 0 && cotVencidas === 0) return null;
 
   return (
     <div className="mt-4 overflow-hidden rounded-lg border border-orion-border bg-orion-bg shadow-orion-1">
@@ -48,6 +54,23 @@ export function PendientesPanel({ ocPendientes, stockCritico, companySlug }: Pen
             <span className="flex-1 text-[13px] text-orion-fg">
               <span className="font-medium">
                 {stockCritico} producto{stockCritico !== 1 ? 's' : ''} con stock crítico o sin stock
+              </span>
+            </span>
+            <span aria-hidden="true" className="text-[12px] text-orion-fg-muted">
+              →
+            </span>
+          </Link>
+        )}
+        {cotVencidas > 0 && (
+          <Link
+            href={`/${companySlug}/cotizaciones?estado=vencida`}
+            className="flex items-center gap-3 px-4 py-3 hover:bg-orion-bg-muted"
+          >
+            <FileX size={15} className="shrink-0 text-danger-fg" />
+            <span className="flex-1 text-[13px] text-orion-fg">
+              <span className="font-medium">
+                {cotVencidas} cotización{cotVencidas !== 1 ? 'es' : ''} vencida
+                {cotVencidas !== 1 ? 's' : ''} sin respuesta
               </span>
             </span>
             <span aria-hidden="true" className="text-[12px] text-orion-fg-muted">
