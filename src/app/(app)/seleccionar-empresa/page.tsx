@@ -27,15 +27,15 @@ export default async function SeleccionarEmpresaPage() {
       )
     );
 
-  if (memberships.length === 0) {
-    // Platform admins with no tenant assignments go straight to the admin panel
-    const [pa] = await db
-      .select()
-      .from(platformAdmins)
-      .where(and(eq(platformAdmins.userId, user.id), eq(platformAdmins.activo, true)))
-      .limit(1);
-    if (pa) redirect('/admin');
+  // Platform admins always go to the admin panel first, regardless of tenant memberships
+  const [pa] = await db
+    .select()
+    .from(platformAdmins)
+    .where(and(eq(platformAdmins.userId, user.id), eq(platformAdmins.activo, true)))
+    .limit(1);
+  if (pa) redirect('/admin');
 
+  if (memberships.length === 0) {
     return (
       <div className="grid min-h-screen place-items-center">
         <div className="max-w-md text-center">

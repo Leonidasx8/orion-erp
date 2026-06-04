@@ -119,6 +119,9 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
         <Button variant="outline" asChild>
           <Link href="/admin/tenants">Volver</Link>
         </Button>
+        <Button asChild>
+          <Link href={`/${t.slug}`}>Entrar al tenant →</Link>
+        </Button>
       </div>
     </div>
   );

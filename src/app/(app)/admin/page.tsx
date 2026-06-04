@@ -254,12 +254,20 @@ export default async function AdminDashboardPage() {
                         <EstadoBadge estado={t.estado} />
                       </td>
                       <td className="px-4 py-2.5">
-                        <Link
-                          href={`/admin/tenants/${t.id}`}
-                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
-                        >
-                          <MoreHorizontal size={14} />
-                        </Link>
+                        <div className="flex items-center gap-1">
+                          <Link
+                            href={`/${t.slug}`}
+                            className="flex h-6 items-center gap-1 rounded px-2 text-[11px] font-medium text-violet-600 hover:bg-violet-50"
+                          >
+                            Entrar
+                          </Link>
+                          <Link
+                            href={`/admin/tenants/${t.id}`}
+                            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                          >
+                            <MoreHorizontal size={14} />
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );
