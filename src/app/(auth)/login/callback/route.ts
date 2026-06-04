@@ -18,15 +18,29 @@ export async function GET(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const lastSlug = user?.user_metadata?.current_tenant_slug as string | undefined;
-  if (lastSlug) {
-    return NextResponse.redirect(new URL(`/${lastSlug}`, url.origin));
-  }
-
   if (user) {
     // Usar supabase-js (REST/HTTPS) en lugar de Drizzle para evitar
     // la limitación de conexión directa postgres en free tier.
     const admin = await createServerAdminClient();
+
+    // Platform admins siempre van a /admin, ignorando last_slug
+    const { data: pa } = await admin
+      .from('platform_admins')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('activo', true)
+      .limit(1)
+      .single();
+
+    if (pa) {
+      return NextResponse.redirect(new URL('/admin', url.origin));
+    }
+
+    // Usuarios normales: respetar último tenant visitado
+    const lastSlug = user?.user_metadata?.current_tenant_slug as string | undefined;
+    if (lastSlug) {
+      return NextResponse.redirect(new URL(`/${lastSlug}`, url.origin));
+    }
 
     const { data: membership } = await admin
       .from('tenant_members')
@@ -41,18 +55,6 @@ export async function GET(request: Request) {
 
     if (activeMembership) {
       return NextResponse.redirect(new URL('/seleccionar-empresa', url.origin));
-    }
-
-    const { data: pa } = await admin
-      .from('platform_admins')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('activo', true)
-      .limit(1)
-      .single();
-
-    if (pa) {
-      return NextResponse.redirect(new URL('/admin', url.origin));
     }
   }
 
