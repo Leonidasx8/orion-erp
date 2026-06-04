@@ -22,7 +22,7 @@ export async function invitarUsuario(input: z.infer<typeof InvitarSchema>) {
   const [rol] = await db
     .select()
     .from(roles)
-    .where(and(eq(roles.tenantId, tenant.id), eq(roles.nombre, data.rolNombre)))
+    .where(and(eq(roles.tenantId, tenant.id), eq(roles.nombre, data.rolNombre.toLowerCase())))
     .limit(1);
 
   if (!rol) return { success: false as const, error: 'role-not-found' };
@@ -32,7 +32,7 @@ export async function invitarUsuario(input: z.infer<typeof InvitarSchema>) {
   await db.insert(tenantMembers).values({
     userId: newUser.id,
     tenantId: tenant.id,
-    rol: data.rolNombre,
+    rol: data.rolNombre.toLowerCase(),
     estado: 'pendiente',
     invitadoPor: user.id,
   });
