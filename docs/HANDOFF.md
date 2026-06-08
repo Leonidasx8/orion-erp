@@ -13,12 +13,12 @@
 
 Implementación de los quick wins cerrados por las respuestas de Lucas en el Google Doc (id `1l3W0xeFZB66_BnuJG7_nJgZaP_d3jAJWSzB_S7f6LrY`). **Rama nueva, sin mergear ni desplegar — falta probar en navegador.**
 
-| Commit    | Qué                                                                                                                                                                                                               | Obs           |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `d736838` | Sidebar/título "Compras a Proveedores"→"Órdenes de Compra"; "Añadir línea"→"Añadir ítem" (cotiz/OC/factura); quitar campo "Lista de precios" del form de cliente (se mantiene en schema/defaults)                 | 5.1, 5.2, P1  |
-| `8d14f6d` | USD por defecto en cotización (OC ya era USD); ocultar "Tipo de cambio" en cotización y OC (input oculto, dato se conserva); quitar refines que exigían TC para USD. **Factura NO tocada** (TC lo necesita SUNAT) | 4.3, 4.8, 5.4 |
-| `cc99145` | "Precio actual"→"Precio de venta" (actualización masiva) y "Precio unitario (S/)"→"Precio de venta (USD)" en form de producto                                                                                     | 3.2           |
-| `18347f7` | OC sin paso de aprobación: nace en estado `aprobada` lista para recibir; `eliminar` permite borrar sin recepciones. Botones Enviar/Aprobar quedan solo para OCs legadas                                           | nuevo (Lucas) |
+| Commit        | Qué                                                                                                                                                                                                               | Obs           |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `d736838`     | Sidebar/título "Compras a Proveedores"→"Órdenes de Compra"; "Añadir línea"→"Añadir ítem" (cotiz/OC/factura); quitar campo "Lista de precios" del form de cliente (se mantiene en schema/defaults)                 | 5.1, 5.2, P1  |
+| `8d14f6d`     | USD por defecto en cotización (OC ya era USD); ocultar "Tipo de cambio" en cotización y OC (input oculto, dato se conserva); quitar refines que exigían TC para USD. **Factura NO tocada** (TC lo necesita SUNAT) | 4.3, 4.8, 5.4 |
+| `cc99145`     | "Precio actual"→"Precio de venta" (actualización masiva) y "Precio unitario (S/)"→"Precio de venta (USD)" en form de producto                                                                                     | 3.2           |
+| ~~`18347f7`~~ | **REVERTIDO** en `67b2dab` — malinterpretación. El flujo OC `borrador→enviar→aprobar` SE QUEDA. Ver "Pipeline de stock" abajo                                                                                     | —             |
 
 **Pendiente de este lote (no hecho aún):**
 
@@ -26,11 +26,14 @@ Implementación de los quick wins cerrados por las respuestas de Lucas en el Goo
 - 7.3 Catálogo completo unidades SUNAT — `unidades_medida` es tabla en DB (no constante); falta seed/migration con catálogo 03 SUNAT.
 - 6.2 Botón "Ajustar stock" visible en InventarioList (ruta `/inventario/[id]/ajuste` existe; falta el botón en la lista).
 - 5.5 Bug PDF de OC — falta reproducir.
-- Follow-up OC: simplificar stepper/banner visual a 3 pasos (Creada→Recibir→Cerrada) y migrar las 7 OCs legadas (borrador/enviada) si se quiere flujo 100% limpio.
+
+**⚠️ El flujo OC `borrador→enviar→aprobar` NO se toca** (malentendido corregido 08-jun). Lucas NO pidió quitar la aprobación.
+
+**Pipeline de stock (lo que Lucas SÍ pidió, en la parte final del doc):** al **aprobar/aceptar una cotización**, de frente preguntar si hay stock del producto. Si **hay stock** → poder elegir **guardar/reservar** ese stock para el cliente (se refleja en inventario y queda **NO disponible para otros clientes** — reserva). Si **no hay stock** → generar la orden de compra al proveedor. Feature mediano-grande: requiere modelo de reserva de stock (stock disponible vs reservado), UI en la conversión de cotización, y reflejo en inventario/kardex. **Diseñar antes de codear.**
 
 **Item 3.1 (quitar variación % en producto):** NO existe tal control en el form individual de producto; solo en actualización masiva (feature intencional). NO tocar sin confirmar con Lucas.
 
-**Features grandes del doc (diseñar antes de codear):** freno de línea de crédito + correo al admin (P7), reserva de stock antes de OC, precio proveedor ≠ precio venta en OC, GRE guías 2 casos (traslado Idex / comprador), NC/ND + exportación + detracción (bloqueados hasta Nubefact activo).
+**Features grandes del doc (diseñar antes de codear):** pipeline de stock con reserva (arriba), freno de línea de crédito + correo al admin (P7), precio proveedor ≠ precio venta en OC, GRE guías 2 casos (traslado Idex / comprador), NC/ND + exportación + detracción (bloqueados hasta Nubefact activo).
 
 ---
 
