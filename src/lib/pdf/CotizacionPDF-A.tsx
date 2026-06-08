@@ -364,14 +364,20 @@ export function CotizacionPDFDesignA({
                     {data.tenant.bancoNombre}
                   </Text>
                 ) : null}
-                {data.tenant.bancoCuenta ? (
+                {(data.moneda === 'USD' ? data.tenant.bancoCuentaUsd : data.tenant.bancoCuenta) ? (
                   <Text style={{ fontSize: 8.5, color: C.body }}>
-                    Cta. <Text style={{ fontFamily: 'Courier' }}>{data.tenant.bancoCuenta}</Text>
+                    Cta. {data.moneda === 'USD' ? 'US$' : 'S/'}{' '}
+                    <Text style={{ fontFamily: 'Courier' }}>
+                      {data.moneda === 'USD' ? data.tenant.bancoCuentaUsd : data.tenant.bancoCuenta}
+                    </Text>
                   </Text>
                 ) : null}
-                {data.tenant.bancoCci ? (
+                {(data.moneda === 'USD' ? data.tenant.bancoCciUsd : data.tenant.bancoCci) ? (
                   <Text style={{ fontSize: 8.5, color: C.body }}>
-                    CCI <Text style={{ fontFamily: 'Courier' }}>{data.tenant.bancoCci}</Text>
+                    CCI {data.moneda === 'USD' ? 'US$' : 'S/'}{' '}
+                    <Text style={{ fontFamily: 'Courier' }}>
+                      {data.moneda === 'USD' ? data.tenant.bancoCciUsd : data.tenant.bancoCci}
+                    </Text>
                   </Text>
                 ) : null}
                 {data.tenant.bancoDetraccionCuenta ? (

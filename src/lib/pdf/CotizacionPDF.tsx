@@ -202,6 +202,8 @@ export interface CotizacionPDFData {
     bancoCuenta?: string | null;
     bancoCci?: string | null;
     bancoDetraccionCuenta?: string | null;
+    bancoCuentaUsd?: string | null;
+    bancoCciUsd?: string | null;
   };
   cliente: string;
   clienteRuc?: string | null;

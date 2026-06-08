@@ -79,6 +79,8 @@ export async function GET(
           bancoCuenta: tenants.bancoCuenta,
           bancoCci: tenants.bancoCci,
           bancoDetraccionCuenta: tenants.bancoDetraccionCuenta,
+          bancoCuentaUsd: tenants.bancoCuentaUsd,
+          bancoCciUsd: tenants.bancoCciUsd,
           comercialNombre: tenants.comercialNombre,
           comercialTelefono: tenants.comercialTelefono,
         })
@@ -123,6 +125,8 @@ export async function GET(
         bancoCuenta: tenantRow?.bancoCuenta ?? null,
         bancoCci: tenantRow?.bancoCci ?? null,
         bancoDetraccionCuenta: tenantRow?.bancoDetraccionCuenta ?? null,
+        bancoCuentaUsd: tenantRow?.bancoCuentaUsd ?? null,
+        bancoCciUsd: tenantRow?.bancoCciUsd ?? null,
       },
       cliente: row.clienteRazon ?? '—',
       clienteRuc: row.clienteRuc,
