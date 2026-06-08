@@ -18,6 +18,17 @@
 
 ---
 
+## ✅ Progreso (ejecución inline 2026-06-08, Opus)
+
+- ✅ **T2 Cuentas bancarias por moneda en PDF** — commit `fe1c2a5`. Falta verificación visual (correr app).
+- ✅ **T3 PDF de Orden de Compra** — commit `9ba3cd3`. **NO era un bug: la feature no existía.** Se creó `OrdenCompraPDF.tsx` + route + se conectó el botón (era stub "Próximamente"). Falta verificación visual.
+- ⏸️ **T1 Unidades SUNAT** — pendiente: necesita la lista OFICIAL del catálogo 03 (no de memoria; el repo `jldamians/sunat-catalogs` solo trae NIU/ZZ). Sourcing flaky — retomar con la lista oficial.
+- ℹ️ Botón ajuste-stock y filtro de calibre: ya estaban (ver contexto previo).
+
+**Pendiente Fase 2 (medianos, requieren verificación visual / Opus / confirmación):** T4 dashboard moneda, T5 roles, T6 inventario salida-en-guía, T7 guías 2-casos.
+
+---
+
 ## FASE 1 — Quick wins in-contract restantes (Sonnet)
 
 ### Task 1: Catálogo completo de unidades de medida SUNAT (obs 7.3)
