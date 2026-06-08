@@ -76,7 +76,8 @@ export function CotizacionDetalle({
             <h1 className="m-0 font-mono text-[22px] font-semibold tracking-tight text-orion-fg">
               {data.numero}
             </h1>
-            <EstadoBadge estado={data.estado} />
+            {/* En cotización 'aceptada' = aceptada por el cliente, no por SUNAT */}
+            <EstadoBadge estado={data.estado === 'aceptada' ? 'aceptada_cliente' : data.estado} />
             {data.vencimientoTag && (
               <span className="inline-flex h-[22px] items-center gap-1 rounded-sm bg-orion-bg-muted px-2 text-[11px] text-orion-fg-muted">
                 <Clock size={11} />
@@ -340,7 +341,8 @@ function labelLowercase(estado: Estado): string {
     enviada: 'enviada',
     pendiente: 'pendiente',
     aprobada: 'aprobada',
-    aceptada: 'aceptada SUNAT',
+    aceptada: 'aceptada por el cliente',
+    aceptada_cliente: 'aceptada por el cliente',
     pagada: 'pagada',
     rechazada: 'rechazada',
     vencida: 'vencida',

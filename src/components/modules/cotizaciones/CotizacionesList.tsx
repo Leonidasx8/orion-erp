@@ -391,7 +391,10 @@ export function CotizacionesList({
                     </Td>
                     <Td className="max-w-[220px] truncate">{r.cliente}</Td>
                     <Td>
-                      <EstadoBadge estado={r.estado} />
+                      {/* En cotización 'aceptada' = aceptada por el cliente, no por SUNAT */}
+                      <EstadoBadge
+                        estado={r.estado === 'aceptada' ? 'aceptada_cliente' : r.estado}
+                      />
                     </Td>
                     <Td className="whitespace-nowrap text-orion-fg-muted">{r.fechaEmision}</Td>
                     <Td

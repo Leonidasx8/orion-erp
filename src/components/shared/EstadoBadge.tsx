@@ -11,6 +11,7 @@ export type Estado =
   | 'pendiente'
   | 'aprobada'
   | 'aceptada'
+  | 'aceptada_cliente'
   | 'rechazada'
   | 'vencida'
   | 'anulada'
@@ -30,6 +31,7 @@ const CFG: Record<Estado, { label: string; className: string; lineThrough?: bool
   pendiente: { label: 'Pendiente', className: 'bg-info-soft text-info-fg' },
   aprobada: { label: 'Aprobada', className: 'bg-success-soft text-success-fg' },
   aceptada: { label: 'Aceptada SUNAT', className: 'bg-success-soft text-success-fg' },
+  aceptada_cliente: { label: 'Aceptada cliente', className: 'bg-success-soft text-success-fg' },
   pagada: { label: 'Pagada', className: 'bg-success-soft text-success-fg' },
   rechazada: { label: 'Rechazada', className: 'bg-danger-soft text-danger-fg' },
   vencida: { label: 'Vencida', className: 'bg-warn-soft text-warn-fg' },
