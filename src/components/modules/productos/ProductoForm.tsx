@@ -204,7 +204,7 @@ export function ProductoForm({ companySlug, producto, categorias, uoms, proveedo
         <h3 className="text-sm font-medium">Precios</h3>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="precio">Precio unitario (S/) *</Label>
+            <Label htmlFor="precio">Precio de venta (USD) *</Label>
             <Input
               id="precio"
               type="number"
@@ -218,7 +218,7 @@ export function ProductoForm({ companySlug, producto, categorias, uoms, proveedo
             )}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="costo">Costo unitario (S/)</Label>
+            <Label htmlFor="costo">Costo unitario (USD)</Label>
             <Input
               id="costo"
               type="number"

@@ -284,14 +284,14 @@ export function ActualizarPreciosForm({ productos, categorias, proveedores, comp
               <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Código</th>
               <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Producto</th>
               <th className="px-3 py-2.5 text-right font-medium text-muted-foreground">
-                Precio actual
+                Precio de venta
               </th>
               <th className="px-3 py-2.5 text-right font-medium text-muted-foreground">
                 Costo actual
               </th>
               {canPreview && (
                 <th className="px-3 py-2.5 text-right font-medium text-muted-foreground">
-                  Nuevo {campo === 'precio' ? 'precio' : 'costo'}
+                  Nuevo {campo === 'precio' ? 'precio de venta' : 'costo'}
                 </th>
               )}
             </tr>
