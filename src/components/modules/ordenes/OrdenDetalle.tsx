@@ -107,7 +107,15 @@ export function OrdenDetalle({ data, tenantSlug }: { data: OrdenDetalleData; ten
           </div>
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <DetalleBtn icon={<FileText size={13} />} label="PDF" />
+          <a
+            href={`/api/${tenantSlug}/ordenes/${data.id}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-3 text-[13px] font-medium text-orion-fg hover:bg-orion-bg-muted"
+          >
+            <FileText size={13} />
+            PDF
+          </a>
           {esEditable && data.permissions.editar && (
             <Link
               href={`/${tenantSlug}/ordenes/${data.id}/editar`}
