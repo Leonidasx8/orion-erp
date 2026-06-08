@@ -62,6 +62,11 @@ export async function crearOrdenCompra(
           cotizacionOrigenId: data.cotizacionOrigenId ?? null,
           moneda: data.moneda,
           tipoCambio: data.tipoCambio != null ? String(data.tipoCambio) : null,
+          // Sin paso de aprobación: al generar la OC ya queda lista para recibir
+          // (Lucas: "no es necesario el botón de aprobar").
+          estado: 'aprobada',
+          fechaEnvio: new Date(),
+          fechaAprobacion: new Date(),
           fechaEmision: data.fechaEmision ?? hoy,
           fechaEntregaEsperada: data.fechaEntregaEsperada ?? null,
           subtotal: String(totales.subtotal),
@@ -151,6 +156,10 @@ export async function crearOcDesdeCotizacion(
           cotizacionOrigenId: cotizacionId,
           moneda: cot.moneda,
           tipoCambio: cot.tipoCambio,
+          // Sin paso de aprobación: nace lista para recibir.
+          estado: 'aprobada',
+          fechaEnvio: new Date(),
+          fechaAprobacion: new Date(),
           fechaEmision: hoy,
           subtotal: cot.subtotal,
           igv: cot.igv,
@@ -363,10 +372,22 @@ export async function eliminarOrden(ordenId: string): Promise<ActionResult> {
     .where(and(eq(ordenesCompra.id, ordenId), eq(ordenesCompra.tenantId, tenant.id)));
 
   if (!actual) return { success: false, error: 'Orden no encontrada' };
-  if (actual.estado !== 'borrador')
+  // Se puede eliminar mientras no haya recepciones (borrador legado o aprobada
+  // recién creada — ya no hay paso de aprobación).
+  if (!['borrador', 'enviada', 'aprobada'].includes(actual.estado))
     return {
       success: false,
-      error: `Solo se puede eliminar en borrador (actual: ${actual.estado})`,
+      error: `No se puede eliminar una orden ya recibida (actual: ${actual.estado})`,
+    };
+
+  const lineasRecep = await db
+    .select({ recibida: lineasOrdenCompra.cantidadRecibida })
+    .from(lineasOrdenCompra)
+    .where(eq(lineasOrdenCompra.ordenId, ordenId));
+  if (lineasRecep.some((l) => Number(l.recibida) > 0))
+    return {
+      success: false,
+      error: 'No se puede eliminar una orden con recepciones registradas',
     };
 
   await db.delete(ordenesCompra).where(eq(ordenesCompra.id, ordenId));
