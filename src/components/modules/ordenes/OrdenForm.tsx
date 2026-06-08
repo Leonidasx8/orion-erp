@@ -170,20 +170,8 @@ export function OrdenForm({ companySlug, proveedores, productos }: Props) {
             </select>
           </Field>
 
-          <Field
-            label={moneda === 'USD' ? 'Tipo de cambio *' : 'Tipo de cambio'}
-            error={errors.tipoCambio?.message}
-          >
-            <input
-              type="number"
-              step="0.0001"
-              min="0"
-              disabled={moneda === 'PEN'}
-              {...register('tipoCambio')}
-              className={cn(inputCls, 'tabular-nums')}
-              placeholder={moneda === 'PEN' ? 'No aplica' : '3.7500'}
-            />
-          </Field>
+          {/* Tipo de cambio oculto: USD es la moneda base. Se conserva por debajo. */}
+          <input type="hidden" {...register('tipoCambio')} />
 
           <Field label="Fecha emisión *" error={errors.fechaEmision?.message}>
             <input type="date" {...register('fechaEmision')} className={inputCls} />

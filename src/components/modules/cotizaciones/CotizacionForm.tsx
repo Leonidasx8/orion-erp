@@ -137,7 +137,7 @@ export function CotizacionForm({
         }
       : {
           clienteId: defaultClienteId ?? '',
-          moneda: 'PEN',
+          moneda: 'USD',
           fechaEmision: todayIso(),
           fechaVencimiento: plusDaysIso(3),
           descuentoGlobal: 0,
@@ -371,29 +371,17 @@ export function CotizacionForm({
                 </Field>
               </div>
 
-              {/* 2-col: Moneda | Tipo de cambio */}
+              {/* Moneda (USD es la moneda base de venta). El tipo de cambio se
+                  oculta pero se conserva por debajo para cotizaciones en PEN. */}
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Moneda *">
                   <select {...register('moneda')} className={inputCls}>
-                    <option value="PEN">PEN — Soles</option>
                     <option value="USD">USD — Dólares</option>
+                    <option value="PEN">PEN — Soles</option>
                   </select>
                 </Field>
-                <Field
-                  label={moneda === 'USD' ? 'Tipo de cambio *' : 'Tipo de cambio'}
-                  error={errors.tipoCambio?.message}
-                >
-                  <input
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    disabled={moneda === 'PEN'}
-                    {...register('tipoCambio')}
-                    className={cn(inputCls, 'tabular-nums')}
-                    placeholder={moneda === 'PEN' ? 'No aplica' : '3.7500'}
-                  />
-                </Field>
               </div>
+              <input type="hidden" {...register('tipoCambio')} />
             </div>
           </Card>
 

@@ -18,7 +18,7 @@ export type CotizacionItemInput = z.infer<typeof cotizacionItemSchema>;
 export const cotizacionSchema = z
   .object({
     clienteId: z.string().uuid('Selecciona un cliente'),
-    moneda: z.enum(monedasCotizacion).default('PEN'),
+    moneda: z.enum(monedasCotizacion).default('USD'),
     tipoCambio: z.preprocess(
       (v) => (v === '' || v == null ? undefined : v),
       z.coerce.number().positive().optional()
@@ -37,10 +37,8 @@ export const cotizacionSchema = z
     contactoClienteEmail: z.string().max(200).optional(),
     items: z.array(cotizacionItemSchema).min(1, 'La cotización debe tener al menos un ítem'),
   })
-  .refine((d) => d.moneda === 'PEN' || (d.tipoCambio != null && d.tipoCambio > 0), {
-    message: 'Tipo de cambio requerido para USD',
-    path: ['tipoCambio'],
-  })
+  // El tipo de cambio dejó de ser obligatorio: USD es la moneda base de venta.
+  // El campo se conserva (oculto en la UI) para cotizaciones en PEN.
   .refine((d) => new Date(d.fechaVencimiento) >= new Date(d.fechaEmision), {
     message: 'Vencimiento no puede ser anterior a la emisión',
     path: ['fechaVencimiento'],
