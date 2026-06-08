@@ -2,10 +2,48 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-08 tarde GMT-5 (worker SUNAT + quick wins observaciones Lucas)
+**Última actualización:** 2026-06-08 noche GMT-5 (🎉 FACTURACIÓN SUNAT OPERATIVA + respuestas Lucas)
 **Branch activa:** `feat/observaciones-lucas-quickwins` (NO mergeada/desplegada aún) — sale de `main`
-**Estado verificado:** Typecheck verde en cada commit. Worker SUNAT validado HTTP 200. Nubefact: serie F001 SIGUE rechazada (falta comprar plan, lado Lucas).
+**Estado verificado:** F001-13 ACEPTADA por SUNAT (primera factura real E2E). Typecheck verde en cada commit del branch.
 **Último commit prod:** `14023d8` — fix(ui): hover SelectItem
+
+---
+
+## 🎉 RESUELTO 2026-06-08 noche — FACTURACIÓN ELECTRÓNICA OPERATIVA (SUNAT acepta)
+
+El bloqueador de meses se cerró. **F001-00000013 ACEPTADA por SUNAT** (E2E: producto→inventario→cotización→factura→worker→Nubefact→SUNAT). Detalle completo en memoria `project_nubefact_serie_blocker`.
+
+**Eran 2 problemas de config en la cuenta Nubefact de Idex (no del código):**
+
+1. El token API apuntaba al local demo (series FFF1/BBB1). Creé un token para el local "Facturas" (series reales F001/B001) y actualicé `tenants.config_sunat.token` → `c08aba24…`.
+2. El local "Facturas" tenía código de establecimiento SUNAT `0001` (anexo no declarado → rechazo SUNAT 3239). Lo cambié a `0000` (matriz declarada) en Nubefact.
+
+**Acceso Nubefact:** `desarrolladoridex@gmail.com` / `orion123!`. **F001-12 quedó rechazada** (intento con establecimiento viejo, número quemado). Datos de prueba en prod: producto PRUEBA-1, cliente SUNAT 20131312955, COT-28/29, F001-13 (real aceptada, dejada como prueba).
+
+---
+
+## 📋 2026-06-08 — Respuestas de Lucas al doc v5 (decisiones)
+
+Ver memoria `project_respuestas_lucas_v5`. Traducción a tareas:
+
+**DENTRO de contrato — ya hecho/no requiere código:**
+
+- Botón "ajustar stock": YA existe en `InventarioList` (gateado por permiso `inventario.ajuste_manual`).
+- Filtro por calibre: YA funciona — el buscador de `ProductosList` matchea `nombre`, y el calibre va en el nombre ("18 AWG"). Lucas confirmó "cada calibre = un producto".
+
+**DENTRO de contrato — pendiente de implementar:**
+
+- Dashboard: **monedas separadas** USD/PEN (Lucas NO mezcla; si cotiza en ambas hace 2 cotizaciones). Hoy el dashboard suma asumiendo soles → arreglar.
+- Inventario en **Idex (arranca 0) Y Agroalves (con stock real)**; 1 almacén; sin alertas de stock bajo por ahora; **salida de stock al emitir la GUÍA** (no la factura); costeo promedio ponderado **pero mostrando el costo exacto por lote/stock**.
+- Guías de remisión: **2 casos** (Idex traslada / cliente recoge) — Lucas lo da por in-contract.
+- Cuentas bancarias por moneda en PDF (4.6); catálogo completo unidades SUNAT (7.3, usar lista oficial cat.03, NO de memoria); bug PDF de OC (5.5).
+- **Roles:** Lucas se considera ADMIN, no Superadmin ("el Superadmin solo actualiza el software" = Dignita). Las aprobaciones (margen <10%, >USD 5000) deben ir al Admin (Lucas). Revisar matriz de roles.
+
+**FUERA de contrato (addendum/v2):**
+
+- **Retención**: Lucas SÍ la necesita (a él le retienen) — campo de % retención en factura. (ref: factura PuraFruit.)
+- **Anticipo**: Lucas lo usa.
+- Control de crédito con freno + aviso (Lucas lo creía in-contract — manejar con tacto); reserva de stock por cliente (ligado al costo por lote); guardar/reutilizar vehículo-conductor en guías.
 
 ---
 
