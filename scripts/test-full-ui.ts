@@ -5,7 +5,7 @@
  */
 import { chromium, type Page, type BrowserContext } from 'playwright';
 
-const BASE = 'https://orion-rp.com';
+const BASE = process.env.TEST_BASE_URL ?? 'https://orion-rp.com';
 const SLUG = 'idex';
 
 const USERS = {
@@ -54,10 +54,13 @@ async function login(ctx: BrowserContext, email: string, password: string): Prom
   await page.goto(`${BASE}/login`, { waitUntil: 'networkidle', timeout: 30000 });
   await page.fill('input#email', email);
   await page.fill('input#password', password);
+  // Dismiss cookie banner FIRST — overlays y bloquea el botón "Ingresar"
+  await page
+    .click('button:has-text("Accept"), button:has-text("Decline")', { timeout: 3000 })
+    .catch(() => {});
   await page.waitForSelector('button:not([disabled])', { timeout: 5000 });
   await page.click('button:has-text("Ingresar")');
   await page.waitForURL((url) => !url.toString().includes('/login'), { timeout: 20000 });
-  // Dismiss cookie banner if present
   await page.click('button:has-text("Decline"), button:has-text("Accept")').catch(() => {});
   return page;
 }
