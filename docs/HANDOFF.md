@@ -2,10 +2,35 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-08 mediodía GMT-5 (worker SUNAT revivido — root cause infra)
-**Branch activa:** `main` (producción desplegada en orion-rp.com)
-**Estado verificado:** Worker SUNAT cron→worker→DB validado HTTP 200 (sin emitir). Typecheck pendiente de re-correr.
+**Última actualización:** 2026-06-08 tarde GMT-5 (worker SUNAT + quick wins observaciones Lucas)
+**Branch activa:** `feat/observaciones-lucas-quickwins` (NO mergeada/desplegada aún) — sale de `main`
+**Estado verificado:** Typecheck verde en cada commit. Worker SUNAT validado HTTP 200. Nubefact: serie F001 SIGUE rechazada (falta comprar plan, lado Lucas).
 **Último commit prod:** `14023d8` — fix(ui): hover SelectItem
+
+---
+
+## 🚧 EN CURSO 2026-06-08 — Quick wins observaciones Lucas (rama `feat/observaciones-lucas-quickwins`)
+
+Implementación de los quick wins cerrados por las respuestas de Lucas en el Google Doc (id `1l3W0xeFZB66_BnuJG7_nJgZaP_d3jAJWSzB_S7f6LrY`). **Rama nueva, sin mergear ni desplegar — falta probar en navegador.**
+
+| Commit    | Qué                                                                                                                                                                                                               | Obs           |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `d736838` | Sidebar/título "Compras a Proveedores"→"Órdenes de Compra"; "Añadir línea"→"Añadir ítem" (cotiz/OC/factura); quitar campo "Lista de precios" del form de cliente (se mantiene en schema/defaults)                 | 5.1, 5.2, P1  |
+| `8d14f6d` | USD por defecto en cotización (OC ya era USD); ocultar "Tipo de cambio" en cotización y OC (input oculto, dato se conserva); quitar refines que exigían TC para USD. **Factura NO tocada** (TC lo necesita SUNAT) | 4.3, 4.8, 5.4 |
+| `cc99145` | "Precio actual"→"Precio de venta" (actualización masiva) y "Precio unitario (S/)"→"Precio de venta (USD)" en form de producto                                                                                     | 3.2           |
+| `18347f7` | OC sin paso de aprobación: nace en estado `aprobada` lista para recibir; `eliminar` permite borrar sin recepciones. Botones Enviar/Aprobar quedan solo para OCs legadas                                           | nuevo (Lucas) |
+
+**Pendiente de este lote (no hecho aún):**
+
+- 4.6 Cuentas bancarias por moneda en PDF — el PDF NO recibe hoy las cuentas USD (`bancoCuentaUsd`/`bancoCciUsd`); hay que pasarlas en la route `api/.../cotizaciones/[id]/pdf` + filtrar por `data.moneda`.
+- 7.3 Catálogo completo unidades SUNAT — `unidades_medida` es tabla en DB (no constante); falta seed/migration con catálogo 03 SUNAT.
+- 6.2 Botón "Ajustar stock" visible en InventarioList (ruta `/inventario/[id]/ajuste` existe; falta el botón en la lista).
+- 5.5 Bug PDF de OC — falta reproducir.
+- Follow-up OC: simplificar stepper/banner visual a 3 pasos (Creada→Recibir→Cerrada) y migrar las 7 OCs legadas (borrador/enviada) si se quiere flujo 100% limpio.
+
+**Item 3.1 (quitar variación % en producto):** NO existe tal control en el form individual de producto; solo en actualización masiva (feature intencional). NO tocar sin confirmar con Lucas.
+
+**Features grandes del doc (diseñar antes de codear):** freno de línea de crédito + correo al admin (P7), reserva de stock antes de OC, precio proveedor ≠ precio venta en OC, GRE guías 2 casos (traslado Idex / comprador), NC/ND + exportación + detracción (bloqueados hasta Nubefact activo).
 
 ---
 
