@@ -2,10 +2,40 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-03 madrugada GMT-5 (UI sweep Claude Design + diagnóstico reportes)
+**Última actualización:** 2026-06-08 mediodía GMT-5 (worker SUNAT revivido — root cause infra)
 **Branch activa:** `main` (producción desplegada en orion-rp.com)
-**Estado verificado:** Typecheck verde (0 errores). Deploy prod OK (commit `06a1496`).
-**Último commit prod:** `06a1496` — feat(ui): política de precios + roles toggles + usuarios rediseño
+**Estado verificado:** Worker SUNAT cron→worker→DB validado HTTP 200 (sin emitir). Typecheck pendiente de re-correr.
+**Último commit prod:** `14023d8` — fix(ui): hover SelectItem
+
+---
+
+## ✅ RESUELTO 2026-06-08 — Worker SUNAT estaba MUERTO (no era la serie)
+
+**Contexto:** Lucas habilitó la serie F001 el 05-jun, pero la facturación seguía sin emitir. **La causa real NO era la serie** — era infra de la DB rota tras recrear/restaurar el proyecto Supabase (creado 01-jun).
+
+**Diagnóstico (todo read-only):**
+
+- El cron `sunat-worker-even` (jobid 1, cada minuto) **fallaba siempre**: `ERROR: schema "net" does not exist` → la extensión **`pg_net` no estaba instalada**.
+- Además `app.settings.sunat_worker_url` = `null` y `sunat_worker_secret` sin setear → aunque pg_net existiera, posteaba a URL nula.
+- Consecuencia: la cola pgmq nunca se drenaba. F001-11 (prueba PEN 42.80) llevaba encolada sin tocar desde 06-04. **Nunca hubo una emisión exitosa** (log solo tiene los 3 errores de serie del 06-02).
+
+**Fix aplicado (vía Supabase MCP, rol `postgres`):**
+
+1. `CREATE EXTENSION IF NOT EXISTS pg_net;` (quedó v0.20.3).
+2. `ALTER DATABASE SET app.settings.*` → **permission denied** (el rol no es superusuario). Workaround: reescribí el **comando del cron job 1** con `cron.alter_job` embebiendo URL + secret directamente (sin depender del GUC):
+   - URL: `https://orion-rp.com/api/sunat/procesar-cola`
+   - Secret: `orion-sunat-prod-ad20ab214f6334d1` (coincide con `SUNAT_WORKER_SECRET` de Vercel — validado, no dio 401).
+3. Archivé el mensaje F001-11 de la cola (`pgmq.archive('sunat_outbox', 6)`) para que el worker NO emitiera al revivir. La factura sigue en `pendiente` (reversible: re-encolar con `pgmq.send`).
+
+**Validación (sin emitir nada — cola vacía):** llamada manual + corrida programada del cron → worker devolvió `HTTP 200 {"ok":true,"processed":0}`. Cadena cron→worker→DB sana.
+
+**⚠️ RUNBOOK DE RESTORE:** si se vuelve a recrear/restaurar la DB Supabase, **repetir el fix**: (1) habilitar `pg_net`, (2) re-setear el comando del cron job con `cron.alter_job` (URL+secret). pgmq y pg_cron sí los traen las migrations; pg_net + el comando del cron NO.
+
+### ⏳ PENDIENTE para cerrar facturación E2E (requiere a Lucas)
+
+1. **Confirmar modo Nubefact (live vs pruebas)** — ajuste del panel Nubefact que solo ve Lucas. `buildFactura` fuerza `enviar_automaticamente_a_la_sunat: true`, así que CUALQUIER emisión va a SUNAT real si la cuenta está en producción.
+2. **Emitir 1 factura de prueba** una vez confirmado el modo. Re-encolar es un one-liner: `SELECT pgmq.send('sunat_outbox', '{"tenantId":"…","documentoTipo":"factura","documentoId":"<uuid>","intento":1,"encoladoAt":"…"}'::jsonb);` y esperar ≤60s al cron.
+3. **NO re-emitir F001-6/7/8/9** (`error_red`): son data basura (clientes ficticios "Grupo Minera Cerro Verde"; F001-9 con RUC inválido). Dejar como error histórico. La instrucción vieja de "re-encolar F001-6/7/8/9" quedó obsoleta e insegura.
 
 ---
 
