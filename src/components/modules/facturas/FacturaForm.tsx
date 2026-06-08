@@ -293,7 +293,7 @@ export function FacturaForm({
                 className="inline-flex h-7 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-2.5 text-[12px] font-medium text-orion-fg-muted hover:bg-orion-bg-muted hover:text-orion-fg"
               >
                 <Plus size={12} />
-                Agregar línea
+                Añadir ítem
               </button>
             </div>
 

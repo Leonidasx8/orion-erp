@@ -1,0 +1,84 @@
+<h2>Diseño — Parte 3: Banner en Inventario</h2>
+<p class="subtitle">Aparece cuando hay productos sin stock o críticos. Le dice al admin exactamente qué hacer.</p>
+
+<div class="mockup" style="max-width: 780px; margin: 0 auto;">
+  <div class="mockup-header">Inventario · 24 productos</div>
+  <div class="mockup-body" style="padding: 1rem; background: #f9fafb;">
+
+    <!-- BANNER informativo (aparece cuando hay sin_stock o critico) -->
+    <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:0.8rem 1rem; margin-bottom:0.8rem; display:flex; align-items:flex-start; gap:0.8rem;">
+      <div style="font-size:1.2rem; flex-shrink:0; margin-top:0.1rem;">🔴</div>
+      <div style="flex:1;">
+        <div style="font-size:0.8rem; font-weight:700; color:#991b1b;">4 productos necesitan reposición de stock</div>
+        <div style="font-size:0.72rem; color:#b91c1c; margin-top:0.2rem; line-height:1.5;">
+          Para agregar stock, crea una <strong>Orden de Compra</strong> al proveedor y luego registra la recepción cuando llegue la mercadería. El inventario se actualiza solo.
+        </div>
+        <div style="margin-top:0.6rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <a style="background:#ef4444; color:white; font-size:0.7rem; font-weight:700; padding:0.3rem 0.7rem; border-radius:5px; cursor:pointer; text-decoration:none;">+ Nueva orden de compra</a>
+          <a style="background:transparent; color:#ef4444; font-size:0.7rem; font-weight:600; padding:0.3rem 0.7rem; border-radius:5px; border:1px solid #fca5a5; cursor:pointer; text-decoration:none;">Ver OC pendientes →</a>
+        </div>
+      </div>
+      <div style="font-size:0.8rem; cursor:pointer; color:#9ca3af; flex-shrink:0;">✕</div>
+    </div>
+
+    <!-- Tabla de inventario (referencia) -->
+    <div style="background:white; border-radius:8px; border:1px solid #e5e7eb; overflow:hidden;">
+      <div style="padding:0.6rem 1rem; border-bottom:1px solid #f3f4f6; display:flex; gap:0.5rem; align-items:center;">
+        <input class="mock-input" placeholder="Buscar producto..." style="flex:1; font-size:0.75rem;">
+        <div style="background:#fee2e2; color:#ef4444; font-size:0.7rem; font-weight:600; padding:3px 8px; border-radius:999px; cursor:pointer;">Sin stock (2)</div>
+        <div style="background:#fef3c7; color:#f59e0b; font-size:0.7rem; font-weight:600; padding:3px 8px; border-radius:999px; cursor:pointer;">Crítico (2)</div>
+        <div style="background:#f3f4f6; color:#6b7280; font-size:0.7rem; padding:3px 8px; border-radius:999px; cursor:pointer;">Normal (20)</div>
+      </div>
+      <!-- Fila sin stock -->
+      <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; padding:0.55rem 1rem; border-bottom:1px solid #fef2f2; background:#fef9f9; font-size:0.73rem; align-items:center; gap:0.5rem;">
+        <div><span style="font-weight:600;">Cable UTP Cat6 x metro</span><br><span style="color:#9ca3af; font-size:0.65rem;">SKU-0041</span></div>
+        <div style="color:#ef4444; font-weight:700;">0 unid.</div>
+        <div style="color:#6b7280;">S/ 0.00</div>
+        <div><span style="background:#fee2e2; color:#ef4444; font-size:0.65rem; padding:2px 7px; border-radius:999px; font-weight:600;">Sin stock</span></div>
+      </div>
+      <!-- Fila crítico -->
+      <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; padding:0.55rem 1rem; border-bottom:1px solid #fffbeb; background:#fffef9; font-size:0.73rem; align-items:center; gap:0.5rem;">
+        <div><span style="font-weight:600;">Switch 8 puertos</span><br><span style="color:#9ca3af; font-size:0.65rem;">SKU-0022</span></div>
+        <div style="color:#f59e0b; font-weight:700;">3 unid.</div>
+        <div style="color:#6b7280;">S/ 450.00</div>
+        <div><span style="background:#fef3c7; color:#f59e0b; font-size:0.65rem; padding:2px 7px; border-radius:999px; font-weight:600;">Crítico</span></div>
+      </div>
+      <!-- Fila normal -->
+      <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; padding:0.55rem 1rem; font-size:0.73rem; align-items:center; gap:0.5rem; color:#6b7280;">
+        <div><span style="font-weight:500; color:#374151;">Monitor 24"</span><br><span style="font-size:0.65rem;">SKU-0011</span></div>
+        <div style="color:#374151;">18 unid.</div>
+        <div>S/ 12,600</div>
+        <div><span style="background:#f0fdf4; color:#16a34a; font-size:0.65rem; padding:2px 7px; border-radius:999px; font-weight:600;">Normal</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="max-width:780px; margin: 1.2rem auto 0; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:0.8rem 1rem; font-size:0.82rem; color:#166534;">
+  <strong>Lógica del banner:</strong>
+  <ul style="margin:0.4rem 0 0 1.2rem; padding:0; line-height:1.7;">
+    <li>Aparece solo cuando hay al menos 1 producto en sin_stock o crítico</li>
+    <li>El botón "Nueva OC" lleva directo a <code>/ordenes/nueva</code></li>
+    <li>El botón "Ver OC pendientes" lleva a <code>/ordenes?estado=aprobada</code> (OC listas para recibir)</li>
+    <li>Se puede cerrar con la X (se guarda en localStorage, no vuelve hasta el próximo día)</li>
+  </ul>
+</div>
+
+<div style="max-width:780px; margin:1rem auto 0;">
+  <h3 style="margin-bottom:0.8rem;">¿Cómo te parece este banner?</h3>
+  <div class="options">
+    <div class="option" data-choice="si" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content"><h3>Perfecto, aprobado</h3><p>Los 3 diseños están listos. Pasamos al plan de implementación.</p></div>
+    </div>
+    <div class="option" data-choice="sin-x" onclick="toggleSelect(this)">
+      <div class="letter">~</div>
+      <div class="content"><h3>Sin botón de cerrar</h3><p>Que el banner siempre se muestre mientras haya stock crítico.</p></div>
+    </div>
+    <div class="option" data-choice="cambiar" onclick="toggleSelect(this)">
+      <div class="letter">✗</div>
+      <div class="content"><h3>Cambiar algo</h3><p>Dime qué ajustar.</p></div>
+    </div>
+  </div>
+</div>

@@ -40,12 +40,6 @@ const PLAZOS_PAGO = [
   { value: '60dias', label: '60 días' },
 ] as const;
 
-const LISTAS_PRECIO = [
-  { value: 'default', label: 'Lista AAA (default)' },
-  { value: 'distribuidor', label: 'Distribuidor' },
-  { value: 'mayorista', label: 'Mayorista' },
-];
-
 export function ClienteForm({ companySlug, cliente }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -389,28 +383,6 @@ export function ClienteForm({ companySlug, cliente }: Props) {
                 {PLAZOS_PAGO.map((p) => (
                   <SelectItem key={p.value} value={p.value}>
                     {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Lista de precios</Label>
-            <Select
-              defaultValue={
-                cliente
-                  ? ((cliente as Cliente & { listaPrecio?: string }).listaPrecio ?? 'default')
-                  : 'default'
-              }
-              onValueChange={(v) => setValue('listaPrecio', v)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LISTAS_PRECIO.map((l) => (
-                  <SelectItem key={l.value} value={l.value}>
-                    {l.label}
                   </SelectItem>
                 ))}
               </SelectContent>

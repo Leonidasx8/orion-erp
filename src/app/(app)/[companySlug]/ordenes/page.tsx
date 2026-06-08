@@ -6,7 +6,7 @@ import { clientes, lineasOrdenCompra, ordenesCompra } from '@/lib/db/schema';
 import { OrdenesList, type OrdenRow } from '@/components/modules/ordenes/OrdenesList';
 import type { Estado } from '@/components/shared/EstadoBadge';
 
-export const metadata = { title: 'Compras a Proveedores' };
+export const metadata = { title: 'Órdenes de Compra' };
 
 const PAGE_SIZE = 20;
 

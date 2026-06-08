@@ -1,0 +1,13 @@
+{"type":"server-started","port":54761,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:54761","screen_dir":"/Users/leonidasyauri/dev/orion-erp/.superpowers/brainstorm/77562-1780489418/content","state_dir":"/Users/leonidasyauri/dev/orion-erp/.superpowers/brainstorm/77562-1780489418/state"}
+{"type":"screen-added","file":"/Users/leonidasyauri/dev/orion-erp/.superpowers/brainstorm/77562-1780489418/content/flujo-actual.html"}
+{"source":"user-event","type":"click","text":"D\n    \n      Todas las anteriores / el flujo completo es nuevo para él\n      Es la primera vez que trabaja con un ERP y ningún paso le resulta intuitivo.","choice":"d","id":null,"timestamp":1780489482587}
+{"type":"screen-added","file":"/Users/leonidasyauri/dev/orion-erp/.superpowers/brainstorm/77562-1780489418/content/waiting-1.html"}
+{"type":"screen-added","file":"/Users/leonidasyauri/dev/orion-erp/.superpowers/brainstorm/77562-1780489418/content/enfoques.html"}
+{"type":"screen-added","file":"/Users/leonidasyauri/dev/orion-erp/.superpowers/brainstorm/77562-1780489418/content/diseno-dashboard.html"}
+{"source":"user-event","type":"click","text":"✓\n      Sí, así está bienSeguimos con la parte 2 (flujo en OC).","choice":"si","id":null,"timestamp":1780490822458}
+{"type":"screen-added","file":"/Users/leonidasyauri/dev/orion-erp/.superpowers/brainstorm/77562-1780489418/content/diseno-oc.html"}
+{"source":"user-event","type":"click","text":"✓\n      Sí, adelantePasamos a la parte 3 (Inventario).","choice":"si","id":null,"timestamp":1780490884026}
+{"type":"screen-added","file":"/Users/leonidasyauri/dev/orion-erp/.superpowers/brainstorm/77562-1780489418/content/diseno-inventario.html"}
+{"source":"user-event","type":"click","text":"✓\n      Perfecto, aprobadoLos 3 diseños están listos. Pasamos al plan de implementación.","choice":"si","id":null,"timestamp":1780490963324}
+{"type":"screen-added","file":"/Users/leonidasyauri/dev/orion-erp/.superpowers/brainstorm/77562-1780489418/content/waiting-2.html"}
+{"type":"server-stopped","reason":"owner process exited"}

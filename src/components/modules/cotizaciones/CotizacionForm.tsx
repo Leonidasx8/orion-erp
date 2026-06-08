@@ -592,7 +592,7 @@ export function CotizacionForm({
                 className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-orion-fg-muted hover:text-orion-fg"
               >
                 <Plus size={13} />
-                Agregar línea manual
+                Añadir ítem manual
               </button>
             </div>
           </Card>

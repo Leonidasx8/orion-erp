@@ -1,0 +1,75 @@
+<h2>El flujo actual de inventario</h2>
+<p class="subtitle">Así funciona hoy — ¿dónde se pierde el administrador?</p>
+
+<div class="section" style="margin-bottom: 2rem;">
+  <div style="display: flex; align-items: center; gap: 0; flex-wrap: wrap; justify-content: center; margin: 2rem 0;">
+    <div style="text-align:center; padding: 1rem 1.2rem; background: #f3f4f6; border-radius: 8px; min-width: 100px;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.3rem;">📝</div>
+      <div style="font-weight: 600; font-size: 0.85rem;">Crear OC</div>
+      <div style="font-size: 0.72rem; color: #6b7280; margin-top: 0.2rem;">borrador</div>
+    </div>
+    <div style="color: #9ca3af; font-size: 1.4rem; padding: 0 0.5rem;">→</div>
+    <div style="text-align:center; padding: 1rem 1.2rem; background: #eff6ff; border-radius: 8px; min-width: 100px;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.3rem;">📤</div>
+      <div style="font-weight: 600; font-size: 0.85rem;">Enviar al proveedor</div>
+      <div style="font-size: 0.72rem; color: #6b7280; margin-top: 0.2rem;">enviada</div>
+    </div>
+    <div style="color: #9ca3af; font-size: 1.4rem; padding: 0 0.5rem;">→</div>
+    <div style="text-align:center; padding: 1rem 1.2rem; background: #f0fdf4; border-radius: 8px; min-width: 100px;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.3rem;">✅</div>
+      <div style="font-weight: 600; font-size: 0.85rem;">Aprobar OC</div>
+      <div style="font-size: 0.72rem; color: #6b7280; margin-top: 0.2rem;">aprobada</div>
+    </div>
+    <div style="color: #9ca3af; font-size: 1.4rem; padding: 0 0.5rem;">→</div>
+    <div style="text-align:center; padding: 1rem 1.2rem; background: #fffbeb; border-radius: 8px; border: 2px dashed #f59e0b; min-width: 110px; position: relative;">
+      <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #f59e0b; color: white; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap;">STOCK ENTRA AQUÍ</div>
+      <div style="font-size: 1.5rem; margin-bottom: 0.3rem;">📦</div>
+      <div style="font-weight: 600; font-size: 0.85rem;">Registrar recepción</div>
+      <div style="font-size: 0.72rem; color: #6b7280; margin-top: 0.2rem;">recibida_parcial / total</div>
+    </div>
+    <div style="color: #9ca3af; font-size: 1.4rem; padding: 0 0.5rem;">→</div>
+    <div style="text-align:center; padding: 1rem 1.2rem; background: #f3f4f6; border-radius: 8px; min-width: 100px;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.3rem;">🔒</div>
+      <div style="font-weight: 600; font-size: 0.85rem;">Cerrar OC</div>
+      <div style="font-size: 0.72rem; color: #6b7280; margin-top: 0.2rem;">cerrada</div>
+    </div>
+  </div>
+
+  <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0; font-size: 0.88rem; color: #92400e;">
+    <strong>El inventario NO sube al aprobar la OC.</strong> Solo sube cuando el admin hace clic en "Registrar recepción" y confirma las cantidades recibidas. Ese paso no está conectado visualmente con el módulo de Inventario.
+  </div>
+</div>
+
+<h3 style="margin-bottom: 1rem;">¿Dónde se pierde más el administrador?</h3>
+<p class="subtitle">Selecciona la que mejor describe el problema</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>No sabe que tiene que ir a OC para agregar stock</h3>
+      <p>Busca un botón "Agregar inventario" en el módulo de Inventario y no lo encuentra. No relaciona "recibir mercadería" con "subir stock".</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>El flujo borrador → enviada → aprobada → recibida es confuso</h3>
+      <p>Hay demasiados pasos y no queda claro qué hace cada uno o en qué paso está parado.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>No hay feedback de que el stock ya subió</h3>
+      <p>Registra la recepción pero no ve confirmación de que el inventario se actualizó. No sabe si funcionó.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="d" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Todas las anteriores / el flujo completo es nuevo para él</h3>
+      <p>Es la primera vez que trabaja con un ERP y ningún paso le resulta intuitivo.</p>
+    </div>
+  </div>
+</div>

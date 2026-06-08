@@ -213,7 +213,7 @@ export function OrdenForm({ companySlug, proveedores, productos }: Props) {
             className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-3 text-[13px] font-medium text-orion-fg hover:bg-orion-bg-muted"
           >
             <Plus size={13} />
-            Añadir línea
+            Añadir ítem
           </button>
         </CardHead>
 

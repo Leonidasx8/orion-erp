@@ -47,7 +47,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/clientes', label: 'Clientes', icon: Users },
       { href: '/productos', label: 'Productos', icon: Package },
       { href: '/cotizaciones', label: 'Cotizaciones', icon: FileText },
-      { href: '/ordenes', label: 'Compras a Proveedores', icon: ShoppingCart },
+      { href: '/ordenes', label: 'Órdenes de Compra', icon: ShoppingCart },
       { href: '/inventario', label: 'Inventario', icon: Layers },
     ],
   },
