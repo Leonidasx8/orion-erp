@@ -103,11 +103,11 @@ export function OrdenesList({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="m-0 text-[22px] font-semibold tracking-tight text-orion-fg">
-              Compras a Proveedores
+              Órdenes de Compra
             </h1>
             <ModuleHelp
               module="ordenes"
-              title="Compras a Proveedores"
+              title="Órdenes de Compra"
               description="Gestiona las órdenes de compra al proveedor. Al recepcionar, el inventario se actualiza automáticamente con el costo real."
               tips={[
                 'Flujo: Borrador → Enviada → Aprobada → Recibida',

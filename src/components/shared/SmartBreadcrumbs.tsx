@@ -9,7 +9,7 @@ const SEG: Record<string, string> = {
   clientes: 'Clientes',
   productos: 'Productos',
   cotizaciones: 'Cotizaciones',
-  ordenes: 'Compras a Proveedores',
+  ordenes: 'Órdenes de Compra',
   inventario: 'Inventario',
   facturas: 'Facturas',
   credito: 'Crédito y CxC',
