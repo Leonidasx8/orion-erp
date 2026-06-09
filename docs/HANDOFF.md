@@ -2,10 +2,12 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-08 noche GMT-5 (🎉 FACTURACIÓN SUNAT OPERATIVA + respuestas Lucas)
-**Branch activa:** `feat/observaciones-lucas-quickwins` (NO mergeada/desplegada aún) — sale de `main`
-**Estado verificado:** F001-13 ACEPTADA por SUNAT (primera factura real E2E). Typecheck verde en cada commit del branch.
-**Último commit prod:** `14023d8` — fix(ui): hover SelectItem
+**Última actualización:** 2026-06-09 (quick wins MERGEADOS a main + DESPLEGADOS a prod + stress test)
+**Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
+**Estado verificado:** Quick wins de Lucas EN VIVO (sidebar/H1 "Órdenes de Compra", USD default, "Aceptada cliente", PDF de OC funcional verificado, cuentas por moneda). Stress test 76✅/1❌(esperado)/6⏭️. F001-13 ACEPTADA por SUNAT.
+**Último commit prod:** `9b41825` — fix(ordenes): completar renombre a "Órdenes de Compra"
+
+> **gh gotcha:** la cuenta git activa se revierte sola a `DignitaTech` y rompe `git push orionrp` (repo privado de orionrp-hub da "not found"). Antes de push: `gh auth switch --user orionrp-hub`.
 
 ---
 
