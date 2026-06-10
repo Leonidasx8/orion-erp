@@ -1,6 +1,7 @@
 import type { GuiaRemisionPayload } from '../types';
 
-const TIPO_MAP: Record<string, number> = { '09': 9, '31': 31 };
+// Nubefact GRE codes (distinto de SUNAT): 7=Remitente (SUNAT 09), 8=Transportista (SUNAT 31)
+const TIPO_MAP: Record<string, number> = { '09': 7, '31': 8 };
 
 function isoAFecha(iso: string): string {
   const [y, m, d] = iso.split('-');
