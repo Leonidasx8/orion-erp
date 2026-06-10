@@ -299,10 +299,25 @@ export async function POST(req: Request) {
         fechaEmision: guia.fechaEmision,
         fechaInicioTraslado: guia.fechaInicioTraslado,
         destinatario: {
-          tipoDocumento: '6' as TipoDocIdentidad,
-          numeroDocumento: '',
-          razonSocial: '',
+          tipoDocumento: (guia.destinatarioTipoDocSnapshot ?? '6') as TipoDocIdentidad,
+          numeroDocumento: guia.destinatarioNumDocSnapshot ?? '',
+          razonSocial: guia.destinatarioRazonSocialSnapshot ?? '',
         },
+        ...(guia.transportistaRucSnapshot
+          ? {
+              transportista: {
+                rucDocumento: guia.transportistaRucSnapshot,
+                razonSocial: guia.transportistaNombreSnapshot ?? guia.transportistaRucSnapshot,
+              },
+            }
+          : {}),
+        ...(guia.vehiculoPlacaSnapshot
+          ? {
+              vehiculo: {
+                placa: guia.vehiculoPlacaSnapshot,
+              },
+            }
+          : {}),
         motivoTraslado: guia.motivoTraslado as MotivoTraslado,
         descripcionMotivo: guia.descripcionMotivo ?? undefined,
         modalidadTraslado: guia.modalidadTraslado as '01' | '02',

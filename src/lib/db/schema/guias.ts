@@ -89,6 +89,13 @@ export const guiasRemision = pgTable('guias_remision', {
   sunatCodigo: integer('sunat_codigo'),
   sunatMensaje: text('sunat_mensaje'),
 
+  destinatarioRazonSocialSnapshot: text('destinatario_razon_social_snapshot'),
+  destinatarioNumDocSnapshot: text('destinatario_num_doc_snapshot'),
+  destinatarioTipoDocSnapshot: text('destinatario_tipo_doc_snapshot'),
+  transportistaRucSnapshot: text('transportista_ruc_snapshot'),
+  transportistaNombreSnapshot: text('transportista_nombre_snapshot'),
+  vehiculoPlacaSnapshot: text('vehiculo_placa_snapshot'),
+
   facturaRelacionadaId: uuid('factura_relacionada_id'),
   observaciones: text('observaciones'),
   creadoPor: uuid('creado_por').notNull(),

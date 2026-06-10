@@ -5,7 +5,14 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { guiasRemision, lineasGuia, clientes, tenants, seriesDocumentos } from '@/lib/db/schema';
+import {
+  guiasRemision,
+  lineasGuia,
+  clientes,
+  tenants,
+  seriesDocumentos,
+  productos,
+} from '@/lib/db/schema';
 import { reservarCorrelativo } from '@/lib/sunat/reservar-correlativo';
 import { encolarEnvioSunat } from '@/lib/sunat/queue';
 import { registrarSalidaPorGuia } from './kardex-internal';
@@ -29,6 +36,7 @@ const CrearGuiaSchema = z.object({
     )
     .min(1, 'Agrega al menos un ítem'),
   transportistaNombre: z.string().optional(),
+  transportistaRuc: z.string().optional(),
   vehiculoPlaca: z.string().optional(),
   pesoBrutoTotal: z.coerce.number().min(0).optional(),
   observaciones: z.string().optional(),
@@ -53,14 +61,28 @@ export async function crearGuia(
     const direccionPartida = tenantRow?.direccionFiscal ?? 'Lima, Perú';
     const ubigeoPartida = tenantRow?.ubigeo ?? '150101';
 
-    // Cargar datos del cliente para ubigeo de llegada
+    // Cargar datos del cliente destinatario (ubigeo + snapshot para SUNAT)
     const [cliente] = await db
-      .select({ direccionSunat: clientes.direccionSunat, ubigeo: clientes.ubigeoSunat })
+      .select({
+        razonSocial: clientes.razonSocial,
+        nombres: clientes.nombres,
+        apellidoPaterno: clientes.apellidoPaterno,
+        tipoDocumento: clientes.tipoDocumento,
+        numeroDocumento: clientes.numeroDocumento,
+        direccionSunat: clientes.direccionSunat,
+        ubigeo: clientes.ubigeoSunat,
+      })
       .from(clientes)
       .where(and(eq(clientes.id, d.clienteId), eq(clientes.tenantId, tenant.id)));
     if (!cliente) return { success: false, error: 'Cliente no encontrado' };
 
     const ubigeoLlegada = cliente.ubigeo ?? '150101';
+    const destinatarioRazonSocial =
+      cliente.razonSocial ??
+      [cliente.nombres, cliente.apellidoPaterno].filter(Boolean).join(' ') ??
+      'Sin nombre';
+    const destinatarioTipoDoc = cliente.tipoDocumento ?? '6';
+    const destinatarioNumDoc = cliente.numeroDocumento ?? '';
 
     // Serie T001 por defecto para guías
     const [serie] = await db
@@ -89,6 +111,12 @@ export async function crearGuia(
         fechaEmision: hoy,
         fechaInicioTraslado: d.fechaInicioTraslado,
         destinatarioId: d.clienteId,
+        destinatarioRazonSocialSnapshot: destinatarioRazonSocial,
+        destinatarioNumDocSnapshot: destinatarioNumDoc,
+        destinatarioTipoDocSnapshot: destinatarioTipoDoc,
+        transportistaNombreSnapshot: d.transportistaNombre ?? null,
+        transportistaRucSnapshot: d.transportistaRuc ?? null,
+        vehiculoPlacaSnapshot: d.vehiculoPlaca ?? null,
         motivoTraslado: d.motivoTraslado,
         modalidadTraslado: d.modalidadTraslado,
         direccionPartida,
@@ -103,6 +131,19 @@ export async function crearGuia(
       })
       .returning({ id: guiasRemision.id });
 
+    // Precarga SKUs de productos referenciados
+    const productoIds = d.items.map((it) => it.productoId).filter(Boolean) as string[];
+    const skuMap = new Map<string, string>();
+    if (productoIds.length > 0) {
+      const rows = await db
+        .select({ id: productos.id, codigo: productos.codigo })
+        .from(productos)
+        .where(eq(productos.tenantId, tenant.id));
+      rows.forEach((r) => {
+        if (r.codigo) skuMap.set(r.id, r.codigo);
+      });
+    }
+
     // Insertar líneas de mercadería
     if (d.items.length > 0) {
       await db.insert(lineasGuia).values(
@@ -110,7 +151,7 @@ export async function crearGuia(
           guiaId: nuevaGuia.id,
           tenantId: tenant.id,
           productoId: it.productoId ?? null,
-          skuSnapshot: '',
+          skuSnapshot: it.productoId ? (skuMap.get(it.productoId) ?? '') : '',
           descripcion: it.descripcion,
           cantidad: String(it.cantidad),
           unidadMedida: it.unidadMedida,
