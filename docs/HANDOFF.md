@@ -2,10 +2,10 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-10 18:00 (PRUEBAS E2E COMPLETAS + CORREOS A LUCAS)
+**Última actualización:** 2026-06-10 22:10 (AUDIT COMPLETO + GRE T001-8 ACEPTADA SUNAT + COTIZACIÓN→GUÍA LINK)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
-**Estado verificado:** F001-14 ACEPTADA SUNAT ✅ · NC F002-1 creada (falta serie F002 en Nubefact) · Guía T001-7 creada ✅ (falta módulo GRE en Nubefact).
-**Último commit prod:** `584600f` — fix: GRE operation name and NC tipo_map/valorUnitario bugs
+**Estado verificado:** F001-14 ACEPTADA SUNAT ✅ · T001-8 ACEPTADA SUNAT ✅ · NC F002-1 creada (falta serie F002 en Nubefact) · Guía T001-7 Error red (falta módulo GRE en Nubefact) · AUDIT 14/14 módulos OK.
+**Último commit prod:** `6561f25` — fix: GRE "ya existe en NubeFacT" → consultar_guia fallback
 
 > **gh gotcha:** la cuenta git activa se revierte sola a `DignitaTech` y rompe `git push orionrp` (repo privado de orionrp-hub da "not found"). Antes de push: `gh auth switch --user orionrp-hub`.
 
@@ -46,6 +46,43 @@
 
 - **Entorno real**: cargar productos (3 archivos) · serie/correlativo E001 desde 11 · personalizar factura (logo/colores) · prueba real de facturar un cable a un cliente.
 - Dashboard monedas separadas · catálogo unidades SUNAT (cat. 03) · guías 2-casos · roles=Admin · salida de stock al emitir guía.
+
+---
+
+## ✅ 2026-06-10 tarde — Audit completo + GRE fix + cotización→guía link
+
+### Implementado y desplegado (commits `1f9f0bf` y `6561f25`)
+
+1. **Cotización → Guía link** — al crear guía nueva, selector pre-llena destinatario + ítems desde la cotización. Guía detail muestra badge clickeable con número, cliente, fecha, monto. (`migration 0049`, `guias.ts schema`, `server/actions/guias.ts`, `NuevaGuiaForm.tsx`, `guias/nueva/page.tsx`, `guias/[id]/page.tsx`)
+2. **GRE "ya existe en NubeFacT" fix** — el worker ahora detecta el error `ya existe` de Nubefact y llama `consultar_guia` en vez de marcar `error_red`. Funciona: T001-8 pasó de `error_red` → `aceptada` tras reenvío desde UI. (`/api/sunat/procesar-cola/route.ts`)
+
+### Audit de UI/módulos en producción (14/14 ✅)
+
+| Módulo            | Estado | Nota                                                       |
+| ----------------- | ------ | ---------------------------------------------------------- |
+| Dashboard         | ✅     | KPIs USD/PEN separados                                     |
+| Clientes          | ✅     | CRUD + exportar                                            |
+| Productos         | ✅     | CRUD + importar                                            |
+| Cotizaciones      | ✅     | Flujo completo                                             |
+| Órdenes de Compra | ✅     | Ruta `/ordenes` (no `/ordenes-compra`)                     |
+| Inventario        | ✅     | Vacío (sin productos cargados aún)                         |
+| Guías de remisión | ✅     | T001-7 error, T001-8 aceptada                              |
+| Facturas          | ✅     | F001-13/14 aceptadas SUNAT                                 |
+| Crédito y CxC     | ✅     | Aging report                                               |
+| Pipeline          | ✅     | Kanban 6 etapas                                            |
+| Reportes          | ✅     | 4 tarjetas                                                 |
+| Auditoría         | ✅     | Log de eventos                                             |
+| Usuarios          | ✅     | 4 usuarios activos                                         |
+| Roles             | ✅     | Matriz 3 roles × 11 módulos                                |
+| Configuración     | ✅     | Datos Grupo Idex SAC correctos; **logo URL = placeholder** |
+
+### Pendiente para demo mañana (11-jun)
+
+- [ ] **T001-7**: sigue en "Error red" (Nubefact no tiene módulo GRE habilitado para Idex). Pendiente que Lucas habilite GRE en su cuenta Nubefact.
+- [ ] **Logo en Configuración**: URL = `https://ejemplo.com/logo.png` — cargar el logo real de Grupo Idex SAC.
+- [ ] **Entorno real**: cargar los 3 archivos de productos que mandó Lucas (cables JUNIO, conectores, tableros). Usar el módulo Importar en Productos.
+- [ ] **Serie E001 desde 11**: reconciliar con Lucas/Nubefact antes de emitir facturas reales.
+- [ ] **Correo a Lucas**: documentar todas las pruebas hechas hoy y enviarlo.
 
 ---
 
