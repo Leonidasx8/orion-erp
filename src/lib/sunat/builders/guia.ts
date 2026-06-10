@@ -13,10 +13,9 @@ export function buildGuia(p: GuiaRemisionPayload): Record<string, unknown> {
 
   const base: Record<string, unknown> = {
     operacion: 'generar_guia',
-    tipo_de_comprobante: TIPO_MAP[p.tipoDocumento] ?? 9,
+    tipo_de_comprobante: TIPO_MAP[p.tipoDocumento] ?? 7,
     serie: p.serie,
     numero: p.numero,
-    sunat_transaction: 1,
 
     fecha_de_emision: isoAFecha(p.fechaEmision),
     fecha_de_inicio_de_traslado: isoAFecha(p.fechaInicioTraslado),
