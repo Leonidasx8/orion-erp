@@ -64,7 +64,7 @@ export function buildGuia(p: GuiaRemisionPayload): Record<string, unknown> {
     base.remitente_direccion = p.remitente.direccion ?? '';
   }
 
-  // Transportista y vehículo (transporte privado)
+  // Vehículo (transporte privado)
   if (p.modalidadTraslado === '02' && p.vehiculo) {
     base.placa_vehiculo = p.vehiculo.placa;
     if (p.vehiculo.configuracionVehicular) {
@@ -72,8 +72,8 @@ export function buildGuia(p: GuiaRemisionPayload): Record<string, unknown> {
     }
   }
 
-  // Transportista (transporte público) — tipo 31 o cuando se declara en tipo 09
-  if (!esRemitente && p.transportista) {
+  // Transportista — requerido para: tipo 31, o tipo 09 con modalidad 01 (público)
+  if (p.transportista && (!esRemitente || p.modalidadTraslado === '01')) {
     base.ruc_transportista = p.transportista.rucDocumento;
     base.nombre_transportista = p.transportista.razonSocial;
     if (p.transportista.numeroMtc) {
