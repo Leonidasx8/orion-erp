@@ -111,7 +111,7 @@ export default async function DashboardPage({
       FROM facturas
       WHERE tenant_id = ${tenant.id}
         AND estado_sunat = 'aceptada'
-        AND fecha_emision >= date_trunc('month', current_date)::text
+        AND fecha_emision >= date_trunc('month', current_date)::date
       GROUP BY moneda
     `),
   ]);
