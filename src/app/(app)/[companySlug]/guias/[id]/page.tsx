@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { and, eq } from 'drizzle-orm';
-import { ArrowLeft, MapPin, Truck } from 'lucide-react';
+import { ArrowLeft, FileText, MapPin, Truck } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { guiasRemision, lineasGuia } from '@/lib/db/schema';
+import { clientes, cotizaciones, guiasRemision, lineasGuia } from '@/lib/db/schema';
 import { PageHead } from '@/components/shared/PageHead';
 import { EstadoBadge } from '@/components/shared/EstadoBadge';
 import { ReenviarGuiaButton } from '@/components/modules/guias/ReenviarGuiaButton';
@@ -39,10 +39,29 @@ export default async function GuiaDetallePage({
 
   if (!guia) notFound();
 
-  const lineas = await db
-    .select()
-    .from(lineasGuia)
-    .where(and(eq(lineasGuia.guiaId, id), eq(lineasGuia.tenantId, tenant.id)));
+  const [lineas, cotizacionVinculada] = await Promise.all([
+    db
+      .select()
+      .from(lineasGuia)
+      .where(and(eq(lineasGuia.guiaId, id), eq(lineasGuia.tenantId, tenant.id))),
+    guia.cotizacionId
+      ? db
+          .select({
+            id: cotizaciones.id,
+            numeroCompleto: cotizaciones.numeroCompleto,
+            fechaEmision: cotizaciones.fechaEmision,
+            total: cotizaciones.total,
+            moneda: cotizaciones.moneda,
+            clienteNombre: clientes.razonSocial,
+            clienteNombres: clientes.nombres,
+            clienteApellido: clientes.apellidoPaterno,
+          })
+          .from(cotizaciones)
+          .innerJoin(clientes, eq(cotizaciones.clienteId, clientes.id))
+          .where(eq(cotizaciones.id, guia.cotizacionId))
+          .then((rows) => rows[0] ?? null)
+      : Promise.resolve(null),
+  ]);
 
   const numero = guia.numeroCompleto ?? `${guia.serie}-${String(guia.numero).padStart(8, '0')}`;
 
@@ -60,6 +79,36 @@ export default async function GuiaDetallePage({
         </div>
         <ReenviarGuiaButton guiaId={guia.id} estadoSunat={guia.estadoSunat ?? 'pendiente'} />
       </div>
+
+      {/* Cotización vinculada */}
+      {cotizacionVinculada && (
+        <Link
+          href={`/${companySlug}/cotizaciones/${cotizacionVinculada.id}`}
+          className="flex items-center gap-3 rounded-xl border border-orion-border bg-orion-bg p-4 shadow-orion-1 transition-colors hover:bg-orion-bg-subtle"
+        >
+          <FileText size={16} className="shrink-0 text-tenant-accent" />
+          <div className="min-w-0">
+            <p className="text-[11px] text-orion-fg-muted">Cotización de origen</p>
+            <p className="text-[13px] font-medium text-orion-fg">
+              {cotizacionVinculada.numeroCompleto}
+              {' · '}
+              {cotizacionVinculada.clienteNombre ??
+                [cotizacionVinculada.clienteNombres, cotizacionVinculada.clienteApellido]
+                  .filter(Boolean)
+                  .join(' ')}
+            </p>
+          </div>
+          <div className="ml-auto shrink-0 text-right">
+            <p className="text-[12px] text-orion-fg-muted">{cotizacionVinculada.fechaEmision}</p>
+            <p className="text-[13px] font-semibold text-orion-fg">
+              {cotizacionVinculada.moneda === 'USD' ? '$' : 'S/'}{' '}
+              {parseFloat(cotizacionVinculada.total).toLocaleString('es-PE', {
+                minimumFractionDigits: 2,
+              })}
+            </p>
+          </div>
+        </Link>
+      )}
 
       {/* Estado + fechas */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

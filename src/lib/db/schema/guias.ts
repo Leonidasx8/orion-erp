@@ -97,6 +97,7 @@ export const guiasRemision = pgTable('guias_remision', {
   vehiculoPlacaSnapshot: text('vehiculo_placa_snapshot'),
 
   facturaRelacionadaId: uuid('factura_relacionada_id'),
+  cotizacionId: uuid('cotizacion_id'),
   observaciones: text('observaciones'),
   creadoPor: uuid('creado_por').notNull(),
   fechaEmisionSunat: timestamptz('fecha_emision_sunat'),

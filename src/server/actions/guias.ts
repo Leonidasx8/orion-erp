@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requirePermission } from '@/lib/auth/require-permission';
@@ -12,6 +12,8 @@ import {
   tenants,
   seriesDocumentos,
   productos,
+  cotizaciones,
+  cotizacionItems,
 } from '@/lib/db/schema';
 import { reservarCorrelativo } from '@/lib/sunat/reservar-correlativo';
 import { encolarEnvioSunat } from '@/lib/sunat/queue';
@@ -40,6 +42,7 @@ const CrearGuiaSchema = z.object({
   vehiculoPlaca: z.string().optional(),
   pesoBrutoTotal: z.coerce.number().min(0).optional(),
   observaciones: z.string().optional(),
+  cotizacionId: z.string().uuid().optional(),
 });
 
 export type CrearGuiaInput = z.infer<typeof CrearGuiaSchema>;
@@ -125,6 +128,7 @@ export async function crearGuia(
         ubigeoLlegada,
         pesoBrutoTotal: d.pesoBrutoTotal ? String(d.pesoBrutoTotal) : null,
         observaciones: d.observaciones ?? null,
+        cotizacionId: d.cotizacionId ?? null,
         estado: 'pendiente_despacho',
         estadoSunat: 'sin_enviar',
         creadoPor: user.id,
@@ -249,4 +253,92 @@ export async function reenviarGuiaSunat(
     console.error('[guias] reenviarGuiaSunat error:', err);
     return { success: false, error: err instanceof Error ? err.message : 'Error interno' };
   }
+}
+
+export type CotizacionParaGuia = {
+  id: string;
+  numeroCompleto: string;
+  fechaEmision: string;
+  clienteNombre: string;
+  clienteId: string;
+  total: string;
+  moneda: string;
+  items: {
+    productoId: string | null;
+    codigo: string | null;
+    descripcion: string;
+    cantidad: string;
+    unidadMedida: string;
+  }[];
+};
+
+export async function getCotizacionesParaGuia(): Promise<CotizacionParaGuia[]> {
+  const { tenant } = await requirePermission('guias.crear');
+
+  const rows = await db
+    .select({
+      id: cotizaciones.id,
+      numeroCompleto: cotizaciones.numeroCompleto,
+      fechaEmision: cotizaciones.fechaEmision,
+      total: cotizaciones.total,
+      moneda: cotizaciones.moneda,
+      clienteId: cotizaciones.clienteId,
+      clienteNombre: clientes.razonSocial,
+      clienteNombres: clientes.nombres,
+      clienteApellido: clientes.apellidoPaterno,
+    })
+    .from(cotizaciones)
+    .innerJoin(clientes, eq(cotizaciones.clienteId, clientes.id))
+    .where(
+      and(
+        eq(cotizaciones.tenantId, tenant.id),
+        inArray(cotizaciones.estado, ['enviada', 'aceptada'])
+      )
+    )
+    .orderBy(desc(cotizaciones.createdAt))
+    .limit(50);
+
+  if (rows.length === 0) return [];
+
+  const cotIds = rows.map((r) => r.id);
+  const itemRows = await db
+    .select({
+      cotizacionId: cotizacionItems.cotizacionId,
+      productoId: cotizacionItems.productoId,
+      codigo: cotizacionItems.codigo,
+      descripcion: cotizacionItems.descripcion,
+      cantidad: cotizacionItems.cantidad,
+      unidadMedida: cotizacionItems.unidadMedida,
+      orden: cotizacionItems.orden,
+    })
+    .from(cotizacionItems)
+    .where(inArray(cotizacionItems.cotizacionId, cotIds))
+    .orderBy(cotizacionItems.orden);
+
+  const itemsByCot = new Map<string, typeof itemRows>();
+  for (const it of itemRows) {
+    const arr = itemsByCot.get(it.cotizacionId) ?? [];
+    arr.push(it);
+    itemsByCot.set(it.cotizacionId, arr);
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    numeroCompleto: r.numeroCompleto ?? '',
+    fechaEmision: r.fechaEmision,
+    clienteId: r.clienteId,
+    clienteNombre:
+      r.clienteNombre ??
+      [r.clienteNombres, r.clienteApellido].filter(Boolean).join(' ') ??
+      'Cliente',
+    total: r.total,
+    moneda: r.moneda,
+    items: (itemsByCot.get(r.id) ?? []).map((it) => ({
+      productoId: it.productoId ?? null,
+      codigo: it.codigo ?? null,
+      descripcion: it.descripcion,
+      cantidad: it.cantidad,
+      unidadMedida: it.unidadMedida,
+    })),
+  }));
 }

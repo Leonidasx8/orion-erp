@@ -1,10 +1,10 @@
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { clientes, productos } from '@/lib/db/schema';
+import { clientes, cotizacionItems, cotizaciones, productos } from '@/lib/db/schema';
 import { NuevaGuiaForm } from '@/components/modules/guias/NuevaGuiaForm';
 
 export const metadata = { title: 'Nueva guía de remisión' };
@@ -18,7 +18,7 @@ export default async function NuevaGuiaPage({
   await requirePermission('guias.crear');
   const tenant = await getCurrentTenant();
 
-  const [destinatariosRaw, productosRaw] = await Promise.all([
+  const [destinatariosRaw, productosRaw, cotizacionesRaw] = await Promise.all([
     db
       .select({
         id: clientes.id,
@@ -45,7 +45,74 @@ export default async function NuevaGuiaPage({
         )
       )
       .orderBy(productos.nombre),
+    db
+      .select({
+        id: cotizaciones.id,
+        numeroCompleto: cotizaciones.numeroCompleto,
+        fechaEmision: cotizaciones.fechaEmision,
+        total: cotizaciones.total,
+        moneda: cotizaciones.moneda,
+        clienteId: cotizaciones.clienteId,
+        clienteNombre: clientes.razonSocial,
+        clienteNombres: clientes.nombres,
+        clienteApellido: clientes.apellidoPaterno,
+      })
+      .from(cotizaciones)
+      .innerJoin(clientes, eq(cotizaciones.clienteId, clientes.id))
+      .where(
+        and(
+          eq(cotizaciones.tenantId, tenant.id),
+          inArray(cotizaciones.estado, ['enviada', 'aceptada'])
+        )
+      )
+      .orderBy(desc(cotizaciones.createdAt))
+      .limit(50),
   ]);
+
+  const cotIds = cotizacionesRaw.map((c) => c.id);
+  const itemsRaw =
+    cotIds.length > 0
+      ? await db
+          .select({
+            cotizacionId: cotizacionItems.cotizacionId,
+            productoId: cotizacionItems.productoId,
+            codigo: cotizacionItems.codigo,
+            descripcion: cotizacionItems.descripcion,
+            cantidad: cotizacionItems.cantidad,
+            unidadMedida: cotizacionItems.unidadMedida,
+            orden: cotizacionItems.orden,
+          })
+          .from(cotizacionItems)
+          .where(inArray(cotizacionItems.cotizacionId, cotIds))
+          .orderBy(cotizacionItems.orden)
+      : [];
+
+  const itemsByCot = new Map<string, typeof itemsRaw>();
+  for (const it of itemsRaw) {
+    const arr = itemsByCot.get(it.cotizacionId) ?? [];
+    arr.push(it);
+    itemsByCot.set(it.cotizacionId, arr);
+  }
+
+  const cotizacionesList = cotizacionesRaw.map((c) => ({
+    id: c.id,
+    numeroCompleto: c.numeroCompleto ?? '',
+    fechaEmision: c.fechaEmision,
+    clienteId: c.clienteId,
+    clienteNombre:
+      c.clienteNombre ??
+      [c.clienteNombres, c.clienteApellido].filter(Boolean).join(' ') ??
+      'Cliente',
+    total: c.total,
+    moneda: c.moneda,
+    items: (itemsByCot.get(c.id) ?? []).map((it) => ({
+      productoId: it.productoId ?? null,
+      codigo: it.codigo ?? null,
+      descripcion: it.descripcion,
+      cantidad: it.cantidad,
+      unidadMedida: it.unidadMedida,
+    })),
+  }));
 
   return (
     <div className="mx-auto max-w-2xl space-y-5 pb-10">
@@ -75,6 +142,7 @@ export default async function NuevaGuiaPage({
           direccion: c.direccionSunat ?? '',
         }))}
         productos={productosRaw}
+        cotizaciones={cotizacionesList}
       />
     </div>
   );

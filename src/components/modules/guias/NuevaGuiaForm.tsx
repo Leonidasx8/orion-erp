@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Trash2, Truck, PackageOpen } from 'lucide-react';
 import { toast } from 'sonner';
-import { crearGuia, type CrearGuiaInput } from '@/server/actions/guias';
+import { crearGuia, type CrearGuiaInput, type CotizacionParaGuia } from '@/server/actions/guias';
 
 interface Destinatario {
   id: string;
@@ -30,6 +30,7 @@ interface Props {
   tenantSlug: string;
   destinatarios: Destinatario[];
   productos: ProductoCatalogo[];
+  cotizaciones: CotizacionParaGuia[];
 }
 
 const MOTIVOS = [
@@ -40,7 +41,7 @@ const MOTIVOS = [
   { value: '14', label: 'Venta sujeta a confirmación' },
 ];
 
-export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
+export function NuevaGuiaForm({ tenantSlug, destinatarios, productos, cotizaciones }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -54,11 +55,34 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
   const [items, setItems] = useState<Item[]>([
     { descripcion: '', cantidad: 1, unidadMedida: 'NIU' },
   ]);
+  const [cotizacionId, setCotizacionId] = useState('');
   const [transportista, setTransportista] = useState('');
   const [transportistaRuc, setTransportistaRuc] = useState('');
   const [placa, setPlaca] = useState('');
   const [pesoBruto, setPesoBruto] = useState('');
   const [observaciones, setObservaciones] = useState('');
+
+  function handleCotizacionSelect(id: string) {
+    setCotizacionId(id);
+    if (!id) return;
+    const cot = cotizaciones.find((c) => c.id === id);
+    if (!cot) return;
+    // Auto-fill destinatario
+    setClienteId(cot.clienteId);
+    const dest = destinatarios.find((d) => d.id === cot.clienteId);
+    if (dest?.direccion) setDireccionLlegada(dest.direccion);
+    // Auto-fill ítems desde los de la cotización
+    if (cot.items.length > 0) {
+      setItems(
+        cot.items.map((it) => ({
+          productoId: it.productoId ?? undefined,
+          descripcion: it.descripcion,
+          cantidad: parseFloat(it.cantidad) || 1,
+          unidadMedida: it.unidadMedida,
+        }))
+      );
+    }
+  }
 
   function handleClienteChange(id: string) {
     setClienteId(id);
@@ -129,6 +153,7 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
                 .filter(Boolean)
                 .join('. ')
             : observaciones || undefined,
+        cotizacionId: cotizacionId || undefined,
       });
       if (res.success) {
         toast.success(`Guía ${res.data.numero} creada`);
@@ -283,6 +308,46 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
           </Field>
         </div>
       </Card>
+
+      {/* Cotización de origen */}
+      {cotizaciones.length > 0 && (
+        <Card title="¿Viene de una cotización?">
+          <Field label="Cotización (opcional)">
+            <select
+              value={cotizacionId}
+              onChange={(e) => handleCotizacionSelect(e.target.value)}
+              className={sel}
+            >
+              <option value="">— Sin cotización vinculada —</option>
+              {cotizaciones.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.numeroCompleto} · {c.clienteNombre} · {c.moneda === 'USD' ? '$' : 'S/'}{' '}
+                  {parseFloat(c.total).toLocaleString('es-PE', { minimumFractionDigits: 2 })} ·{' '}
+                  {c.fechaEmision}
+                </option>
+              ))}
+            </select>
+          </Field>
+          {cotizacionId &&
+            (() => {
+              const cot = cotizaciones.find((c) => c.id === cotizacionId);
+              if (!cot) return null;
+              return (
+                <div className="mt-2 rounded-lg border border-orion-border bg-orion-bg-subtle px-3 py-2 text-[12px] text-orion-fg-muted">
+                  <span className="font-medium text-orion-fg">{cot.numeroCompleto}</span>
+                  {' · '}
+                  {cot.clienteNombre}
+                  {' · '}
+                  {cot.moneda === 'USD' ? '$' : 'S/'}{' '}
+                  {parseFloat(cot.total).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                  {' · '}
+                  {cot.fechaEmision}
+                  <span className="ml-2 text-green-600">✓ Ítems cargados</span>
+                </div>
+              );
+            })()}
+        </Card>
+      )}
 
       {/* Mercadería */}
       <Card title="Mercadería a enviar">
