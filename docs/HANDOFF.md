@@ -2,12 +2,50 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-09 (quick wins MERGEADOS a main + DESPLEGADOS a prod + stress test)
+**Última actualización:** 2026-06-10 (CERRANDO ENTREGA FINAL — Lucas mandó docs del entorno real)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
-**Estado verificado:** Quick wins de Lucas EN VIVO (sidebar/H1 "Órdenes de Compra", USD default, "Aceptada cliente", PDF de OC funcional verificado, cuentas por moneda). Stress test 76✅/1❌(esperado)/6⏭️. F001-13 ACEPTADA por SUNAT.
+**Estado verificado:** Sistema EN PRODUCCIÓN y operativo. Quick wins de Lucas EN VIVO. Stress test 76✅/1❌(esperado)/6⏭️. F001-13 ACEPTADA por SUNAT.
 **Último commit prod:** `9b41825` — fix(ordenes): completar renombre a "Órdenes de Compra"
 
 > **gh gotcha:** la cuenta git activa se revierte sola a `DignitaTech` y rompe `git push orionrp` (repo privado de orionrp-hub da "not found"). Antes de push: `gh auth switch --user orionrp-hub`.
+
+---
+
+## 🚀 ENTREGA FINAL — estado y plan (2026-06-10)
+
+**Estamos cerrando la entrega del proyecto.** Plan de entrega del cliente (Leo):
+
+1. **Manual end-to-end** del sistema (a redactar) → entrega final.
+2. **Video** mostrando cómo funciona (lo graba Leo).
+3. **Correo** solicitando el resto del depósito (pago).
+4. **Correo** con todas las funcionalidades pendientes para la **v2**.
+
+### Secuencia de trabajo acordada (en orden)
+
+1. ✅ Revisar todos los pendientes (ver `IDEX-PROYECTO-DASHBOARD.md` en orion-erp-setup).
+2. ⏳ **Revisar TODOS los botones** de la app (auditoría funcional módulo por módulo, sobre prod/preview).
+3. ⏳ **Manual E2E** para el cliente (solo documenta lo que funciona y se verificó).
+4. ⏳ **Auditoría de ciberseguridad** (código: auth/RLS, server actions, secretos, permisos por rol, inputs).
+
+### Docs que Lucas mandó por WhatsApp (10-jun) para el ENTORNO REAL
+
+> Están en la carpeta "Lucas" (la indica Leo); los WhatsApp en la carpeta principal. En `~/Downloads` ya se ven facturas `PDF-DOC-E001-…` y `LISTA DE PRECIO…xlsx`.
+
+- **Lista de precios JUNIO** (cables, 9 pág) · **Lista precios conectores Grupo Idex** (10 pág) · **listado tableros.xlsx** (materiales/tableros) → cargar como productos reales.
+- **Factura real de Lucas** `PDF-DOC-E001-10…`: su serie real es **E001**, última emitida = **10** → la siguiente debe ser **11**. ⚠️ El sistema usó F001-13 en pruebas; al armar el entorno real hay que **reconciliar serie/correlativo (E001 desde 11) con Lucas + Nubefact + SUNAT** antes de emitir en vivo.
+- **Factura CELSA** `…FA01-00035398.pdf`: referencia de DISEÑO → **logo arriba-izquierda, debajo razón social y dirección**. Lucas quiere **personalizar la factura (logo + colores)**.
+
+### Preguntas abiertas de Lucas (10-jun)
+
+- "¿Puedo meter precios a mano en la cotización?" → Leo: no en esta versión; se hace a nivel general (actualización de precios), cambio delicado. (Para tableros, los precios cambian por proveedor.)
+- "¿Cada vez que cotice debo actualizar los precios?" → responder.
+- "¿Se puede recibir una cotización y que entre automáticamente al sistema?" → **v2**.
+- Personalización de factura (logo/colores estilo CELSA) → decidir in-contract vs v2.
+
+### Pendientes para CERRAR la entrega (in-contract)
+
+- **Entorno real**: cargar productos (3 archivos) · serie/correlativo E001 desde 11 · personalizar factura (logo/colores) · prueba real de facturar un cable a un cliente.
+- Dashboard monedas separadas · catálogo unidades SUNAT (cat. 03) · guías 2-casos · roles=Admin · salida de stock al emitir guía.
 
 ---
 
