@@ -8,6 +8,7 @@ import { db } from '@/lib/db/client';
 import { guiasRemision, lineasGuia } from '@/lib/db/schema';
 import { PageHead } from '@/components/shared/PageHead';
 import { EstadoBadge } from '@/components/shared/EstadoBadge';
+import { ReenviarGuiaButton } from '@/components/modules/guias/ReenviarGuiaButton';
 
 export const metadata = { title: 'Guía de remisión' };
 
@@ -47,14 +48,17 @@ export default async function GuiaDetallePage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 pb-10">
-      <div className="flex items-center gap-3">
-        <Link
-          href={`/${companySlug}/guias`}
-          className="grid h-8 w-8 place-items-center rounded-md border border-orion-border text-orion-fg-muted hover:bg-orion-bg-subtle"
-        >
-          <ArrowLeft size={14} />
-        </Link>
-        <PageHead title={numero} subtitle="Guía de remisión" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/${companySlug}/guias`}
+            className="grid h-8 w-8 place-items-center rounded-md border border-orion-border text-orion-fg-muted hover:bg-orion-bg-subtle"
+          >
+            <ArrowLeft size={14} />
+          </Link>
+          <PageHead title={numero} subtitle="Guía de remisión" />
+        </div>
+        <ReenviarGuiaButton guiaId={guia.id} estadoSunat={guia.estadoSunat ?? 'pendiente'} />
       </div>
 
       {/* Estado + fechas */}

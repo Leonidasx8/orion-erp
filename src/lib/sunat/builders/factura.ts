@@ -64,7 +64,7 @@ export function buildFactura(p: FacturaPayload): Record<string, unknown> {
 
     // Moneda
     moneda: MONEDA_MAP[p.moneda] ?? 1,
-    tipo_de_cambio: p.tipoCambio ?? '',
+    tipo_de_cambio: p.tipoCambio ?? (p.moneda !== 'PEN' ? 3.75 : ''),
 
     // Totales
     porcentaje_de_igv: 18.0,

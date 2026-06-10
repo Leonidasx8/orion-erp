@@ -213,3 +213,40 @@ export async function marcarEntregada(guiaId: string): Promise<AR> {
     return { success: false, error: err instanceof Error ? err.message : 'Error interno' };
   }
 }
+
+export async function reenviarGuiaSunat(
+  guiaId: string
+): Promise<{ success: true; data: { encolado: boolean } } | { success: false; error: string }> {
+  try {
+    const { tenant } = await requirePermission('guias.crear');
+
+    const [guia] = await db
+      .select({ id: guiasRemision.id, estadoSunat: guiasRemision.estadoSunat })
+      .from(guiasRemision)
+      .where(and(eq(guiasRemision.id, guiaId), eq(guiasRemision.tenantId, tenant.id)));
+
+    if (!guia) return { success: false, error: 'Guía no encontrada' };
+    if (guia.estadoSunat === 'aceptada') {
+      return { success: false, error: 'La guía ya está aceptada por SUNAT' };
+    }
+
+    await db
+      .update(guiasRemision)
+      .set({ estadoSunat: 'pendiente', updatedAt: new Date() })
+      .where(eq(guiasRemision.id, guiaId));
+
+    const { duplicado } = await encolarEnvioSunat({
+      tenantId: tenant.id,
+      documentoTipo: 'guia_remision',
+      documentoId: guiaId,
+    });
+
+    revalidatePath(`/${tenant.slug}/guias`);
+    revalidatePath(`/${tenant.slug}/guias/${guiaId}`);
+
+    return { success: true, data: { encolado: !duplicado } };
+  } catch (err) {
+    console.error('[guias] reenviarGuiaSunat error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Error interno' };
+  }
+}

@@ -226,8 +226,23 @@ export async function convertirCotizacionAFactura(
     if (!items.length) return { success: false, error: 'Cotización sin ítems' };
 
     const tipoDocumento = opcionesOverride?.tipoDocumento ?? '01';
-    const serie = opcionesOverride?.serie ?? (tipoDocumento === '01' ? 'F001' : 'B001');
     const formaPago = opcionesOverride?.formaPago ?? 'contado';
+
+    // Usar serie activa del tenant; fallback a F001/B001 solo si no hay ninguna configurada
+    let serie = opcionesOverride?.serie;
+    if (!serie) {
+      const [serieActiva] = await db
+        .select({ serie: seriesDocumentos.serie })
+        .from(seriesDocumentos)
+        .where(
+          and(
+            eq(seriesDocumentos.tenantId, tenant.id),
+            eq(seriesDocumentos.tipoDocumento, tipoDocumento),
+            eq(seriesDocumentos.activa, true)
+          )
+        );
+      serie = serieActiva?.serie ?? (tipoDocumento === '01' ? 'F001' : 'B001');
+    }
     const plazoDias = opcionesOverride?.plazoDias ?? 30;
 
     const fechaEmision = new Date().toISOString().split('T')[0];
