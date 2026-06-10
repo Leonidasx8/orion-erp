@@ -2,10 +2,10 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-10 (CERRANDO ENTREGA FINAL — Lucas mandó docs del entorno real)
+**Última actualización:** 2026-06-10 18:00 (PRUEBAS E2E COMPLETAS + CORREOS A LUCAS)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
-**Estado verificado:** Sistema EN PRODUCCIÓN y operativo. Quick wins de Lucas EN VIVO. Stress test 76✅/1❌(esperado)/6⏭️. F001-13 ACEPTADA por SUNAT.
-**Último commit prod:** `9b41825` — fix(ordenes): completar renombre a "Órdenes de Compra"
+**Estado verificado:** F001-14 ACEPTADA SUNAT ✅ · NC F002-1 creada (falta serie F002 en Nubefact) · Guía T001-7 creada ✅ (falta módulo GRE en Nubefact).
+**Último commit prod:** `584600f` — fix: GRE operation name and NC tipo_map/valorUnitario bugs
 
 > **gh gotcha:** la cuenta git activa se revierte sola a `DignitaTech` y rompe `git push orionrp` (repo privado de orionrp-hub da "not found"). Antes de push: `gh auth switch --user orionrp-hub`.
 
@@ -46,6 +46,40 @@
 
 - **Entorno real**: cargar productos (3 archivos) · serie/correlativo E001 desde 11 · personalizar factura (logo/colores) · prueba real de facturar un cable a un cliente.
 - Dashboard monedas separadas · catálogo unidades SUNAT (cat. 03) · guías 2-casos · roles=Admin · salida de stock al emitir guía.
+
+---
+
+## 🧪 2026-06-10 — Pruebas E2E completas + correcciones de bugs
+
+### Flujo probado (todo con botones de UI, no DB directa)
+
+1. **Login** ✅ · **Dashboard** ✅
+2. **Producto** creado: Cable Cobre THW AWG #12 (CB-AWG12) ✅
+3. **Cotización** COT-2026-000030 → aprobada ✅
+4. **Factura F001-00000014** → ACEPTADA SUNAT ✅ (`Código: 0 — La Factura numero F001-14, ha sido aceptada`)
+5. **Nota de Crédito F002-00000001** → creada en DB ✅ — falta registrar serie F002 en Nubefact
+6. **Guía T001-00000007** → creada en DB ✅ — falta módulo GRE habilitado en Nubefact
+
+### Bugs corregidos (commit 584600f, prod desplegado)
+
+- **NC builder**: `tipo_de_comprobante` 7/8 → 3/4 (Nubefact: 3=NC, 4=ND)
+- **NC builder**: `tipo_de_cambio` fallback para facturas USD
+- **NC action**: `valorUnitario` corregido (era `precioUnitario` con IGV → rompía cálculo Nubefact)
+- **NC action**: `porcentajeIgv` añadido a líneas de NC/ND
+- **NC action**: columna `numero_completo` (GENERATED ALWAYS AS) no se inserta explícitamente
+- **Guía builder**: `operacion: 'generar_guia_de_remision'` (era `generar_comprobante`)
+- **DB migration 0048**: constraint `guias_remision_estado_check` actualizado con estados reales
+
+### Acciones pendientes por Lucas (Nubefact)
+
+1. Registrar serie **F002** como "Nota de Crédito" en el portal Nubefact
+2. Habilitar módulo **GRE** en Nubefact para emitir Guías Electrónicas a SUNAT
+3. Configurar serie **E001** desde correlativo 11 (entorno real)
+
+### Correo enviado
+
+- Borrador creado en Gmail con evidencia completa. ID de borrador: `r360095174025663382`
+- Destinatario: lescriva@grupoidex.com.pe
 
 ---
 
