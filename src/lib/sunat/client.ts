@@ -28,6 +28,11 @@ export interface SunatClient {
     serie: string;
     numero: number;
   }): Promise<NubefactResponse>;
+  consultarGuia(args: {
+    tipoDocumento: string;
+    serie: string;
+    numero: number;
+  }): Promise<NubefactSuccessResponse>;
   anularComprobante(args: {
     tipoDocumento: string;
     serie: string;
@@ -44,6 +49,9 @@ const TIPO_SUNAT_A_NUBEFACT: Record<string, number> = {
   '09': 9,
   '31': 31,
 };
+
+// Nubefact GRE codes: 7=Remitente (SUNAT 09), 8=Transportista (SUNAT 31)
+const TIPO_MAP: Record<string, number> = { '09': 7, '31': 8 };
 
 function formatFechaDDMMYYYY(date: Date): string {
   const d = String(date.getDate()).padStart(2, '0');
@@ -159,6 +167,19 @@ class NubefactHttpClient implements SunatClient {
     });
   }
 
+  consultarGuia(args: {
+    tipoDocumento: string;
+    serie: string;
+    numero: number;
+  }): Promise<NubefactSuccessResponse> {
+    return this.post({
+      operacion: 'consultar_guia',
+      tipo_de_comprobante: TIPO_MAP[args.tipoDocumento] ?? 7,
+      serie: args.serie,
+      numero: String(args.numero),
+    });
+  }
+
   anularComprobante(args: {
     tipoDocumento: string;
     serie: string;
@@ -193,6 +214,9 @@ class SunatClientStub implements SunatClient {
     return this.fail();
   }
   consultarComprobante(): Promise<NubefactResponse> {
+    return this.fail();
+  }
+  consultarGuia(): Promise<NubefactSuccessResponse> {
     return this.fail();
   }
   anularComprobante(): Promise<NubefactSuccessResponse> {

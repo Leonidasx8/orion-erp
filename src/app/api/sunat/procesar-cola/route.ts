@@ -341,7 +341,26 @@ export async function POST(req: Request) {
       };
 
       requestPayload = payload as unknown as Record<string, unknown>;
-      const resp = await client.emitirGuia(payload);
+      let resp = await client.emitirGuia(payload);
+
+      // Nubefact GRE: aceptada_por_sunat siempre es false en el primer paso.
+      // Si no hay sunat_soap_error, la guía fue enviada a SUNAT y está en proceso.
+      // Esperar y consultar para obtener el CDR.
+      const respAny = resp as unknown as Record<string, unknown>;
+      if (!resp.aceptada_por_sunat && respAny['sunat_soap_error'] === '') {
+        await new Promise((r) => setTimeout(r, 5000));
+        try {
+          const consulta = await client.consultarGuia({
+            tipoDocumento: guia.tipoDocumento,
+            serie: guia.serie,
+            numero: guia.numero,
+          });
+          resp = consulta;
+        } catch {
+          // Si falla la consulta, usar la respuesta original
+        }
+      }
+
       responsePayload = resp as unknown as Record<string, unknown>;
       sunatCodigo = resp.sunat_responsecode ? parseInt(resp.sunat_responsecode, 10) : 0;
       sunatMensaje = resp.sunat_description ?? null;
