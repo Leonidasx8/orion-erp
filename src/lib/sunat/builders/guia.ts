@@ -11,7 +11,7 @@ export function buildGuia(p: GuiaRemisionPayload): Record<string, unknown> {
   const esRemitente = p.tipoDocumento === '09';
 
   const base: Record<string, unknown> = {
-    operacion: 'generar_comprobante',
+    operacion: 'generar_guia_de_remision',
     tipo_de_comprobante: TIPO_MAP[p.tipoDocumento] ?? 9,
     serie: p.serie,
     numero: p.numero,

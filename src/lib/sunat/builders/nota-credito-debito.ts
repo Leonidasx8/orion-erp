@@ -1,6 +1,7 @@
 import type { NotaCreditoDebitoPayload, LineaSunatPayload } from '../types';
 
-const TIPO_MAP: Record<string, number> = { '07': 7, '08': 8 };
+// Nubefact: 3=Nota de Crédito, 4=Nota de Débito
+const TIPO_MAP: Record<string, number> = { '07': 3, '08': 4 };
 const MONEDA_MAP: Record<string, number> = { PEN: 1, USD: 2, EUR: 3 };
 const IGV_TIPO_MAP: Record<string, number> = {
   '10': 1,
@@ -76,7 +77,7 @@ export function buildNotaCreditoDebito(p: NotaCreditoDebitoPayload): Record<stri
 
     // Moneda
     moneda: MONEDA_MAP[p.moneda] ?? 1,
-    tipo_de_cambio: p.tipoCambio ?? '',
+    tipo_de_cambio: p.tipoCambio ?? (p.moneda !== 'PEN' ? 3.75 : ''),
 
     // Totales
     porcentaje_de_igv: 18.0,
