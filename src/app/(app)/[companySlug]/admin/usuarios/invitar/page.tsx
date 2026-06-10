@@ -30,7 +30,11 @@ const Schema = z.object({
   rolNombre: z.string().min(1, 'Selecciona un rol'),
 });
 
-const ROLES = ['Superadmin', 'Comercial', 'Facturación'];
+const ROLES = [
+  { value: 'Superadmin', label: 'Admin' },
+  { value: 'Comercial', label: 'Comercial' },
+  { value: 'Facturación', label: 'Facturación' },
+];
 
 export default function InvitarUsuarioPage() {
   const router = useRouter();
@@ -100,8 +104,8 @@ export default function InvitarUsuarioPage() {
                   </FormControl>
                   <SelectContent>
                     {ROLES.map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {r}
+                      <SelectItem key={r.value} value={r.value}>
+                        {r.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

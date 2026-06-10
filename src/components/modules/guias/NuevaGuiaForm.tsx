@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Truck, PackageOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { crearGuia, type CrearGuiaInput } from '@/server/actions/guias';
 
@@ -12,7 +12,15 @@ interface Destinatario {
   direccion: string;
 }
 
+interface ProductoCatalogo {
+  id: string;
+  nombre: string;
+  codigo: string;
+  unidadMedida: string;
+}
+
 interface Item {
+  productoId?: string;
   descripcion: string;
   cantidad: number;
   unidadMedida: string;
@@ -21,6 +29,7 @@ interface Item {
 interface Props {
   tenantSlug: string;
   destinatarios: Destinatario[];
+  productos: ProductoCatalogo[];
 }
 
 const MOTIVOS = [
@@ -31,12 +40,13 @@ const MOTIVOS = [
   { value: '14', label: 'Venta sujeta a confirmación' },
 ];
 
-export function NuevaGuiaForm({ tenantSlug, destinatarios }: Props) {
+export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const today = new Date().toISOString().split('T')[0];
 
+  const [caso, setCaso] = useState<'idex_envia' | 'cliente_recoge'>('idex_envia');
   const [clienteId, setClienteId] = useState('');
   const [direccionLlegada, setDireccionLlegada] = useState('');
   const [fechaEnvio, setFechaEnvio] = useState(today);
@@ -52,6 +62,26 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios }: Props) {
     setClienteId(id);
     const dest = destinatarios.find((d) => d.id === id);
     if (dest?.direccion) setDireccionLlegada(dest.direccion);
+  }
+
+  function handleProductoSelect(i: number, productoId: string) {
+    if (!productoId) {
+      setItems((prev) =>
+        prev.map((it, idx) =>
+          idx === i ? { ...it, productoId: undefined, descripcion: '', unidadMedida: 'NIU' } : it
+        )
+      );
+      return;
+    }
+    const p = productos.find((p) => p.id === productoId);
+    if (!p) return;
+    setItems((prev) =>
+      prev.map((it, idx) =>
+        idx === i
+          ? { ...it, productoId: p.id, descripcion: p.nombre, unidadMedida: p.unidadMedida }
+          : it
+      )
+    );
   }
 
   function addItem() {
@@ -71,6 +101,8 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios }: Props) {
     if (!direccionLlegada.trim()) return toast.error('Ingresa la dirección de entrega');
     if (items.some((it) => !it.descripcion.trim()))
       return toast.error('Completa la descripción de todos los ítems');
+    if (caso === 'idex_envia' && !transportista.trim())
+      return toast.error('Ingresa el nombre del transportista');
 
     startTransition(async () => {
       const res = await crearGuia({
@@ -78,11 +110,16 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios }: Props) {
         direccionLlegada,
         fechaInicioTraslado: fechaEnvio,
         motivoTraslado: motivo,
-        modalidadTraslado: '02',
+        modalidadTraslado: caso === 'idex_envia' ? '01' : '02',
         items,
-        transportistaNombre: transportista || undefined,
-        vehiculoPlaca: placa || undefined,
-        observaciones: observaciones || undefined,
+        transportistaNombre: caso === 'idex_envia' ? transportista || undefined : undefined,
+        vehiculoPlaca: caso === 'idex_envia' ? placa || undefined : undefined,
+        observaciones:
+          caso === 'cliente_recoge'
+            ? ['El cliente retira la mercadería en almacén', observaciones]
+                .filter(Boolean)
+                .join('. ')
+            : observaciones || undefined,
       });
       if (res.success) {
         toast.success(`Guía ${res.data.numero} creada`);
@@ -95,6 +132,46 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios }: Props) {
 
   return (
     <div className="space-y-5">
+      {/* Tipo de despacho */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => setCaso('idex_envia')}
+          className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-colors ${
+            caso === 'idex_envia'
+              ? 'bg-tenant-accent/5 border-tenant-accent ring-1 ring-tenant-accent'
+              : 'border-orion-border hover:bg-orion-bg-subtle'
+          }`}
+        >
+          <Truck
+            size={20}
+            className={caso === 'idex_envia' ? 'text-tenant-accent' : 'text-orion-fg-muted'}
+          />
+          <div>
+            <p className="text-[13px] font-semibold text-orion-fg">Idex lo lleva</p>
+            <p className="text-[11px] text-orion-fg-muted">Nosotros despachamos</p>
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => setCaso('cliente_recoge')}
+          className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-colors ${
+            caso === 'cliente_recoge'
+              ? 'bg-tenant-accent/5 border-tenant-accent ring-1 ring-tenant-accent'
+              : 'border-orion-border hover:bg-orion-bg-subtle'
+          }`}
+        >
+          <PackageOpen
+            size={20}
+            className={caso === 'cliente_recoge' ? 'text-tenant-accent' : 'text-orion-fg-muted'}
+          />
+          <div>
+            <p className="text-[13px] font-semibold text-orion-fg">Cliente recoge</p>
+            <p className="text-[11px] text-orion-fg-muted">Retira en almacén</p>
+          </div>
+        </button>
+      </div>
+
       {/* Destinatario */}
       <Card title="¿A quién va el envío?">
         <div className="space-y-3">
@@ -117,7 +194,11 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios }: Props) {
               type="text"
               value={direccionLlegada}
               onChange={(e) => setDireccionLlegada(e.target.value)}
-              placeholder="Av. Los Álamos 123, Lima"
+              placeholder={
+                caso === 'cliente_recoge'
+                  ? 'Dirección del almacén de Idex'
+                  : 'Av. Los Álamos 123, Lima'
+              }
               className={inp}
             />
           </Field>
@@ -148,65 +229,92 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios }: Props) {
               ))}
             </select>
           </Field>
-          <Field label="Transportista / conductor">
-            <input
-              type="text"
-              value={transportista}
-              onChange={(e) => setTransportista(e.target.value)}
-              placeholder="Nombre del conductor"
-              className={inp}
-            />
-          </Field>
-          <Field label="Placa del vehículo">
-            <input
-              type="text"
-              value={placa}
-              onChange={(e) => setPlaca(e.target.value.toUpperCase())}
-              placeholder="ABC-123"
-              className={`${inp} uppercase`}
-            />
-          </Field>
+          {caso === 'idex_envia' && (
+            <>
+              <Field label="Transportista / conductor *">
+                <input
+                  type="text"
+                  value={transportista}
+                  onChange={(e) => setTransportista(e.target.value)}
+                  placeholder="Nombre del conductor"
+                  className={inp}
+                />
+              </Field>
+              <Field label="Placa del vehículo">
+                <input
+                  type="text"
+                  value={placa}
+                  onChange={(e) => setPlaca(e.target.value.toUpperCase())}
+                  placeholder="ABC-123"
+                  className={`${inp} uppercase`}
+                />
+              </Field>
+            </>
+          )}
         </div>
       </Card>
 
       {/* Mercadería */}
       <Card title="Mercadería a enviar">
-        <div className="space-y-2">
+        <div className="space-y-3">
           {items.map((it, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input
-                type="text"
-                value={it.descripcion}
-                onChange={(e) => updateItem(i, 'descripcion', e.target.value)}
-                placeholder="Descripción del producto"
-                className={`${inp} flex-1`}
-              />
-              <input
-                type="number"
-                value={it.cantidad}
-                onChange={(e) => updateItem(i, 'cantidad', Number(e.target.value))}
-                min={0.01}
-                step={0.01}
-                className={`${inp} w-20 text-right`}
-              />
-              <select
-                value={it.unidadMedida}
-                onChange={(e) => updateItem(i, 'unidadMedida', e.target.value)}
-                className={`${sel} w-20`}
-              >
-                <option value="NIU">UND</option>
-                <option value="KGM">KG</option>
-                <option value="MTR">MT</option>
-                <option value="RLL">RLL</option>
-              </select>
-              {items.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeItem(i)}
-                  className="hover:border-danger-border grid h-9 w-9 shrink-0 place-items-center rounded-md border border-orion-border text-orion-fg-muted hover:text-danger-fg"
+            <div key={i} className="space-y-1.5 rounded-lg border border-orion-border p-3">
+              <div className="flex items-center gap-2">
+                <select
+                  value={it.productoId ?? ''}
+                  onChange={(e) => handleProductoSelect(i, e.target.value)}
+                  className={`${sel} flex-1`}
                 >
-                  <Trash2 size={13} />
-                </button>
+                  <option value="">— Descripción libre —</option>
+                  {productos.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.codigo} · {p.nombre}
+                    </option>
+                  ))}
+                </select>
+                {items.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeItem(i)}
+                    className="hover:border-danger-border grid h-9 w-9 shrink-0 place-items-center rounded-md border border-orion-border text-orion-fg-muted hover:text-danger-fg"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={it.descripcion}
+                  onChange={(e) => updateItem(i, 'descripcion', e.target.value)}
+                  placeholder="Descripción del producto"
+                  className={`${inp} flex-1`}
+                  readOnly={!!it.productoId}
+                />
+                <input
+                  type="number"
+                  value={it.cantidad}
+                  onChange={(e) => updateItem(i, 'cantidad', Number(e.target.value))}
+                  min={0.01}
+                  step={0.01}
+                  className={`${inp} w-24 text-right`}
+                />
+                <select
+                  value={it.unidadMedida}
+                  onChange={(e) => updateItem(i, 'unidadMedida', e.target.value)}
+                  className={`${sel} w-24`}
+                >
+                  <option value="NIU">UND</option>
+                  <option value="KGM">KG</option>
+                  <option value="MTR">MT</option>
+                  <option value="RLL">RLL</option>
+                  <option value="KTM">KM</option>
+                </select>
+              </div>
+              {it.productoId && (
+                <p className="text-[11px] text-orion-fg-muted">
+                  ✓ Vinculado al catálogo — descuenta stock al guardar
+                </p>
               )}
             </div>
           ))}
@@ -226,14 +334,17 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios }: Props) {
           value={observaciones}
           onChange={(e) => setObservaciones(e.target.value)}
           rows={2}
-          placeholder="Instrucciones especiales para el despacho…"
+          placeholder={
+            caso === 'cliente_recoge'
+              ? 'Instrucciones de retiro…'
+              : 'Instrucciones especiales para el despacho…'
+          }
           className={`${inp} w-full resize-none`}
         />
       </Card>
 
       <p className="text-[11px] text-orion-fg-muted">
-        El documento electrónico SUNAT (T001) se generará automáticamente. Puedes emitirlo a SUNAT
-        desde el detalle de la guía cuando esté lista.
+        El documento electrónico SUNAT (T001) se generará automáticamente.
       </p>
 
       <div className="flex justify-end gap-3">

@@ -8,6 +8,7 @@ import { db } from '@/lib/db/client';
 import { guiasRemision, lineasGuia, clientes, tenants, seriesDocumentos } from '@/lib/db/schema';
 import { reservarCorrelativo } from '@/lib/sunat/reservar-correlativo';
 import { encolarEnvioSunat } from '@/lib/sunat/queue';
+import { registrarSalidaPorGuia } from './kardex-internal';
 
 type AR<T = undefined> = { success: true; data: T } | { success: false; error: string };
 
@@ -20,6 +21,7 @@ const CrearGuiaSchema = z.object({
   items: z
     .array(
       z.object({
+        productoId: z.string().uuid().optional(),
         descripcion: z.string().min(1, 'Descripción requerida'),
         cantidad: z.coerce.number().positive('Cantidad debe ser positiva'),
         unidadMedida: z.string().default('NIU'),
@@ -107,6 +109,7 @@ export async function crearGuia(
         d.items.map((it, i) => ({
           guiaId: nuevaGuia.id,
           tenantId: tenant.id,
+          productoId: it.productoId ?? null,
           skuSnapshot: '',
           descripcion: it.descripcion,
           cantidad: String(it.cantidad),
@@ -114,6 +117,17 @@ export async function crearGuia(
           orden: i,
         }))
       );
+    }
+
+    // Salida de stock por cada ítem vinculado al catálogo
+    for (const it of d.items.filter((i) => i.productoId)) {
+      await registrarSalidaPorGuia(db, {
+        tenantId: tenant.id,
+        productoId: it.productoId!,
+        cantidad: it.cantidad,
+        guiaId: nuevaGuia.id,
+        userId: user.id,
+      });
     }
 
     // Encolar en sunat_outbox para emisión automática a Nubefact

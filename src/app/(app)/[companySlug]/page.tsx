@@ -30,6 +30,7 @@ export default async function DashboardPage({
     stockRaw,
     ocPendientesRaw,
     cotVencidasRaw,
+    ventasMonedaRaw,
   ] = await Promise.all([
     // Ventas por mes — últimos 12 meses desde dashboard_metricas
     db.execute<MetricasRow>(sql`
@@ -103,6 +104,16 @@ export default async function DashboardPage({
       WHERE tenant_id = ${tenant.id}
         AND estado = 'vencida'
     `),
+
+    // Ventas del mes corriente separadas por moneda
+    db.execute<{ moneda: string; total: string }>(sql`
+      SELECT moneda, COALESCE(SUM(total), 0)::text AS total
+      FROM facturas
+      WHERE tenant_id = ${tenant.id}
+        AND estado_sunat = 'aceptada'
+        AND fecha_emision >= date_trunc('month', current_date)::text
+      GROUP BY moneda
+    `),
   ]);
 
   const metricas = Array.from(metricasRaw);
@@ -116,6 +127,7 @@ export default async function DashboardPage({
     ? ocPendientesRaw[0].numeros.split(',').filter(Boolean)
     : [];
   const cotVencidas = Number(cotVencidasRaw[0]?.count ?? 0);
+  const ventasPorMoneda = Array.from(ventasMonedaRaw);
 
   function formatSubtitle() {
     const now = new Date();
@@ -152,6 +164,7 @@ export default async function DashboardPage({
         metricas={metricas}
         cxcTotales={cxcTotales}
         stockCritico={stockCritico}
+        ventasPorMoneda={ventasPorMoneda}
         companySlug={companySlug}
       />
 

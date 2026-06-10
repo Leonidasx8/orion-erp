@@ -23,7 +23,7 @@ const TIPO_DOC_LABEL: Record<string, string> = {
 };
 
 const ROL_LABEL: Record<string, string> = {
-  superadmin: 'Superadmin',
+  superadmin: 'Admin',
   comercial: 'Comercial',
   facturación: 'Facturación',
   contabilidad: 'Contabilidad',
@@ -76,7 +76,7 @@ export default async function ConfiguracionPage({
           <SectionCard
             title="Política de precios y márgenes"
             description="Reglas globales que aplican a cotizaciones y control de márgenes."
-            tag="Solo Superadmin"
+            tag="Solo Admin"
           >
             <PoliticaPreciosForm
               initial={{

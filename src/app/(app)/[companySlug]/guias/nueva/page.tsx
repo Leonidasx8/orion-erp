@@ -1,10 +1,10 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { clientes } from '@/lib/db/schema';
+import { clientes, productos } from '@/lib/db/schema';
 import { NuevaGuiaForm } from '@/components/modules/guias/NuevaGuiaForm';
 
 export const metadata = { title: 'Nueva guía de remisión' };
@@ -18,16 +18,34 @@ export default async function NuevaGuiaPage({
   await requirePermission('guias.crear');
   const tenant = await getCurrentTenant();
 
-  const destinatarios = await db
-    .select({
-      id: clientes.id,
-      razonSocial: clientes.razonSocial,
-      nombres: clientes.nombres,
-      apellidoPaterno: clientes.apellidoPaterno,
-      direccionSunat: clientes.direccionSunat,
-    })
-    .from(clientes)
-    .where(eq(clientes.tenantId, tenant.id));
+  const [destinatariosRaw, productosRaw] = await Promise.all([
+    db
+      .select({
+        id: clientes.id,
+        razonSocial: clientes.razonSocial,
+        nombres: clientes.nombres,
+        apellidoPaterno: clientes.apellidoPaterno,
+        direccionSunat: clientes.direccionSunat,
+      })
+      .from(clientes)
+      .where(eq(clientes.tenantId, tenant.id)),
+    db
+      .select({
+        id: productos.id,
+        nombre: productos.nombre,
+        codigo: productos.codigo,
+        unidadMedida: productos.unidadMedida,
+      })
+      .from(productos)
+      .where(
+        and(
+          eq(productos.tenantId, tenant.id),
+          eq(productos.controlaStock, true),
+          eq(productos.activo, true)
+        )
+      )
+      .orderBy(productos.nombre),
+  ]);
 
   return (
     <div className="mx-auto max-w-2xl space-y-5 pb-10">
@@ -48,7 +66,7 @@ export default async function NuevaGuiaPage({
 
       <NuevaGuiaForm
         tenantSlug={companySlug}
-        destinatarios={destinatarios.map((c) => ({
+        destinatarios={destinatariosRaw.map((c) => ({
           id: c.id,
           nombre:
             c.razonSocial ??
@@ -56,6 +74,7 @@ export default async function NuevaGuiaPage({
             '(sin nombre)',
           direccion: c.direccionSunat ?? '',
         }))}
+        productos={productosRaw}
       />
     </div>
   );

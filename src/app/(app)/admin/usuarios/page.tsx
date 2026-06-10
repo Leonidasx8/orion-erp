@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 export const metadata = { title: 'Usuarios globales — Orión ERP' };
 
 const ROL_LABEL: Record<string, string> = {
-  superadmin: 'Superadmin',
+  superadmin: 'Admin',
   comercial: 'Comercial',
   facturacion: 'Facturación',
   bodega: 'Bodega',

@@ -18,6 +18,7 @@ interface DashboardKpisProps {
   metricas: MetricasRow[];
   cxcTotales: CxCRow | null;
   stockCritico: number;
+  ventasPorMoneda: { moneda: string; total: string }[];
   companySlug: string;
 }
 
@@ -25,18 +26,14 @@ export function DashboardKpis({
   metricas,
   cxcTotales,
   stockCritico,
+  ventasPorMoneda,
   companySlug,
 }: DashboardKpisProps) {
   const mesActual = metricas[metricas.length - 1];
-  const mesAnterior = metricas[metricas.length - 2];
   const cxcVencido = Number(cxcTotales?.vencido ?? 0);
 
-  const deltaVentas =
-    mesAnterior && Number(mesAnterior.ventas_total) > 0
-      ? ((Number(mesActual?.ventas_total ?? 0) - Number(mesAnterior.ventas_total)) /
-          Number(mesAnterior.ventas_total)) *
-        100
-      : 0;
+  const ventasUSD = Number(ventasPorMoneda.find((v) => v.moneda === 'USD')?.total ?? 0);
+  const ventasPEN = Number(ventasPorMoneda.find((v) => v.moneda === 'PEN')?.total ?? 0);
 
   // Compute date range for current month (YYYY-MM-DD format)
   const now = new Date();
@@ -47,21 +44,23 @@ export function DashboardKpis({
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
       <Link
-        href={`/${companySlug}/reportes/ventas?desde=${mesActualStr}&hasta=${finDeMesStr}`}
+        href={`/${companySlug}/reportes/ventas?desde=${mesActualStr}&hasta=${finDeMesStr}&moneda=USD`}
+        className="block rounded-lg transition-opacity hover:opacity-80"
+      >
+        <KpiCard label="Ventas USD (mes)" value={ventasUSD} format="currency" subtitle="dólares" />
+      </Link>
+      <Link
+        href={`/${companySlug}/reportes/ventas?desde=${mesActualStr}&hasta=${finDeMesStr}&moneda=PEN`}
         className="block rounded-lg transition-opacity hover:opacity-80"
       >
         <KpiCard
-          label="Ventas del mes"
-          value={Number(mesActual?.ventas_total ?? 0)}
-          delta={deltaVentas}
+          label="Ventas PEN (mes)"
+          value={ventasPEN}
           format="currency"
+          subtitle={
+            mesActual?.facturas_emitidas ? `${mesActual.facturas_emitidas} fact. emitidas` : 'soles'
+          }
         />
-      </Link>
-      <Link
-        href={`/${companySlug}/facturas`}
-        className="block rounded-lg transition-opacity hover:opacity-80"
-      >
-        <KpiCard label="Facturas emitidas" value={Number(mesActual?.facturas_emitidas ?? 0)} />
       </Link>
       <Link
         href={`/${companySlug}/clientes`}
