@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, Copy, FileText, PackageCheck, Pencil, Send, X } from 'lucide-react';
+import { Check, Copy, FileText, PackageCheck, Pencil, Send, Truck, X } from 'lucide-react';
 import { Money } from '@/components/shared/Money';
 import { EstadoBadge, type Estado } from '@/components/shared/EstadoBadge';
 import {
@@ -57,6 +57,10 @@ export function OrdenDetalle({ data, tenantSlug }: { data: OrdenDetalleData; ten
   const puedeRecibir =
     (data.estado === 'aprobada' || data.estado === 'recibida_parcial') && data.permissions.recibir;
   const puedeCerrar = data.estado === 'recibida_total' && data.permissions.cerrar;
+  const puedeGenerarGuia =
+    data.estado === 'aprobada' ||
+    data.estado === 'recibida_parcial' ||
+    data.estado === 'recibida_total';
   const esEditable = data.estado === 'borrador';
 
   const totalPedido = data.lineas.reduce((acc, l) => acc + l.cantidad, 0);
@@ -157,6 +161,15 @@ export function OrdenDetalle({ data, tenantSlug }: { data: OrdenDetalleData; ten
               <PackageCheck size={13} />
               Registrar recepción
             </button>
+          )}
+          {puedeGenerarGuia && (
+            <Link
+              href={`/${tenantSlug}/guias/nueva`}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-orion-border bg-orion-bg px-3 text-[13px] font-medium text-orion-fg hover:bg-orion-bg-muted"
+            >
+              <Truck size={13} />
+              Generar guía
+            </Link>
           )}
         </div>
       </div>

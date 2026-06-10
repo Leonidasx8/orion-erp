@@ -3,6 +3,7 @@
 import { CheckCircle2, XCircle, Clock, FileText, Download, AlertTriangle } from 'lucide-react';
 import { EstadoBadge } from '@/components/shared/EstadoBadge';
 import { Money } from '@/components/shared/Money';
+import { FacturaAcciones } from './FacturaAcciones';
 import type { Estado } from '@/components/shared/EstadoBadge';
 
 export type LineaDetalleRow = {
@@ -141,7 +142,13 @@ function SunatStatusBox({
   );
 }
 
-export function FacturaDetalle({ data }: { data: FacturaDetalleData; companySlug: string }) {
+export function FacturaDetalle({
+  data,
+  companySlug,
+}: {
+  data: FacturaDetalleData;
+  companySlug: string;
+}) {
   const moneda = data.moneda as 'PEN' | 'USD';
 
   return (
@@ -155,8 +162,14 @@ export function FacturaDetalle({ data }: { data: FacturaDetalleData; companySlug
             {data.fechaVencimiento && ` · Vence ${data.fechaVencimiento}`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <EstadoBadge estado={data.estado as Estado} />
+          <FacturaAcciones
+            facturaId={data.id}
+            estadoSunat={data.estadoSunat}
+            moneda={data.moneda}
+            companySlug={companySlug}
+          />
         </div>
       </div>
 

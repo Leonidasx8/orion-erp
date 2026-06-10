@@ -21,6 +21,13 @@ import {
 import type { Tenant } from '@/lib/db/schema';
 import { cn } from '@/lib/utils';
 
+const ROL_LABEL: Record<string, string> = {
+  superadmin: 'Admin',
+  comercial: 'Comercial',
+  facturacion: 'Facturación',
+  contabilidad: 'Contabilidad',
+};
+
 type NavItem = {
   href: string;
   label: string;
@@ -198,7 +205,9 @@ export function TenantSidebar({
             <div className="truncate text-[12.5px] font-medium text-orion-fg">
               {userName ?? '—'}
             </div>
-            <div className="truncate text-[11px] text-orion-fg-faint">{userRole ?? ''}</div>
+            <div className="truncate text-[11px] text-orion-fg-faint">
+              {ROL_LABEL[userRole ?? ''] ?? userRole ?? ''}
+            </div>
           </div>
         </div>
       )}
