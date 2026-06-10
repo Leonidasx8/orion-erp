@@ -13,7 +13,7 @@ import {
 } from '@/lib/db/schema';
 import { getSunatClient } from '@/lib/sunat/client';
 import { reencolarConBackoff } from '@/lib/sunat/queue';
-import { esTransitorio } from '@/lib/sunat/errors';
+import { esTransitorio, SunatError, SunatValidationError } from '@/lib/sunat/errors';
 import { numeroALetras } from '@/lib/sunat/helpers/numero-a-letras';
 import type {
   FacturaPayload,
@@ -341,7 +341,20 @@ export async function POST(req: Request) {
       };
 
       requestPayload = payload as unknown as Record<string, unknown>;
-      let resp = await client.emitirGuia(payload);
+      let resp = await client.emitirGuia(payload).catch(async (err) => {
+        // "ya existe en NubeFacT" = fue enviada antes; consultar para obtener estado real
+        if (
+          (err instanceof SunatError || err instanceof SunatValidationError) &&
+          err.message.toLowerCase().includes('ya existe')
+        ) {
+          return client.consultarGuia({
+            tipoDocumento: guia.tipoDocumento,
+            serie: guia.serie,
+            numero: guia.numero,
+          });
+        }
+        throw err;
+      });
 
       // Nubefact GRE: aceptada_por_sunat siempre es false en el primer paso.
       // Si no hay sunat_soap_error, la guía fue enviada a SUNAT y está en proceso.
