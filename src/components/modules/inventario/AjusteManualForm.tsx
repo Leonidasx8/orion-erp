@@ -84,7 +84,7 @@ export function AjusteManualForm({ tenantSlug, producto }: AjusteManualFormProps
           Ajuste manual de inventario
         </h1>
         <p className="mt-0.5 text-[13px] text-orion-fg-muted">
-          Requiere motivo · genera auditoría · permiso Superadmin
+          Requiere motivo · genera auditoría · permiso Admin
         </p>
       </div>
 

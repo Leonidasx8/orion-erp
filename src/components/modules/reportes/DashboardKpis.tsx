@@ -47,7 +47,13 @@ export function DashboardKpis({
         href={`/${companySlug}/reportes/ventas?desde=${mesActualStr}&hasta=${finDeMesStr}&moneda=USD`}
         className="block rounded-lg transition-opacity hover:opacity-80"
       >
-        <KpiCard label="Ventas USD (mes)" value={ventasUSD} format="currency" subtitle="dólares" />
+        <KpiCard
+          label="Ventas USD (mes)"
+          value={ventasUSD}
+          format="currency"
+          currency="USD"
+          subtitle="dólares"
+        />
       </Link>
       <Link
         href={`/${companySlug}/reportes/ventas?desde=${mesActualStr}&hasta=${finDeMesStr}&moneda=PEN`}

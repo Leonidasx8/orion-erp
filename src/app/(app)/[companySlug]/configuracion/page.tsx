@@ -25,7 +25,7 @@ const TIPO_DOC_LABEL: Record<string, string> = {
 const ROL_LABEL: Record<string, string> = {
   superadmin: 'Admin',
   comercial: 'Comercial',
-  facturación: 'Facturación',
+  facturacion: 'Facturación',
   contabilidad: 'Contabilidad',
 };
 

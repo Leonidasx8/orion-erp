@@ -177,7 +177,7 @@ export default function LoginPage() {
           {/* Footer del card */}
           <div className="mt-5 flex items-center justify-center gap-1.5 text-[12px] text-muted-foreground">
             <Shield size={13} />
-            <span>Conexión segura · MFA requerido para Superadmin</span>
+            <span>Conexión segura · MFA requerido para Admin</span>
           </div>
         </div>
 

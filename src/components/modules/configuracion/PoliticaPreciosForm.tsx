@@ -44,7 +44,7 @@ export function PoliticaPreciosForm({
         <div>
           <p className="text-[13px] font-medium text-orion-fg">Margen mínimo global</p>
           <p className="text-[12px] text-orion-fg-muted">
-            Bloquea emitir cotizaciones por debajo de este margen sin aprobación de Superadmin.
+            Bloquea emitir cotizaciones por debajo de este margen sin aprobación del Admin.
           </p>
         </div>
         <div className="ml-6 flex shrink-0 items-center gap-1.5">
