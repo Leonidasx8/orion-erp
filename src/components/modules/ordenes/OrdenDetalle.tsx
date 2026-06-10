@@ -60,7 +60,8 @@ export function OrdenDetalle({ data, tenantSlug }: { data: OrdenDetalleData; ten
   const puedeGenerarGuia =
     data.estado === 'aprobada' ||
     data.estado === 'recibida_parcial' ||
-    data.estado === 'recibida_total';
+    data.estado === 'recibida_total' ||
+    data.estado === 'cerrada';
   const esEditable = data.estado === 'borrador';
 
   const totalPedido = data.lineas.reduce((acc, l) => acc + l.cantidad, 0);
