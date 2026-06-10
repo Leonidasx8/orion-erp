@@ -57,6 +57,7 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
   const [transportista, setTransportista] = useState('');
   const [transportistaRuc, setTransportistaRuc] = useState('');
   const [placa, setPlaca] = useState('');
+  const [pesoBruto, setPesoBruto] = useState('');
   const [observaciones, setObservaciones] = useState('');
 
   function handleClienteChange(id: string) {
@@ -106,6 +107,9 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
       return toast.error('Ingresa el nombre/razón social del transportista');
     if (caso === 'idex_envia' && !transportistaRuc.trim())
       return toast.error('Ingresa el RUC de la empresa transportista');
+    const pesoNum = parseFloat(pesoBruto);
+    if (!pesoBruto || isNaN(pesoNum) || pesoNum <= 0)
+      return toast.error('Ingresa el peso bruto total en kg (mayor a 0)');
 
     startTransition(async () => {
       const res = await crearGuia({
@@ -115,6 +119,7 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
         motivoTraslado: motivo,
         modalidadTraslado: caso === 'idex_envia' ? '01' : '02',
         items,
+        pesoBrutoTotal: pesoNum,
         transportistaNombre: caso === 'idex_envia' ? transportista || undefined : undefined,
         transportistaRuc: caso === 'idex_envia' ? transportistaRuc || undefined : undefined,
         vehiculoPlaca: caso === 'idex_envia' ? placa || undefined : undefined,
@@ -265,6 +270,17 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
               </Field>
             </>
           )}
+          <Field label="Peso bruto total (kg) *">
+            <input
+              type="number"
+              value={pesoBruto}
+              onChange={(e) => setPesoBruto(e.target.value)}
+              min={0.01}
+              step={0.01}
+              placeholder="Ej: 25.5"
+              className={inp}
+            />
+          </Field>
         </div>
       </Card>
 

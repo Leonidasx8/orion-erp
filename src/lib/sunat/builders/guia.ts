@@ -55,7 +55,7 @@ export function buildGuia(p: GuiaRemisionPayload): Record<string, unknown> {
 
     items: p.lineas.map((l, i) => ({
       unidad_de_medida: l.unidadMedida,
-      codigo: l.codigo ?? '',
+      codigo: l.codigo || String(i + 1).padStart(3, '0'),
       descripcion: l.descripcion,
       cantidad: l.cantidad,
       orden: i + 1,
