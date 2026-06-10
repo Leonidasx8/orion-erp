@@ -55,6 +55,7 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
     { descripcion: '', cantidad: 1, unidadMedida: 'NIU' },
   ]);
   const [transportista, setTransportista] = useState('');
+  const [transportistaRuc, setTransportistaRuc] = useState('');
   const [placa, setPlaca] = useState('');
   const [observaciones, setObservaciones] = useState('');
 
@@ -102,7 +103,9 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
     if (items.some((it) => !it.descripcion.trim()))
       return toast.error('Completa la descripción de todos los ítems');
     if (caso === 'idex_envia' && !transportista.trim())
-      return toast.error('Ingresa el nombre del transportista');
+      return toast.error('Ingresa el nombre/razón social del transportista');
+    if (caso === 'idex_envia' && !transportistaRuc.trim())
+      return toast.error('Ingresa el RUC de la empresa transportista');
 
     startTransition(async () => {
       const res = await crearGuia({
@@ -113,6 +116,7 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
         modalidadTraslado: caso === 'idex_envia' ? '01' : '02',
         items,
         transportistaNombre: caso === 'idex_envia' ? transportista || undefined : undefined,
+        transportistaRuc: caso === 'idex_envia' ? transportistaRuc || undefined : undefined,
         vehiculoPlaca: caso === 'idex_envia' ? placa || undefined : undefined,
         observaciones:
           caso === 'cliente_recoge'
@@ -231,12 +235,22 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos }: Props) {
           </Field>
           {caso === 'idex_envia' && (
             <>
-              <Field label="Transportista / conductor *">
+              <Field label="Empresa transportista *">
                 <input
                   type="text"
                   value={transportista}
                   onChange={(e) => setTransportista(e.target.value)}
-                  placeholder="Nombre del conductor"
+                  placeholder="Razón social del transportista"
+                  className={inp}
+                />
+              </Field>
+              <Field label="RUC del transportista *">
+                <input
+                  type="text"
+                  value={transportistaRuc}
+                  onChange={(e) => setTransportistaRuc(e.target.value)}
+                  placeholder="20XXXXXXXXX"
+                  maxLength={11}
                   className={inp}
                 />
               </Field>
