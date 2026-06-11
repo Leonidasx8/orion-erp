@@ -1289,3 +1289,14 @@ Cuando termines una tarea o un commit significativo, actualiza este archivo así
 
 - B.4 Productos commiteado en `0702865`.
 - B.5 iniciado: schema, cálculo, server actions (los archivos quedaron sin commit cuando se cerró la terminal).
+
+### 2026-06-11 (tarde)
+
+- **Countdown de anulación + columna "Anulación" en facturas** (commit `4979973`, desplegado a prod y verificado con Playwright):
+  - Verificado contra SUNAT: el plazo NO son 48 horas. Comunicación de baja directa = **7 días** desde la emisión; la anulación vía NC **no tiene plazo** (la práctica recomendada es emitirla dentro del mismo periodo tributario).
+  - Nuevo `src/components/modules/facturas/AnulacionCountdown.tsx`: countdown en vivo (tick 60s) de la ventana de baja de 7 días (hora Lima, vence al fin del 7.º día siguiente a la emisión); pasada la ventana muestra "Ventana de baja vencida · NC sin plazo".
+  - Lista de facturas: columna "Anulación" — countdown para activas, "Anulada tras X" (diff createdAt factura → createdAt NC aceptada motivos 01/06) para anuladas. Query extra con `MIN(created_at)` agrupado por documento origen.
+  - Detalle: countdown bajo el encabezado para facturas no anuladas; el banner de anulada ahora dice "…aceptada por SUNAT, 4 h después de emitida".
+  - Textos corregidos (ayuda del módulo, modal NC, manual §4.9) de "48 horas" a la regla real.
+  - Verificado en prod: F001-14 "Anulada tras 4 h", F001-13 "Anulada tras 2 días". No se emitió ningún comprobante de prueba para esta verificación.
+  - Paquete de entrega: manual y reporte de pruebas sincronizados, 8 PDFs regenerados (repo setup).
