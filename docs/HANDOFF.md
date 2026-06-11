@@ -2,7 +2,7 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-11 09:35 (GUÍA T001-7 RESUELTA ✅ — datos corregidos + reenviada por UI + ACEPTADA SUNAT. Las 2 guías del sistema aceptadas. NC F002-1 y F002-2 también ACEPTADAS por SUNAT — sistema SUNAT 100% verde: F001 ✅ F002 ✅ T001 ✅)
+**Última actualización:** 2026-06-11 10:00 (IMPORTADOR MASIVO REAL ✅ commit 1b56f08 desplegándose — parseo Excel/CSV server-side + upsert con categorías auto. Entrega: solo Idex en acta/accesos (sin Agroalves), plantillas Excel contractuales generadas, conciliación 64/65, manual con sección de importación, reporte de pruebas con T001-7 recuperada + F002-2. SUNAT 100% verde: F001 ✅ F002 ✅ T001 ✅. PENDIENTE: verificar importador en prod cuando termine el deploy + desactivar producto PRUEBA-IMPORT-01 si se creó en la verificación.)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
 **Estado verificado:** F001-13/14 emitidas y luego anuladas por NC (flujo completo demostrado) · NC F002-1 y F002-2 ACEPTADAS SUNAT ✅ · Guías T001-7 y T001-8 ACEPTADAS SUNAT ✅ · AUDIT 14/14 módulos OK.
 **Último commit prod:** `6561f25` — fix: GRE "ya existe en NubeFacT" → consultar_guia fallback
