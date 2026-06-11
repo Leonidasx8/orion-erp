@@ -124,6 +124,17 @@ Muestra los 476 productos del catálogo (cables CELSA + productos propios). Pued
    - **Controla stock** — activa si quieres llevar inventario de este producto
 3. Haz clic en **Guardar**.
 
+### Importar productos desde Excel (carga masiva)
+
+Para cargar o actualizar muchos productos de una sola vez (por ejemplo, una lista de precios nueva de CELSA):
+
+1. Ve a **Productos** → haz clic en **Importar**.
+2. **Paso 1 — Subir archivo:** arrastra tu Excel (.xlsx) o CSV al recuadro. La primera hoja debe tener columnas **SKU** y **Costo** (o Precio); opcionalmente Nombre, Familia, Unidad de Medida y Precio de Venta. Puedes usar la plantilla oficial `plantilla-catalogo.xlsx` incluida en el paquete de entrega.
+3. **Paso 2 — Vista previa:** el sistema valida cada fila (SKU vacío, duplicados, costo en 0, márgenes bajos) y te muestra los problemas. Puedes corregir cualquier fila con el lápiz de edición sin salir de la pantalla.
+4. **Paso 3 — Confirmar:** haz clic en **Confirmar import**. Si un SKU ya existe, el producto se ACTUALIZA (nombre, costo, precio, familia); si no existe, se CREA. Las familias nuevas se crean automáticamente.
+
+> Si dejas la columna Precio de Venta vacía, el sistema lo calcula con el margen global vigente (Configuración → Comercial).
+
 ### Editar precio de un producto
 
 1. Haz clic sobre el producto.
@@ -257,7 +268,7 @@ Desde el detalle de la guía, haz clic en **Enviar a SUNAT**. El sistema la proc
 
 ### Imprimir / descargar PDF
 
-Haz clic en **PDF** para descargar el PDF de la guía con el código QR de SUNAT.
+Abre el detalle de la guía y baja hasta la sección **"Documentos SUNAT"** (al final de la página): ahí están los botones **PDF** (versión imprimible con código QR), **XML** y **CDR**. Estos botones aparecen una vez que SUNAT acepta la guía.
 
 > La serie activa es **T001**. La guía T001-00000008 fue aceptada por SUNAT en las pruebas de entrega.
 
@@ -490,7 +501,7 @@ El sistema muestra el mensaje de error de SUNAT. Corriges los datos (RUC del cli
 Sí. Al crear la cotización o factura, selecciona **USD** como moneda. SUNAT acepta facturas en USD (incluye el tipo de cambio automáticamente).
 
 **¿Cómo agrego más productos al catálogo?**  
-Ve a Productos → Nuevo producto. Para importar una lista grande (Excel), contacta al equipo de Orion — el módulo de importación masiva está en hoja de ruta.
+Uno por uno: Productos → Nuevo producto. Para listas grandes usa **Productos → Importar** (Excel/CSV): valida, previsualiza y crea o actualiza cientos de productos en un clic (ver sección 4).
 
 **¿El sistema funciona en el celular?**  
 Sí, el diseño es responsivo. Funciona en Chrome o Safari móvil. La barra lateral se convierte en menú hamburguesa.
