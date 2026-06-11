@@ -2,7 +2,7 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-10 22:10 (AUDIT COMPLETO + GRE T001-8 ACEPTADA SUNAT + COTIZACIÓN→GUÍA LINK)
+**Última actualización:** 2026-06-11 04:22 (IMPORT 475 PRODUCTOS CELSA ✅ — 476 total en catálogo Idex)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
 **Estado verificado:** F001-14 ACEPTADA SUNAT ✅ · T001-8 ACEPTADA SUNAT ✅ · NC F002-1 creada (falta serie F002 en Nubefact) · Guía T001-7 Error red (falta módulo GRE en Nubefact) · AUDIT 14/14 módulos OK.
 **Último commit prod:** `6561f25` — fix: GRE "ya existe en NubeFacT" → consultar_guia fallback
@@ -49,6 +49,18 @@
 
 ---
 
+## ✅ 2026-06-11 madrugada — Import 475 productos CELSA (catálogo real)
+
+### Ejecutado
+
+- Parseado Excel `LISTA DE PRECIO ABRIL 2026-SEGELECTRICA (1).xlsx` con exceljs (Node.js). 475 productos, 7 familias (COBRE DESNUDO, COBRE CONSTRUCCION, COBRE AEREO, ENERGIA, CONSTRUCCION, INSTRUMENTAL, CONTROL).
+- Precios: `costo_unitario = USD × 3.75`, `precio_unitario = costo × 1.143` (≈14.3% margen).
+- Import vía SQL directo en Supabase (5 batches × 100/100/100/100/75). La UI `/productos/importar` es mock (hardcoded automotive test data, no parsea Excel real).
+- Resultado verificado en UI: **476 productos activos** (475 CELSA + 1 CB-AWG12 de prueba E2E).
+- **Nota:** El producto T001-7 (guía con error) sigue pendiente. Los conectores y tableros de Lucas aún NO se cargaron (pendiente recibir archivos).
+
+---
+
 ## ✅ 2026-06-10 tarde — Audit completo + GRE fix + cotización→guía link
 
 ### Implementado y desplegado (commits `1f9f0bf` y `6561f25`)
@@ -80,9 +92,9 @@
 
 - [ ] **T001-7**: sigue en "Error red" (Nubefact no tiene módulo GRE habilitado para Idex). Pendiente que Lucas habilite GRE en su cuenta Nubefact.
 - [ ] **Logo en Configuración**: URL = `https://ejemplo.com/logo.png` — cargar el logo real de Grupo Idex SAC.
-- [ ] **Entorno real**: cargar los 3 archivos de productos que mandó Lucas (cables JUNIO, conectores, tableros). Usar el módulo Importar en Productos.
+- [x] **Entorno real — 475 productos CELSA importados** ✅: lista CELSA (cables GPT, THW-90, TW-80, NYY, N2XY, N2XOH, LSOH, CELSAFLEX, N2XSY) cargada vía SQL directo (la UI Importar es mock). 7 familias/categorías. Precios: costo=USD×3.75 PEN, venta=costo×1.143 (14.3% margen). 476 productos activos en total.
 - [ ] **Serie E001 desde 11**: reconciliar con Lucas/Nubefact antes de emitir facturas reales.
-- [ ] **Correo a Lucas**: documentar todas las pruebas hechas hoy y enviarlo.
+- [ ] **Correo a Lucas**: documentar todas las pruebas hechas y enviarlo.
 
 ---
 
