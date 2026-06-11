@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import {
   FileSpreadsheet,
@@ -11,9 +11,14 @@ import {
   ChevronRight,
   Download,
   Pencil,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  parsearArchivoProductos,
+  confirmarImportProductos,
+} from '@/server/actions/productos-importar';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -29,6 +34,7 @@ interface PreviewRow {
   calibre: string;
   precioCompra: number;
   precioVenta: number;
+  unidadMedida: string;
   status: RowStatus;
   message: string;
 }
@@ -36,119 +42,11 @@ interface PreviewRow {
 type FilterMode = 'all' | 'errors';
 
 // ---------------------------------------------------------------------------
-// Initial mock preview data
-// ---------------------------------------------------------------------------
-
-const INITIAL_ROWS: PreviewRow[] = [
-  {
-    index: 1,
-    sku: 'ACE-001',
-    descripcion: 'Aceite de motor 5W-30 1L',
-    familia: 'Lubricantes',
-    calibre: '—',
-    precioCompra: 32,
-    precioVenta: 45,
-    status: 'ok',
-    message: '',
-  },
-  {
-    index: 2,
-    sku: 'FIL-023',
-    descripcion: 'Filtro de aire universal',
-    familia: 'Filtros',
-    calibre: 'Universal',
-    precioCompra: 18.5,
-    precioVenta: 28,
-    status: 'ok',
-    message: '',
-  },
-  {
-    index: 3,
-    sku: 'BAT-12V',
-    descripcion: 'Batería 12V 60Ah',
-    familia: 'Eléctricos',
-    calibre: '60Ah',
-    precioCompra: 210,
-    precioVenta: 299,
-    status: 'ok',
-    message: '',
-  },
-  {
-    index: 4,
-    sku: 'LLA-R15',
-    descripcion: 'Llanta radial 195/65 R15',
-    familia: '',
-    calibre: 'R15',
-    precioCompra: 180,
-    precioVenta: 245,
-    status: 'warning',
-    message: '',
-  },
-  {
-    index: 5,
-    sku: 'AMO-500',
-    descripcion: 'Amortiguador delantero',
-    familia: 'Suspensión',
-    calibre: '—',
-    precioCompra: 94.85,
-    precioVenta: 112,
-    status: 'warning',
-    message: '',
-  },
-  {
-    index: 6,
-    sku: 'PAR-220',
-    descripcion: 'Pastillas de freno delantera',
-    familia: '',
-    calibre: '220mm',
-    precioCompra: 55,
-    precioVenta: 78,
-    status: 'warning',
-    message: '',
-  },
-  {
-    index: 7,
-    sku: '',
-    descripcion: 'Correa de distribución',
-    familia: 'Motor',
-    calibre: '—',
-    precioCompra: 42,
-    precioVenta: 62,
-    status: 'error',
-    message: '',
-  },
-  {
-    index: 8,
-    sku: 'ACE-001',
-    descripcion: 'Aceite de motor 10W-40 1L',
-    familia: 'Lubricantes',
-    calibre: '—',
-    precioCompra: 28,
-    precioVenta: 40,
-    status: 'error',
-    message: '',
-  },
-  {
-    index: 9,
-    sku: 'BUJ-NGK',
-    descripcion: 'Bujía NGK estándar',
-    familia: 'Encendido',
-    calibre: '—',
-    precioCompra: 0,
-    precioVenta: 12,
-    status: 'error',
-    message: '',
-  },
-];
-
-const TOTAL_ROWS = 47;
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatSoles(n: number): string {
-  return `S/ ${n.toFixed(2)}`;
+function formatPrecio(n: number): string {
+  return n.toFixed(2);
 }
 
 function validateRows(rows: PreviewRow[]): PreviewRow[] {
@@ -285,23 +183,47 @@ function StatusCell({ row }: { row: PreviewRow }) {
 
 interface Step1Props {
   companySlug: string;
-  onNext: (fileName: string) => void;
+  onNext: (fileName: string, rows: PreviewRow[]) => void;
 }
 
 function Step1({ companySlug, onNext }: Step1Props) {
   const [fileName, setFileName] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [parseError, setParseError] = useState('');
+  const [pending, startTransition] = useTransition();
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function handleFile(file: File) {
-    setFileName(file.name);
+  function handleFile(f: File) {
+    setFile(f);
+    setFileName(f.name);
+    setParseError('');
   }
 
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     setDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  }
+
+  function handleNext() {
+    if (!file) return;
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.append('archivo', file);
+      const res = await parsearArchivoProductos(fd);
+      if (!res.success) {
+        setParseError(res.error);
+        return;
+      }
+      const rows: PreviewRow[] = res.data.filas.map((f) => ({
+        ...f,
+        status: 'ok' as RowStatus,
+        message: '',
+      }));
+      onNext(res.data.nombreArchivo, rows);
+    });
   }
 
   return (
@@ -368,6 +290,14 @@ function Step1({ companySlug, onNext }: Step1Props) {
         </div>
       )}
 
+      {/* Parse error */}
+      {parseError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{parseError}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Actions */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" asChild>
@@ -376,9 +306,18 @@ function Step1({ companySlug, onNext }: Step1Props) {
             Volver al catálogo
           </Link>
         </Button>
-        <Button onClick={() => onNext(fileName)} disabled={!fileName}>
-          Siguiente
-          <ChevronRight className="ml-1 h-4 w-4" />
+        <Button onClick={handleNext} disabled={!fileName || pending}>
+          {pending ? (
+            <>
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              Leyendo archivo…
+            </>
+          ) : (
+            <>
+              Siguiente
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </>
+          )}
         </Button>
       </div>
     </div>
@@ -393,9 +332,19 @@ interface Step2Props {
   setRows: (rows: PreviewRow[]) => void;
   onBack: () => void;
   onConfirm: () => void;
+  confirming: boolean;
+  confirmError: string;
 }
 
-function Step2({ fileName, rows, setRows, onBack, onConfirm }: Step2Props) {
+function Step2({
+  fileName,
+  rows,
+  setRows,
+  onBack,
+  onConfirm,
+  confirming,
+  confirmError,
+}: Step2Props) {
   const [filter, setFilter] = useState<FilterMode>('all');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState<PreviewRow | null>(null);
@@ -408,7 +357,7 @@ function Step2({ fileName, rows, setRows, onBack, onConfirm }: Step2Props) {
     filter === 'errors' ? rows.filter((r) => r.status === 'error' || r.status === 'warning') : rows;
 
   const hasErrors = errorCount > 0;
-  const importableCount = Math.max(0, TOTAL_ROWS - errorCount);
+  const importableCount = Math.max(0, rows.length - errorCount);
 
   function rowBg(status: RowStatus) {
     if (status === 'error') return 'bg-red-50 dark:bg-red-950/20';
@@ -590,10 +539,10 @@ function Step2({ fileName, rows, setRows, onBack, onConfirm }: Step2Props) {
                     </td>
                     <td className="px-3 py-2.5 text-muted-foreground">{row.calibre}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums">
-                      {formatSoles(row.precioCompra)}
+                      {formatPrecio(row.precioCompra)}
                     </td>
                     <td className="px-3 py-2.5 text-right tabular-nums">
-                      {formatSoles(row.precioVenta)}
+                      {formatPrecio(row.precioVenta)}
                     </td>
                     <td className="px-3 py-2.5">
                       <StatusCell row={row} />
@@ -620,7 +569,7 @@ function Step2({ fileName, rows, setRows, onBack, onConfirm }: Step2Props) {
         {/* Table footer */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/20 px-4 py-2.5 text-xs text-muted-foreground">
           <span>
-            Filas 1–{rows.length} de {TOTAL_ROWS} · {errorCount + warnCount} con problemas
+            Filas 1–{rows.length} de {rows.length} · {errorCount + warnCount} con problemas
           </span>
           <div className="flex items-center gap-1">
             <Button
@@ -666,16 +615,49 @@ function Step2({ fileName, rows, setRows, onBack, onConfirm }: Step2Props) {
           Subir otro archivo
         </Button>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              const problemas = rows.filter((r) => r.status !== 'ok');
+              const lineas = ['Fila\tSKU\tDescripción\tProblema'];
+              for (const r of problemas) {
+                lineas.push(`${r.index}\t${r.sku}\t${r.descripcion}\t${r.message}`);
+              }
+              const blob = new Blob([lineas.join('\n')], { type: 'text/tab-separated-values' });
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = 'reporte-errores-import.tsv';
+              a.click();
+              URL.revokeObjectURL(a.href);
+            }}
+            disabled={rows.every((r) => r.status === 'ok')}
+          >
             <Download className="mr-1.5 h-4 w-4" />
             Descargar reporte de errores
           </Button>
-          <Button onClick={onConfirm} disabled={hasErrors || editingIndex !== null}>
-            Confirmar import ({importableCount})
-            <ChevronRight className="ml-1 h-4 w-4" />
+          <Button onClick={onConfirm} disabled={hasErrors || editingIndex !== null || confirming}>
+            {confirming ? (
+              <>
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                Importando…
+              </>
+            ) : (
+              <>
+                Confirmar import ({importableCount})
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </>
+            )}
           </Button>
         </div>
       </div>
+
+      {confirmError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{confirmError}</AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }
@@ -684,11 +666,12 @@ function Step2({ fileName, rows, setRows, onBack, onConfirm }: Step2Props) {
 
 interface Step3Props {
   companySlug: string;
-  importedCount: number;
+  creados: number;
+  actualizados: number;
   warningCount: number;
 }
 
-function Step3({ companySlug, importedCount, warningCount }: Step3Props) {
+function Step3({ companySlug, creados, actualizados, warningCount }: Step3Props) {
   return (
     <div className="flex flex-col items-center gap-6 py-12 text-center">
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
@@ -697,8 +680,13 @@ function Step3({ companySlug, importedCount, warningCount }: Step3Props) {
       <div className="space-y-1">
         <h2 className="text-2xl font-bold text-foreground">Importación completada</h2>
         <p className="text-muted-foreground">
-          {importedCount} producto{importedCount !== 1 ? 's' : ''} importado
-          {importedCount !== 1 ? 's' : ''}
+          {creados} producto{creados !== 1 ? 's' : ''} creado{creados !== 1 ? 's' : ''}
+          {actualizados > 0 && (
+            <>
+              {' · '}
+              {actualizados} actualizado{actualizados !== 1 ? 's' : ''}
+            </>
+          )}
           {warningCount > 0 && (
             <>
               {' · '}
@@ -735,11 +723,36 @@ const STEP_LABELS: Record<number, string> = {
 export function ProductosImportar({ companySlug }: ProductosImportarProps) {
   const [step, setStep] = useState(1);
   const [fileName, setFileName] = useState('');
-  const [rows, setRows] = useState<PreviewRow[]>(() => validateRows(INITIAL_ROWS));
+  const [rows, setRows] = useState<PreviewRow[]>([]);
+  const [resultado, setResultado] = useState({ creados: 0, actualizados: 0 });
+  const [confirmError, setConfirmError] = useState('');
+  const [confirming, startConfirm] = useTransition();
 
-  const errorCount = rows.filter((r) => r.status === 'error').length;
   const warnCount = rows.filter((r) => r.status === 'warning').length;
-  const importedCount = Math.max(0, TOTAL_ROWS - errorCount);
+
+  function handleConfirm() {
+    const validas = rows.filter((r) => r.status !== 'error');
+    setConfirmError('');
+    startConfirm(async () => {
+      const res = await confirmarImportProductos({
+        filas: validas.map((r) => ({
+          sku: r.sku.trim(),
+          descripcion: r.descripcion.trim(),
+          familia: r.familia.trim(),
+          precioCompra: r.precioCompra,
+          precioVenta: r.precioVenta,
+          unidadMedida: r.unidadMedida,
+        })),
+        margenPorcentaje: 10,
+      });
+      if (!res.success) {
+        setConfirmError(res.error);
+        return;
+      }
+      setResultado(res.data);
+      setStep(3);
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -765,8 +778,9 @@ export function ProductosImportar({ companySlug }: ProductosImportarProps) {
         {step === 1 && (
           <Step1
             companySlug={companySlug}
-            onNext={(name) => {
+            onNext={(name, parsedRows) => {
               setFileName(name);
+              setRows(validateRows(parsedRows));
               setStep(2);
             }}
           />
@@ -777,11 +791,18 @@ export function ProductosImportar({ companySlug }: ProductosImportarProps) {
             rows={rows}
             setRows={setRows}
             onBack={() => setStep(1)}
-            onConfirm={() => setStep(3)}
+            onConfirm={handleConfirm}
+            confirming={confirming}
+            confirmError={confirmError}
           />
         )}
         {step === 3 && (
-          <Step3 companySlug={companySlug} importedCount={importedCount} warningCount={warnCount} />
+          <Step3
+            companySlug={companySlug}
+            creados={resultado.creados}
+            actualizados={resultado.actualizados}
+            warningCount={warnCount}
+          />
         )}
       </div>
     </div>
