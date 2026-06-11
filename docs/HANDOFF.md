@@ -66,6 +66,14 @@
 
 **Limpieza hecha:** producto `PRUEBA-IMPORT-01` y categoría "Pruebas" borrados de prod. Catálogo queda en **476 productos activos** (CELSA intacto).
 
+### Reportes de Lucas en pruebas en vivo (3:30pm) — 3 fixes (commit `0c51f5c`)
+
+1. **"No existe ese RUC" al crear cliente** → `APIS_NET_PE_TOKEN` NUNCA se configuró (vacío en `.env.local`, ausente en Vercel). El catch silencioso convertía "sin token" en "no se encontró el documento". Fix: mensaje honesto que invita a llenar manual (el form SÍ permite alta manual). **PENDIENTE LEO: registrarse en apis.net.pe (gratis 100/día), obtener token → `vercel env add APIS_NET_PE_TOKEN production` → redeploy.**
+2. **"Los precios de los cables están en soles y la lista es en USD"** → Lucas tenía razón: los precios de producto son USD en todo el sistema (cotización los copia sin convertir con USD como moneda base, kardex muestra USD, form dice "(USD)", actualizar-precios formatea USD). La carga de la madrugada (×3.75) fue el error y además inflaba cotizaciones 3.75×. Fix: **475 productos CELSA divididos entre 3.75 vía SQL** (CB-AWG12 demo intacto) + catálogo ahora formatea US$ (era el único display en PEN).
+3. **"Sigue en soles" (dashboard)** → ejes de los gráficos Ventas 12m y Pipeline tenían "S/" hardcodeado; ahora "US$". Nota: el view `dashboard_metricas` suma facturas sin separar moneda (limitación conocida B.11 "referencia histórica"); refinar en v2.
+
+> **Gap conocido (no urgente):** cotización en PEN copia el precio USD del producto sin convertir por tipo de cambio (`CotizacionForm.tsx:240`). Con USD como default no afecta el flujo normal; documentar o convertir en v2/addendum precios.
+
 ### Botón "Calibre" en /productos — retirado (commit `87ba90b`, reporte de Lucas 12:55)
 
 Era un placeholder sin `onClick` que parecía un filtro activo. Retirado y verificado en prod. El calibre se busca por el buscador de texto (busca SKU+descripción+calibre). Filtro dedicado requiere campo `calibre` estructurado → addendum de variantes (fuera de contrato).
