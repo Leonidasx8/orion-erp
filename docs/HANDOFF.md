@@ -2,7 +2,7 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-11 04:22 (IMPORT 475 PRODUCTOS CELSA ✅ — 476 total en catálogo Idex)
+**Última actualización:** 2026-06-11 04:35 (EMAIL LUCAS BORRADOR ✅ — documentación de pruebas lista para enviar)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
 **Estado verificado:** F001-14 ACEPTADA SUNAT ✅ · T001-8 ACEPTADA SUNAT ✅ · NC F002-1 creada (falta serie F002 en Nubefact) · Guía T001-7 Error red (falta módulo GRE en Nubefact) · AUDIT 14/14 módulos OK.
 **Último commit prod:** `6561f25` — fix: GRE "ya existe en NubeFacT" → consultar_guia fallback
@@ -94,7 +94,7 @@
 - [ ] **Logo en Configuración**: URL = `https://ejemplo.com/logo.png` — cargar el logo real de Grupo Idex SAC.
 - [x] **Entorno real — 475 productos CELSA importados** ✅: lista CELSA (cables GPT, THW-90, TW-80, NYY, N2XY, N2XOH, LSOH, CELSAFLEX, N2XSY) cargada vía SQL directo (la UI Importar es mock). 7 familias/categorías. Precios: costo=USD×3.75 PEN, venta=costo×1.143 (14.3% margen). 476 productos activos en total.
 - [ ] **Serie E001 desde 11**: reconciliar con Lucas/Nubefact antes de emitir facturas reales.
-- [ ] **Correo a Lucas**: documentar todas las pruebas hechas y enviarlo.
+- [x] **Correo a Lucas**: ✅ Borrador completo creado en Gmail (ID `r-9115412228634889132`). Documenta: flujo E2E, 475 productos CELSA, SUNAT status (F001/T001 ACEPTADA, F002 pendiente), bugs corregidos, pendientes de activación entorno real. **FALTA:** revisar y enviar desde Gmail.
 
 ---
 
