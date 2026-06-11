@@ -2,7 +2,7 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-11 10:00 (IMPORTADOR MASIVO REAL ✅ commit 1b56f08 desplegándose — parseo Excel/CSV server-side + upsert con categorías auto. Entrega: solo Idex en acta/accesos (sin Agroalves), plantillas Excel contractuales generadas, conciliación 64/65, manual con sección de importación, reporte de pruebas con T001-7 recuperada + F002-2. SUNAT 100% verde: F001 ✅ F002 ✅ T001 ✅. PENDIENTE: verificar importador en prod cuando termine el deploy + desactivar producto PRUEBA-IMPORT-01 si se creó en la verificación.)
+**Última actualización:** 2026-06-11 12:30 (⚠️ BUG ABIERTO: importador de productos falla con 500 al CONFIRMAR en prod — parseo/preview OK, insert final no. Ver sección "BUG ABIERTO" abajo con diagnóstico hecho y descartado. Además: feature descartar guía (commit 9d0d3f1) desplegada pero SIN verificar en prod. La sesión de la mañana se cortó por créditos a mitad del debugging.)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
 **Estado verificado:** F001-13/14 emitidas y luego anuladas por NC (flujo completo demostrado) · NC F002-1 y F002-2 ACEPTADAS SUNAT ✅ · Guías T001-7 y T001-8 ACEPTADAS SUNAT ✅ · AUDIT 14/14 módulos OK.
 **Último commit prod:** `6561f25` — fix: GRE "ya existe en NubeFacT" → consultar_guia fallback
@@ -49,13 +49,45 @@
 
 ---
 
+## ⚠️ 2026-06-11 mediodía — BUG ABIERTO: importador falla al confirmar (500) + descartar guía sin verificar
+
+> La sesión de la mañana (~10:07) se cortó por créditos a mitad del debugging. Esto es lo que quedó a medias.
+
+### Bug: `confirmarImportProductos` devuelve 500 en producción
+
+**Síntoma:** en `/idex/productos/importar`, los pasos 1 y 2 (subir archivo + parseo/preview) funcionan perfecto en prod (probado 3 veces: catálogo de 47 productos y archivo mínimo de 1 producto, validación "1 OK, 0 errores"). Al hacer clic en **"Confirmar import (1)"** → 500 "An error occurred in the Server Components render" (detalle suprimido en build de prod). El producto `PRUEBA-IMPORT-01` NO se creó.
+
+**Diagnóstico ya hecho (no repetir):**
+
+- ✅ El producto NO existe en DB (sin insert parcial), pero la categoría **"Pruebas" SÍ se creó** → el fallo ocurre DESPUÉS de crear la categoría, en el insert del producto (`src/server/actions/productos-importar.ts`, bloque `db.insert(productos)...onConflictDoUpdate` ~línea 240).
+- ✅ Constraint `UNIQUE (tenant_id, codigo)` **SÍ existe en prod** (`productos_tenant_id_codigo_key`, verificado vía pg_constraint 11-jun 12:20) → el `onConflictDoUpdate` target NO es la causa.
+- ✅ Upsert manual con `RETURNING (xmax = 0)` vía SQL directo en prod funcionó → schema y técnica xmax OK.
+- ❌ Los logs de Vercel y Postgres del momento del error (10:04) **ya expiraron** sin capturarse. El log en vivo (`/tmp/vercel-live.log`) solo registró GETs normales.
+
+**Sospechosos restantes (por revisar):**
+
+- El insert de Drizzle con `onConflictDoUpdate().returning(sql\`(xmax = 0)\`)`en runtime de Vercel (¿prepared statements vs pooler en transaction mode? El resto de la app usa Drizzle y funciona, pero ninguna otra action usa`xmax` en RETURNING).
+- `createdBy: user.id` — verificar que `user.id` exista en la forma que la columna espera.
+- Serialización del resultado / `revalidatePath` tras el insert.
+
+**Próximo paso concreto:** correr `vercel logs <deployment-url> --follow` ANTES de hacer clic en Confirmar, reproducir el 500, y leer el stack trace real. El archivo de prueba mínimo (1 producto `PRUEBA-IMPORT-01`, S/0.50→S/1.00, familia "Pruebas") ya existe en orion-erp-setup. **Limpieza pendiente:** ya quedó la categoría "Pruebas" huérfana en prod; borrarla al cerrar el bug (el producto nunca se creó, no hay nada que desactivar).
+
+### Feature: descartar guía (commit `9d0d3f1`) — desplegada, NO verificada
+
+- `descartarGuia` server action (`src/server/actions/guias.ts`): permiso `guias.anular`, bloquea si `estadoSunat='aceptada'`, setea `estado='anulada'`.
+- `DescartarGuiaButton.tsx` integrado en header de `guias/[id]/page.tsx` junto a ReenviarGuiaButton. Typecheck OK.
+- Ambos deploys de Vercel terminaron **Ready** (importador + guías están en prod).
+- **Pendiente:** probar en prod el flujo descartar guía con error → crear guía corregida.
+
+---
+
 ## ✅ 2026-06-11 madrugada — Import 475 productos CELSA (catálogo real)
 
 ### Ejecutado
 
 - Parseado Excel `LISTA DE PRECIO ABRIL 2026-SEGELECTRICA (1).xlsx` con exceljs (Node.js). 475 productos, 7 familias (COBRE DESNUDO, COBRE CONSTRUCCION, COBRE AEREO, ENERGIA, CONSTRUCCION, INSTRUMENTAL, CONTROL).
 - Precios: `costo_unitario = USD × 3.75`, `precio_unitario = costo × 1.143` (≈14.3% margen).
-- Import vía SQL directo en Supabase (5 batches × 100/100/100/100/75). La UI `/productos/importar` es mock (hardcoded automotive test data, no parsea Excel real).
+- Import vía SQL directo en Supabase (5 batches × 100/100/100/100/75). La UI `/productos/importar` era mock en ese momento (desde commit `1b56f08` ya parsea Excel real — pero ver BUG ABIERTO arriba: el confirmar falla en prod).
 - Resultado verificado en UI: **476 productos activos** (475 CELSA + 1 CB-AWG12 de prueba E2E).
 - **Nota:** El producto T001-7 (guía con error) sigue pendiente. Los conectores y tableros de Lucas aún NO se cargaron (pendiente recibir archivos).
 
