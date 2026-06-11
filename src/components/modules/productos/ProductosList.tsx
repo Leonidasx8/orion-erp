@@ -52,9 +52,11 @@ const STOCK_MIN_DEFAULT = 20;
 const PAGE_SIZE_GRID = 8;
 const PAGE_SIZE_LIST = 25;
 
+// Los precios de producto se almacenan en USD (moneda base de venta;
+// las cotizaciones los toman tal cual y PEN se deriva por tipo de cambio).
 function formatPrecio(valor: string | null) {
   if (!valor) return '—';
-  return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
     parseFloat(valor)
   );
 }

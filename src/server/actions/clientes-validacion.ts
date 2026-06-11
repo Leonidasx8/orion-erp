@@ -15,8 +15,21 @@ export async function buscarDocumentoSunat(
   if (tipo === 'DNI' && limpio.length !== 8)
     return { success: false, error: 'DNI debe tener 8 dígitos' };
 
+  if (!process.env.APIS_NET_PE_TOKEN) {
+    return {
+      success: false,
+      error:
+        'La consulta automática SUNAT/RENIEC no está habilitada todavía. Ingresa los datos manualmente — el cliente se guarda igual.',
+    };
+  }
+
   const resultado = await consultarDocumento(tipo, limpio);
-  if (!resultado) return { success: false, error: 'No se encontró el documento' };
+  if (!resultado)
+    return {
+      success: false,
+      error:
+        'No se encontró el documento en SUNAT/RENIEC. Verifica el número o ingresa los datos manualmente.',
+    };
 
   return { success: true, data: resultado };
 }

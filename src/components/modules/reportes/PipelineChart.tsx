@@ -23,9 +23,9 @@ const ESTADO_LABELS: Record<string, string> = {
 };
 
 function formatCurrency(v: number): string {
-  if (v >= 1_000_000) return `S/ ${(v / 1_000_000).toFixed(1)}M`;
-  if (v >= 1_000) return `S/ ${(v / 1_000).toFixed(0)}K`;
-  return `S/ ${v.toFixed(0)}`;
+  if (v >= 1_000_000) return `US$ ${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `US$ ${(v / 1_000).toFixed(0)}K`;
+  return `US$ ${v.toFixed(0)}`;
 }
 
 export function PipelineChart({ data }: PipelineChartProps) {
