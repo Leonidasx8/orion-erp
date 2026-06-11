@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import ExcelJS from 'exceljs';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { productos, categoriasProducto } from '@/lib/db/schema';
+import { productos, categoriasProducto, unidadesMedida } from '@/lib/db/schema';
 import { z } from 'zod';
 
 type ActionResult<T = undefined> = { success: true; data: T } | { success: false; error: string };
@@ -51,6 +51,73 @@ const COLUMNAS = {
 
 function normalizar(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+// Alias frecuentes en listas de proveedores → código SUNAT (catálogo 03 / tabla unidades_medida).
+// La FK productos.unidad_medida exige un código del catálogo; lo no reconocido cae a NIU.
+const UNIDAD_ALIAS: Record<string, string> = {
+  UND: 'NIU',
+  UNID: 'NIU',
+  UNIDAD: 'NIU',
+  UNIDADES: 'NIU',
+  U: 'NIU',
+  UN: 'NIU',
+  M: 'MTR',
+  MT: 'MTR',
+  MTS: 'MTR',
+  METRO: 'MTR',
+  METROS: 'MTR',
+  ML: 'MTR',
+  KG: 'KGM',
+  KGS: 'KGM',
+  KILO: 'KGM',
+  KILOS: 'KGM',
+  KILOGRAMO: 'KGM',
+  G: 'GRM',
+  GR: 'GRM',
+  L: 'LTR',
+  LT: 'LTR',
+  LITRO: 'LTR',
+  LITROS: 'LTR',
+  PZA: 'PCE',
+  PZ: 'PCE',
+  PIEZA: 'PCE',
+  PIEZAS: 'PCE',
+  CAJA: 'BX',
+  CJA: 'BX',
+  CJ: 'BX',
+  BOLSA: 'BG',
+  ROLLO: 'RLL',
+  RLLO: 'RLL',
+  PAR: 'PR',
+  PARES: 'PR',
+  JGO: 'SET',
+  JUEGO: 'SET',
+  KIT: 'SET',
+  MIL: 'MLL',
+  MILLAR: 'MLL',
+  GAL: 'GLL',
+  GALON: 'GLL',
+  TON: 'TNE',
+  TONELADA: 'TNE',
+  DOC: 'DZN',
+  DOCENA: 'DZN',
+  PQTE: 'PK',
+  PAQUETE: 'PK',
+  SERV: 'ZZ',
+  SERVICIO: 'ZZ',
+};
+
+function normalizarUnidad(raw: string, codigosValidos: Set<string>): string {
+  const limpio = raw
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^A-Z0-9]/g, '');
+  if (!limpio) return 'NIU';
+  if (UNIDAD_ALIAS[limpio]) return UNIDAD_ALIAS[limpio];
+  if (codigosValidos.has(limpio)) return limpio;
+  return 'NIU';
 }
 
 function celdaTexto(v: ExcelJS.CellValue): string {
@@ -140,6 +207,10 @@ export async function parsearArchivoProductos(
     };
   }
 
+  const codigosUnidad = new Set(
+    (await db.select({ codigo: unidadesMedida.codigo }).from(unidadesMedida)).map((u) => u.codigo)
+  );
+
   const filas: FilaImportada[] = [];
   for (let r = headerRow + 1; r <= ws.rowCount; r++) {
     const row = ws.getRow(r);
@@ -158,7 +229,7 @@ export async function parsearArchivoProductos(
       precioCompra: colIdx.precioCompra ? celdaNumero(row.getCell(colIdx.precioCompra).value) : 0,
       precioVenta: colIdx.precioVenta ? celdaNumero(row.getCell(colIdx.precioVenta).value) : 0,
       unidadMedida: colIdx.unidadMedida
-        ? celdaTexto(row.getCell(colIdx.unidadMedida).value).trim().toUpperCase() || 'NIU'
+        ? normalizarUnidad(celdaTexto(row.getCell(colIdx.unidadMedida).value), codigosUnidad)
         : 'NIU',
     });
     if (filas.length >= MAX_FILAS) break;
@@ -207,6 +278,12 @@ export async function confirmarImportProductos(
     vistos.add(f.sku);
   }
 
+  // Las filas vienen del cliente: re-normalizar unidades contra el catálogo
+  // (la FK productos.unidad_medida rechaza códigos fuera de unidades_medida).
+  const codigosUnidad = new Set(
+    (await db.select({ codigo: unidadesMedida.codigo }).from(unidadesMedida)).map((u) => u.codigo)
+  );
+
   // Resolver/crear categorías una sola vez
   const nombresFamilia = [...new Set(filas.map((f) => f.familia.trim() || 'Sin clasificar'))];
   const categoriaIds = new Map<string, string>();
@@ -229,6 +306,7 @@ export async function confirmarImportProductos(
 
   let creados = 0;
   let actualizados = 0;
+  const fallidos: string[] = [];
 
   for (const f of filas) {
     const familia = f.familia.trim() || 'Sin clasificar';
@@ -237,37 +315,51 @@ export async function confirmarImportProductos(
         ? f.precioVenta
         : Math.round(f.precioCompra * (1 + margenPorcentaje / 100) * 10000) / 10000;
 
-    const result = await db
-      .insert(productos)
-      .values({
-        tenantId: tenant.id,
-        codigo: f.sku,
-        nombre: f.descripcion,
-        categoriaId: categoriaIds.get(familia),
-        costoUnitario: String(f.precioCompra),
-        precioUnitario: String(precioVenta),
-        unidadMedida: f.unidadMedida || 'NIU',
-        tipo: 'bien',
-        controlaStock: false,
-        activo: true,
-        createdBy: user.id,
-      })
-      .onConflictDoUpdate({
-        target: [productos.tenantId, productos.codigo],
-        set: {
+    try {
+      const result = await db
+        .insert(productos)
+        .values({
+          tenantId: tenant.id,
+          codigo: f.sku,
           nombre: f.descripcion,
           categoriaId: categoriaIds.get(familia),
           costoUnitario: String(f.precioCompra),
           precioUnitario: String(precioVenta),
-          updatedAt: new Date(),
-        },
-      })
-      .returning({ created: sql<boolean>`(xmax = 0)` });
+          unidadMedida: normalizarUnidad(f.unidadMedida || 'NIU', codigosUnidad),
+          tipo: 'bien',
+          controlaStock: false,
+          activo: true,
+          createdBy: user.id,
+        })
+        .onConflictDoUpdate({
+          target: [productos.tenantId, productos.codigo],
+          set: {
+            nombre: f.descripcion,
+            categoriaId: categoriaIds.get(familia),
+            costoUnitario: String(f.precioCompra),
+            precioUnitario: String(precioVenta),
+            updatedAt: new Date(),
+          },
+        })
+        .returning({ created: sql<boolean>`(xmax = 0)` });
 
-    if (result[0]?.created) creados++;
-    else actualizados++;
+      if (result[0]?.created) creados++;
+      else actualizados++;
+    } catch (e) {
+      console.error(`Import producto ${f.sku} falló:`, e);
+      fallidos.push(f.sku);
+    }
   }
 
   revalidatePath(`/${tenant.slug}/productos`);
+
+  if (fallidos.length > 0) {
+    const lista = fallidos.slice(0, 5).join(', ') + (fallidos.length > 5 ? '…' : '');
+    return {
+      success: false,
+      error: `Se importaron ${creados + actualizados} de ${filas.length} productos. Fallaron ${fallidos.length}: ${lista}. Corrige esas filas y vuelve a subir el archivo (los ya importados se actualizan, no se duplican).`,
+    };
+  }
+
   return { success: true, data: { creados, actualizados } };
 }
