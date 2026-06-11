@@ -9,6 +9,7 @@ import { clientes, cotizaciones, guiasRemision, lineasGuia } from '@/lib/db/sche
 import { PageHead } from '@/components/shared/PageHead';
 import { EstadoBadge } from '@/components/shared/EstadoBadge';
 import { ReenviarGuiaButton } from '@/components/modules/guias/ReenviarGuiaButton';
+import { DescartarGuiaButton } from '@/components/modules/guias/DescartarGuiaButton';
 
 export const metadata = { title: 'Guía de remisión' };
 
@@ -77,7 +78,15 @@ export default async function GuiaDetallePage({
           </Link>
           <PageHead title={numero} subtitle="Guía de remisión" />
         </div>
-        <ReenviarGuiaButton guiaId={guia.id} estadoSunat={guia.estadoSunat ?? 'pendiente'} />
+        <div className="flex items-center gap-2">
+          <DescartarGuiaButton
+            guiaId={guia.id}
+            estadoSunat={guia.estadoSunat ?? 'pendiente'}
+            estado={guia.estado}
+            companySlug={companySlug}
+          />
+          <ReenviarGuiaButton guiaId={guia.id} estadoSunat={guia.estadoSunat ?? 'pendiente'} />
+        </div>
       </div>
 
       {/* Cotización vinculada */}

@@ -218,6 +218,36 @@ export async function marcarEntregada(guiaId: string): Promise<AR> {
   }
 }
 
+export async function descartarGuia(guiaId: string): Promise<AR> {
+  try {
+    const { tenant } = await requirePermission('guias.anular');
+
+    const [guia] = await db
+      .select({ id: guiasRemision.id, estadoSunat: guiasRemision.estadoSunat })
+      .from(guiasRemision)
+      .where(and(eq(guiasRemision.id, guiaId), eq(guiasRemision.tenantId, tenant.id)));
+
+    if (!guia) return { success: false, error: 'Guía no encontrada' };
+    if (guia.estadoSunat === 'aceptada') {
+      return {
+        success: false,
+        error: 'La guía ya fue aceptada por SUNAT; no puede descartarse. Emite una nueva guía.',
+      };
+    }
+
+    await db
+      .update(guiasRemision)
+      .set({ estado: 'anulada', updatedAt: new Date() })
+      .where(and(eq(guiasRemision.id, guiaId), eq(guiasRemision.tenantId, tenant.id)));
+
+    revalidatePath(`/${tenant.slug}/guias`);
+    revalidatePath(`/${tenant.slug}/guias/${guiaId}`);
+    return { success: true, data: undefined };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Error interno' };
+  }
+}
+
 export async function reenviarGuiaSunat(
   guiaId: string
 ): Promise<{ success: true; data: { encolado: boolean } } | { success: false; error: string }> {
