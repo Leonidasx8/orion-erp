@@ -2,7 +2,7 @@ import { and, desc, eq, inArray } from 'drizzle-orm';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
-import { requirePermission } from '@/lib/auth/require-permission';
+import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { clientes, cotizacionItems, cotizaciones, productos } from '@/lib/db/schema';
 import { NuevaGuiaForm } from '@/components/modules/guias/NuevaGuiaForm';
@@ -15,7 +15,7 @@ export default async function NuevaGuiaPage({
   params: Promise<{ companySlug: string }>;
 }) {
   const { companySlug } = await params;
-  await requirePermission('guias.crear');
+  await requirePermissionPage('guias.crear', companySlug);
   const tenant = await getCurrentTenant();
 
   const [destinatariosRaw, productosRaw, cotizacionesRaw] = await Promise.all([

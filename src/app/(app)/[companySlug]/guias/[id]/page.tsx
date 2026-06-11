@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { ArrowLeft, FileText, MapPin, Truck } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
-import { requirePermission } from '@/lib/auth/require-permission';
+import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { clientes, cotizaciones, guiasRemision, lineasGuia } from '@/lib/db/schema';
 import { PageHead } from '@/components/shared/PageHead';
@@ -29,7 +29,7 @@ export default async function GuiaDetallePage({
   params: Promise<{ companySlug: string; id: string }>;
 }) {
   const { companySlug, id } = await params;
-  await requirePermission('guias.ver');
+  await requirePermissionPage('guias.ver', companySlug);
   const tenant = await getCurrentTenant();
 
   const [guia] = await db

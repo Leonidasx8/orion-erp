@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { and, eq, sql } from 'drizzle-orm';
-import { requirePermission } from '@/lib/auth/require-permission';
+import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { userHasPermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { facturas, cotizaciones } from '@/lib/db/schema';
@@ -36,11 +36,14 @@ function formatDate(iso: string | null): string {
 }
 
 export default async function FacturasPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ companySlug: string }>;
   searchParams: Promise<{ estado?: string; page?: string; clienteId?: string }>;
 }) {
-  const { tenant } = await requirePermission('facturas.ver');
+  const { companySlug } = await params;
+  const { tenant } = await requirePermissionPage('facturas.ver', companySlug);
   const canCreate = await userHasPermission('facturas.crear');
   const sp = await searchParams;
   const filtroActivo = sp.estado && ESTADOS_VALIDOS.has(sp.estado) ? sp.estado : 'todas';

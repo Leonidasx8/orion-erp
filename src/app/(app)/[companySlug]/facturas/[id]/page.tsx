@@ -1,6 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
-import { requirePermission } from '@/lib/auth/require-permission';
+import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { facturas, lineasFactura } from '@/lib/db/schema';
 import {
@@ -38,7 +38,7 @@ export default async function FacturaDetallePage({
   params: Promise<{ companySlug: string; id: string }>;
 }) {
   const { companySlug, id } = await params;
-  const { tenant } = await requirePermission('facturas.ver');
+  const { tenant } = await requirePermissionPage('facturas.ver', companySlug);
 
   const [row] = await db
     .select()

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { eq, desc } from 'drizzle-orm';
 import { Plus, Truck } from 'lucide-react';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
-import { requirePermission } from '@/lib/auth/require-permission';
+import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { guiasRemision, clientes } from '@/lib/db/schema';
 import { PageHead } from '@/components/shared/PageHead';
@@ -39,7 +39,7 @@ const ESTADO_SUNAT: Record<string, { label: string; cls: string }> = {
 
 export default async function GuiasPage({ params }: { params: Promise<{ companySlug: string }> }) {
   const { companySlug } = await params;
-  await requirePermission('guias.ver');
+  await requirePermissionPage('guias.ver', companySlug);
   const tenant = await getCurrentTenant();
 
   const rows = await db

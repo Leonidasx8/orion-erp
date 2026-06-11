@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { userHasPermission } from '@/lib/auth/require-permission';
-import { requirePermission } from '@/lib/auth/require-permission';
+import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { kardexMovimientos, productos } from '@/lib/db/schema';
 import { KardexDetalle, type MovimientoRow } from '@/components/modules/inventario/KardexDetalle';
@@ -22,7 +22,7 @@ export default async function KardexPage({
   params: Promise<{ companySlug: string; productoId: string }>;
   searchParams: Promise<{ tipo?: string }>;
 }) {
-  const { productoId } = await params;
+  const { productoId, companySlug } = await params;
   const sp = await searchParams;
   const filtroActivo = (
     ['entradas', 'salidas', 'ajustes'].includes(sp.tipo ?? '') ? (sp.tipo as TipoFiltro) : 'todos'
@@ -32,7 +32,7 @@ export default async function KardexPage({
     getCurrentTenant(),
     userHasPermission('inventario.ajuste_manual'),
   ]);
-  await requirePermission('inventario.ver');
+  await requirePermissionPage('inventario.ver', companySlug);
 
   // Fetch producto + stock
   const stockRows = await db.execute<{

@@ -1,6 +1,6 @@
 import Link from 'next/link'; // noqa
 import { sql, eq, and } from 'drizzle-orm';
-import { requirePermission } from '@/lib/auth/require-permission';
+import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { facturas } from '@/lib/db/schema';
 import { PagoForm, type FacturaPendienteOption } from '@/components/modules/credito/PagoForm';
@@ -15,7 +15,7 @@ export default async function PagoNuevoPage({
   searchParams: Promise<{ clienteId?: string; facturaId?: string }>;
 }) {
   const [{ companySlug }, sp] = await Promise.all([params, searchParams]);
-  const { tenant } = await requirePermission('credito.registrar_pago');
+  const { tenant } = await requirePermissionPage('credito.registrar_pago', companySlug);
 
   const clienteId = sp.clienteId ?? null;
   const defaultFacturaId = sp.facturaId ?? undefined;

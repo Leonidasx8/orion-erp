@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { sql, eq, and, desc, inArray } from 'drizzle-orm';
-import { requirePermission } from '@/lib/auth/require-permission';
+import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { userHasPermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { clientes, creditosCliente, facturas, pagos } from '@/lib/db/schema';
@@ -70,7 +70,7 @@ export default async function ClienteCxCDetallePage({
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!UUID_RE.test(id)) notFound();
 
-  const { tenant } = await requirePermission('credito.ver');
+  const { tenant } = await requirePermissionPage('credito.ver', companySlug);
 
   const [canOtorgar, canPago] = await Promise.all([
     userHasPermission('credito.otorgar'),

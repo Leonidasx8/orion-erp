@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { notFound, redirect } from 'next/navigation';
-import { requirePermission } from '@/lib/auth/require-permission';
+import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { productos } from '@/lib/db/schema';
 import { AjusteManualForm } from '@/components/modules/inventario/AjusteManualForm';
@@ -14,7 +14,7 @@ export default async function AjustePage({
   params: Promise<{ companySlug: string; productoId: string }>;
 }) {
   const { productoId, companySlug } = await params;
-  const { tenant } = await requirePermission('inventario.ajuste_manual');
+  const { tenant } = await requirePermissionPage('inventario.ajuste_manual', companySlug);
 
   if (tenant.slug !== companySlug) redirect(`/${tenant.slug}/inventario`);
 
