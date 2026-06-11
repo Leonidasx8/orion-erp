@@ -378,13 +378,12 @@ pnpm dev
 - **Descripción:** Se sospechaba que el worker SUNAT no procesaba las NC de la cola.
 - **Resolución (verificada 11-jun-2026):** La NC F002-1 fue procesada por el worker y **ACEPTADA por SUNAT** (código 0, "La Nota de credito numero F002-1, ha sido aceptada"), vinculada a la factura F001-14. El ciclo completo de NC funciona de punta a punta con la serie F002 operativa en Nubefact.
 
-### ISSUE-03 — Guía T001-00000007 en estado "Error red"
+### ISSUE-03 — Guía T001-00000007 en estado "Error red" — ✅ RESUELTO
 
-- **Severidad:** BAJO
+- **Severidad:** BAJO → cerrado
 - **Perfil afectado:** Admin, Facturación
-- **Descripción:** La guía T001-7 fue creada con datos incompletos (peso=0, sin códigos de unidad SUNAT válidos). Nubefact la rechazó.
-- **Impacto:** Registro de prueba inválido en el historial. No afecta guías nuevas.
-- **Solución sugerida:** Anular el registro o marcarlo como prueba descartada.
+- **Descripción:** La guía T001-7 fue creada en pruebas con datos incompletos (sin peso bruto, sin SKU en la línea). Nubefact la rechazó en validación con: "Despatch advice lines codigo no puede estar en blanco, Peso bruto total debe ser mayor a 0". No era un bug del sistema — la validación funcionó correctamente.
+- **Resolución (11-jun-2026):** Se completaron los datos faltantes (peso bruto 50.00 KGM, SKU CB-AWG12 en la línea) y se reenvió desde el botón "Reenviar a SUNAT" de la UI. Resultado: **ACEPTADA por SUNAT** (código 0). Las 2 guías del sistema (T001-7 y T001-8) están aceptadas.
 
 ### ISSUE-04 — Error 404 en prefetch de /idex/admin
 
@@ -404,5 +403,6 @@ pnpm dev
 
 ---
 
-**Resumen de auditoría:** 5 issues detectados — 0 críticos, 0 altos, 1 medio, 3 bajos (ISSUE-02 resuelto y verificado 11-jun).  
-Los 2 issues medios (importación mock + NC sin SUNAT) son funcionalidades incompletas documentadas en el alcance: la importación era workaround, y las NC requieren paso adicional en Nubefact. No bloquean la operación diaria.
+**Resumen de auditoría:** 5 issues detectados — 0 críticos, 0 altos, 1 medio abierto, 2 bajos abiertos.  
+**Resueltos y verificados el 11-jun-2026:** ISSUE-02 (NC F002-1 y F002-2 ACEPTADAS por SUNAT) e ISSUE-03 (guía T001-7 corregida, reenviada y ACEPTADA por SUNAT).  
+**Abiertos:** ISSUE-01 (importación masiva UI — workaround vía carga directa, feature completa en roadmap v2), ISSUE-04 (404 en consola, cosmético) e ISSUE-05 (logo pendiente de que el cliente lo provea). Ninguno bloquea la operación diaria.

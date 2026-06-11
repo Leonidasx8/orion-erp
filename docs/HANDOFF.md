@@ -2,9 +2,9 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-11 00:05 (PAQUETE DE ENTREGA FORMAL ✅ — `orion-erp-setup/entrega/` completo: conciliación 49/52 + 10 cortesías, accesos, roadmap v2, UAT 34 casos, acta con marcha blanca hasta 11-jul, correo 2 variantes, manuales copiados. Pendiente Leo: video por rol, PDFs con branding, link seguro credenciales, enviar correo. Ver `entrega/README.md` checklist final.)
+**Última actualización:** 2026-06-11 09:35 (GUÍA T001-7 RESUELTA ✅ — datos corregidos + reenviada por UI + ACEPTADA SUNAT. Las 2 guías del sistema aceptadas. NC F002-1 y F002-2 también ACEPTADAS por SUNAT — sistema SUNAT 100% verde: F001 ✅ F002 ✅ T001 ✅)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
-**Estado verificado:** F001-14 ACEPTADA SUNAT ✅ · T001-8 ACEPTADA SUNAT ✅ · NC F002-1 creada (falta serie F002 en Nubefact) · Guía T001-7 Error red (falta módulo GRE en Nubefact) · AUDIT 14/14 módulos OK.
+**Estado verificado:** F001-13/14 emitidas y luego anuladas por NC (flujo completo demostrado) · NC F002-1 y F002-2 ACEPTADAS SUNAT ✅ · Guías T001-7 y T001-8 ACEPTADAS SUNAT ✅ · AUDIT 14/14 módulos OK.
 **Último commit prod:** `6561f25` — fix: GRE "ya existe en NubeFacT" → consultar_guia fallback
 
 > **gh gotcha:** la cuenta git activa se revierte sola a `DignitaTech` y rompe `git push orionrp` (repo privado de orionrp-hub da "not found"). Antes de push: `gh auth switch --user orionrp-hub`.
