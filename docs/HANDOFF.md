@@ -66,6 +66,10 @@
 
 **Limpieza hecha:** producto `PRUEBA-IMPORT-01` y categoría "Pruebas" borrados de prod. Catálogo queda en **476 productos activos** (CELSA intacto).
 
+### Botón "Calibre" en /productos — retirado (commit `87ba90b`, reporte de Lucas 12:55)
+
+Era un placeholder sin `onClick` que parecía un filtro activo. Retirado y verificado en prod. El calibre se busca por el buscador de texto (busca SKU+descripción+calibre). Filtro dedicado requiere campo `calibre` estructurado → addendum de variantes (fuera de contrato).
+
 ### Descartar guía (commit `9d0d3f1`) — verificación parcial
 
 - Caso negativo verificado en prod: en guías ACEPTADAS por SUNAT (T001-7/8) NO aparece el botón Descartar ni Reenviar — el guard funciona.
