@@ -145,14 +145,43 @@ function SunatStatusBox({
 export function FacturaDetalle({
   data,
   companySlug,
+  ncAnulacion = null,
 }: {
   data: FacturaDetalleData;
   companySlug: string;
+  ncAnulacion?: { numeroCompleto: string; tipoMotivo: string; pdfUrl: string | null } | null;
 }) {
   const moneda = data.moneda as 'PEN' | 'USD';
+  const anulada = data.estado === 'anulada' || ncAnulacion != null;
 
   return (
     <div className="flex flex-col gap-6">
+      {anulada && (
+        <div className="bg-danger-soft/30 flex flex-wrap items-center gap-2 rounded-lg border border-danger-soft px-4 py-3 text-sm">
+          <XCircle size={16} className="shrink-0 text-danger-fg" />
+          <span className="font-medium text-danger-fg">Factura anulada</span>
+          {ncAnulacion && (
+            <span className="text-orion-fg-muted">
+              mediante la Nota de Crédito{' '}
+              <span className="font-mono font-medium">{ncAnulacion.numeroCompleto}</span> aceptada
+              por SUNAT.
+              {ncAnulacion.pdfUrl && (
+                <>
+                  {' '}
+                  <a
+                    href={ncAnulacion.pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-orion-fg"
+                  >
+                    Ver PDF de la NC
+                  </a>
+                </>
+              )}
+            </span>
+          )}
+        </div>
+      )}
       {/* Encabezado */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

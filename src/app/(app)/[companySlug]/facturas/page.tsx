@@ -125,7 +125,7 @@ export default async function FacturasPage({
             tips={[
               'Las facturas se envían automáticamente a Nubefact cada 60 segundos',
               'Estado SUNAT: Pendiente → Aceptada (con PDF/CDR) o Rechazada (ver motivo)',
-              'Para anular: usa "Generar Nota de Crédito" desde el detalle',
+              'Toda factura puede anularse con "Generar Nota de Crédito" desde el detalle — dentro de las 48 horas de emitida. La factura anulada queda marcada y conserva su NC vinculada',
             ]}
           />
         </div>

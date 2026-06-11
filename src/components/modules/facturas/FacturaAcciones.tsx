@@ -227,8 +227,9 @@ function ModalNota({
 
           {tipo === 'nc' && (
             <p className="rounded-md bg-orion-bg-subtle px-3 py-2 text-[12px] text-orion-fg-muted">
-              Se creará una NC que anula el mismo monto de la factura original. El comprobante se
-              enviará a SUNAT en segundo plano.
+              Se creará una NC que anula el mismo monto de la factura original — disponible dentro
+              de las 48 horas siguientes a la emisión. El comprobante se enviará a SUNAT en segundo
+              plano.
             </p>
           )}
 

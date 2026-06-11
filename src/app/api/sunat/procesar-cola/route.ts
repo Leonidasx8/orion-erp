@@ -268,6 +268,24 @@ export async function POST(req: Request) {
         .where(eq(notasCreditoDebito.id, documentoId));
 
       resultado = resp.aceptada_por_sunat ? 'ok' : 'error_sunat';
+
+      // NC de anulación (01) o devolución total (06) aceptada → la factura original queda ANULADA
+      if (
+        resp.aceptada_por_sunat &&
+        nota.tipoDocumento === '07' &&
+        (nota.tipoMotivo === '01' || nota.tipoMotivo === '06') &&
+        nota.documentoOrigenId
+      ) {
+        await db
+          .update(facturas)
+          .set({
+            estado: 'anulada',
+            estadoSunat: 'anulada',
+            fechaAnulacion: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(facturas.id, nota.documentoOrigenId));
+      }
     } else if (documentoTipo === 'guia_remision') {
       const [guia] = await db.select().from(guiasRemision).where(eq(guiasRemision.id, documentoId));
       if (!guia) throw new Error(`Guía ${documentoId} no encontrada`);

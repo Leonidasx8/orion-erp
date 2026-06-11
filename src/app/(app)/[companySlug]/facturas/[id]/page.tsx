@@ -2,7 +2,7 @@ import { and, asc, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { facturas, lineasFactura } from '@/lib/db/schema';
+import { facturas, lineasFactura, notasCreditoDebito } from '@/lib/db/schema';
 import {
   FacturaDetalle,
   type FacturaDetalleData,
@@ -54,6 +54,23 @@ export default async function FacturaDetallePage({
     .where(eq(lineasFactura.facturaId, id))
     .orderBy(asc(lineasFactura.orden));
 
+  // NC de anulación aceptada vinculada a esta factura (para el aviso de anulación)
+  const [ncAnulacion] = await db
+    .select({
+      numeroCompleto: notasCreditoDebito.numeroCompleto,
+      tipoMotivo: notasCreditoDebito.tipoMotivo,
+      pdfUrl: notasCreditoDebito.pdfUrl,
+    })
+    .from(notasCreditoDebito)
+    .where(
+      and(
+        eq(notasCreditoDebito.documentoOrigenId, id),
+        eq(notasCreditoDebito.tipoDocumento, '07'),
+        eq(notasCreditoDebito.estadoSunat, 'aceptada')
+      )
+    )
+    .limit(1);
+
   const data: FacturaDetalleData = {
     id: row.id,
     numeroCompleto: row.numeroCompleto ?? '—',
@@ -100,7 +117,13 @@ export default async function FacturaDetallePage({
 
   return (
     <div className="p-6">
-      <FacturaDetalle data={data} companySlug={companySlug} />
+      <FacturaDetalle
+        data={data}
+        companySlug={companySlug}
+        ncAnulacion={
+          ncAnulacion ? { ...ncAnulacion, numeroCompleto: ncAnulacion.numeroCompleto ?? '' } : null
+        }
+      />
     </div>
   );
 }
