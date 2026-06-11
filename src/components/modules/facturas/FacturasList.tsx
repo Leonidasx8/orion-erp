@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Check, Clock, Cloud, Receipt, X } from 'lucide-react';
 import { EstadoBadge } from '@/components/shared/EstadoBadge';
 import { Money } from '@/components/shared/Money';
+import { AnulacionCountdown, formatDuracion } from './AnulacionCountdown';
 import type { Estado } from '@/components/shared/EstadoBadge';
 
 export type FacturaRow = {
@@ -12,12 +13,15 @@ export type FacturaRow = {
   numeroCompleto: string;
   tipoDocumento: string;
   fechaEmision: string;
+  fechaEmisionIso: string;
   clienteRazon: string;
   moneda: string;
   total: string;
   estado: string;
   estadoSunat: string;
   cotizacionNumero?: string | null;
+  /** Tiempo entre la emisión de la factura y su NC de anulación aceptada */
+  anuladaTrasMs?: number | null;
 };
 
 const FILTROS = [
@@ -151,6 +155,7 @@ export function FacturasList({
                 <th className="px-4 py-3 text-right">Total</th>
                 <th className="px-4 py-3">Estado doc.</th>
                 <th className="px-4 py-3">Estado SUNAT</th>
+                <th className="px-4 py-3">Anulación</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-orion-border">
@@ -183,6 +188,24 @@ export function FacturasList({
                   </td>
                   <td className="px-4 py-3">
                     <EstadoBadge estado={r.estadoSunat as Estado} />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    {r.estadoSunat === 'anulada' ? (
+                      r.anuladaTrasMs != null ? (
+                        <span
+                          className="text-xs text-danger-fg"
+                          title="Tiempo entre la emisión de la factura y la aceptación SUNAT de su NC de anulación"
+                        >
+                          Anulada tras {formatDuracion(r.anuladaTrasMs)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-orion-fg-faint">Anulada</span>
+                      )
+                    ) : r.estadoSunat === 'rechazada' ? (
+                      <span className="text-xs text-orion-fg-faint">—</span>
+                    ) : (
+                      <AnulacionCountdown fechaEmision={r.fechaEmisionIso} compact />
+                    )}
                   </td>
                 </tr>
               ))}

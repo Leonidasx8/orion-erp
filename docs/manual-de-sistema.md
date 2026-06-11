@@ -154,7 +154,7 @@ supabase/
 - Worker SUNAT procesa cola automáticamente cada 30 seg.
 - Estados: Lista para emitir → Pendiente SUNAT → Aceptada/Rechazada SUNAT.
 - Notas de Crédito: tipo 3 (devolución) y 4 (descuento).
-- **Anulación de facturas:** una NC de anulación (motivo 01) o devolución total (motivo 06) aceptada por SUNAT marca la factura original como **Anulada** automáticamente: badge rojo, banner con la NC vinculada y su PDF, y conteo en el filtro "Anuladas". Política operativa: anular dentro de las **48 horas** de emitida. Las guías de remisión NO se anulan con NC; si una guía salió con error, se emite una nueva (la corrección interna de guías está en el roadmap v2).
+- **Anulación de facturas:** una NC de anulación (motivo 01) o devolución total (motivo 06) aceptada por SUNAT marca la factura original como **Anulada** automáticamente: badge rojo, banner con la NC vinculada y su PDF, y conteo en el filtro "Anuladas". Plazos SUNAT: la **comunicación de baja** directa solo aplica dentro de los **7 días** de emitida; la anulación vía **NC no tiene plazo** (recomendado: emitirla dentro del mismo mes para que el IGV se ajuste en el mismo periodo). El sistema muestra un contador de la ventana de 7 días en la lista y el detalle de cada factura, y la columna "Anulación" indica cuánto tiempo después de emitida se anuló cada comprobante. Las guías de remisión NO se anulan con NC; si una guía salió con error, se emite una nueva (la corrección interna de guías está en el roadmap v2).
 
 ### 4.10 Crédito y CxC
 

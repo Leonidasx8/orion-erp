@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { userHasPermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { facturas, cotizaciones } from '@/lib/db/schema';
+import { facturas, cotizaciones, notasCreditoDebito } from '@/lib/db/schema';
 import { FacturasList, type FacturaRow } from '@/components/modules/facturas/FacturasList';
 import { ModuleHelp } from '@/components/shared/ModuleHelp';
 import { Plus } from 'lucide-react';
@@ -67,6 +67,7 @@ export default async function FacturasPage({
         total: facturas.total,
         estado: facturas.estado,
         estadoSunat: facturas.estadoSunat,
+        createdAt: facturas.createdAt,
         cotizacionNumero: cotizaciones.numeroCompleto,
       })
       .from(facturas)
@@ -100,18 +101,52 @@ export default async function FacturasPage({
     anuladas: sunatMap['anulada'] ?? 0,
   };
 
-  const rows: FacturaRow[] = rowsRaw.map((r) => ({
-    id: r.id,
-    numeroCompleto: r.numeroCompleto ?? '—',
-    tipoDocumento: r.tipoDocumento,
-    fechaEmision: formatDate(r.fechaEmision),
-    clienteRazon: r.clienteRazon,
-    moneda: r.moneda,
-    total: r.total,
-    estado: r.estado,
-    estadoSunat: r.estadoSunat,
-    cotizacionNumero: r.cotizacionNumero ?? null,
-  }));
+  // NC de anulación aceptadas vinculadas a las facturas de la página
+  // (para mostrar cuánto tiempo después de emitida se anuló cada una)
+  const facturaIds = rowsRaw.map((r) => r.id);
+  const ncAnulaciones = facturaIds.length
+    ? await db
+        .select({
+          facturaId: notasCreditoDebito.documentoOrigenId,
+          ncCreatedAt: sql<string>`MIN(${notasCreditoDebito.createdAt})::text`,
+        })
+        .from(notasCreditoDebito)
+        .where(
+          and(
+            eq(notasCreditoDebito.tenantId, tenant.id),
+            eq(notasCreditoDebito.tipoDocumento, '07'),
+            inArray(notasCreditoDebito.tipoMotivo, ['01', '06']),
+            eq(notasCreditoDebito.estadoSunat, 'aceptada'),
+            inArray(notasCreditoDebito.documentoOrigenId, facturaIds)
+          )
+        )
+        .groupBy(notasCreditoDebito.documentoOrigenId)
+    : [];
+  const ncMap = new Map(
+    ncAnulaciones.filter((n) => n.facturaId).map((n) => [n.facturaId as string, n.ncCreatedAt])
+  );
+
+  const rows: FacturaRow[] = rowsRaw.map((r) => {
+    const ncCreatedAt = ncMap.get(r.id);
+    const anuladaTrasMs =
+      ncCreatedAt && r.createdAt
+        ? Math.max(new Date(ncCreatedAt).getTime() - new Date(r.createdAt).getTime(), 0)
+        : null;
+    return {
+      id: r.id,
+      numeroCompleto: r.numeroCompleto ?? '—',
+      tipoDocumento: r.tipoDocumento,
+      fechaEmision: formatDate(r.fechaEmision),
+      fechaEmisionIso: r.fechaEmision,
+      clienteRazon: r.clienteRazon,
+      moneda: r.moneda,
+      total: r.total,
+      estado: r.estado,
+      estadoSunat: r.estadoSunat,
+      cotizacionNumero: r.cotizacionNumero ?? null,
+      anuladaTrasMs,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -125,7 +160,7 @@ export default async function FacturasPage({
             tips={[
               'Las facturas se envían automáticamente a Nubefact cada 60 segundos',
               'Estado SUNAT: Pendiente → Aceptada (con PDF/CDR) o Rechazada (ver motivo)',
-              'Toda factura puede anularse con "Generar Nota de Crédito" desde el detalle — dentro de las 48 horas de emitida. La factura anulada queda marcada y conserva su NC vinculada',
+              'Toda factura puede anularse con "Generar Nota de Crédito" desde el detalle — la NC no tiene plazo SUNAT (la ventana de baja directa es de 7 días). La factura anulada queda marcada y conserva su NC vinculada',
             ]}
           />
         </div>

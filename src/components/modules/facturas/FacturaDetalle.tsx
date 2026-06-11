@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle, Clock, FileText, Download, AlertTriangle } from 
 import { EstadoBadge } from '@/components/shared/EstadoBadge';
 import { Money } from '@/components/shared/Money';
 import { FacturaAcciones } from './FacturaAcciones';
+import { AnulacionCountdown, formatDuracion } from './AnulacionCountdown';
 import type { Estado } from '@/components/shared/EstadoBadge';
 
 export type LineaDetalleRow = {
@@ -26,6 +27,7 @@ export type FacturaDetalleData = {
   serie: string;
   numero: number;
   fechaEmision: string;
+  fechaEmisionIso: string;
   fechaVencimiento: string | null;
   clienteRazon: string;
   clienteNumDoc: string;
@@ -149,7 +151,12 @@ export function FacturaDetalle({
 }: {
   data: FacturaDetalleData;
   companySlug: string;
-  ncAnulacion?: { numeroCompleto: string; tipoMotivo: string; pdfUrl: string | null } | null;
+  ncAnulacion?: {
+    numeroCompleto: string;
+    tipoMotivo: string;
+    pdfUrl: string | null;
+    anuladaTrasMs?: number | null;
+  } | null;
 }) {
   const moneda = data.moneda as 'PEN' | 'USD';
   const anulada = data.estado === 'anulada' || ncAnulacion != null;
@@ -164,7 +171,10 @@ export function FacturaDetalle({
             <span className="text-orion-fg-muted">
               mediante la Nota de Crédito{' '}
               <span className="font-mono font-medium">{ncAnulacion.numeroCompleto}</span> aceptada
-              por SUNAT.
+              por SUNAT
+              {ncAnulacion.anuladaTrasMs != null &&
+                `, ${formatDuracion(ncAnulacion.anuladaTrasMs)} después de emitida`}
+              .
               {ncAnulacion.pdfUrl && (
                 <>
                   {' '}
@@ -190,6 +200,11 @@ export function FacturaDetalle({
             {data.tipoDocumento === '01' ? 'Factura' : 'Boleta'} · Emitida {data.fechaEmision}
             {data.fechaVencimiento && ` · Vence ${data.fechaVencimiento}`}
           </p>
+          {!anulada && data.estadoSunat !== 'rechazada' && (
+            <div className="mt-1">
+              <AnulacionCountdown fechaEmision={data.fechaEmisionIso} />
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <EstadoBadge estado={data.estado as Estado} />

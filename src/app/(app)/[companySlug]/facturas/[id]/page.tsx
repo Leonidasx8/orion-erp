@@ -60,6 +60,7 @@ export default async function FacturaDetallePage({
       numeroCompleto: notasCreditoDebito.numeroCompleto,
       tipoMotivo: notasCreditoDebito.tipoMotivo,
       pdfUrl: notasCreditoDebito.pdfUrl,
+      createdAt: notasCreditoDebito.createdAt,
     })
     .from(notasCreditoDebito)
     .where(
@@ -78,6 +79,7 @@ export default async function FacturaDetallePage({
     serie: row.serie,
     numero: row.numero,
     fechaEmision: formatDate(row.fechaEmision),
+    fechaEmisionIso: row.fechaEmision,
     fechaVencimiento: row.fechaVencimiento ? formatDate(row.fechaVencimiento) : null,
     clienteRazon: row.clienteRazonSocialSnapshot,
     clienteNumDoc: row.clienteNumeroDocSnapshot,
@@ -121,7 +123,21 @@ export default async function FacturaDetallePage({
         data={data}
         companySlug={companySlug}
         ncAnulacion={
-          ncAnulacion ? { ...ncAnulacion, numeroCompleto: ncAnulacion.numeroCompleto ?? '' } : null
+          ncAnulacion
+            ? {
+                numeroCompleto: ncAnulacion.numeroCompleto ?? '',
+                tipoMotivo: ncAnulacion.tipoMotivo,
+                pdfUrl: ncAnulacion.pdfUrl,
+                anuladaTrasMs:
+                  ncAnulacion.createdAt && row.createdAt
+                    ? Math.max(
+                        new Date(ncAnulacion.createdAt).getTime() -
+                          new Date(row.createdAt).getTime(),
+                        0
+                      )
+                    : null,
+              }
+            : null
         }
       />
     </div>
