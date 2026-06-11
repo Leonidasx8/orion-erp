@@ -2,7 +2,7 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-11 12:30 (⚠️ BUG ABIERTO: importador de productos falla con 500 al CONFIRMAR en prod — parseo/preview OK, insert final no. Ver sección "BUG ABIERTO" abajo con diagnóstico hecho y descartado. Además: feature descartar guía (commit 9d0d3f1) desplegada pero SIN verificar en prod. La sesión de la mañana se cortó por créditos a mitad del debugging.)
+**Última actualización:** 2026-06-11 12:45 (✅ BUG RESUELTO: el 500 del importador era FK `productos_unidad_medida_fkey` — el Excel traía "UND" y la columna exige códigos del catálogo SUNAT. Fix `b09b54b` desplegado y VERIFICADO end-to-end en prod. Datos de prueba limpiados, 476 productos activos. ⏰ LUCAS ENTRA A PROBAR HOY 2:00PM — va a meter productos, precios y líneas de crédito.)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
 **Estado verificado:** F001-13/14 emitidas y luego anuladas por NC (flujo completo demostrado) · NC F002-1 y F002-2 ACEPTADAS SUNAT ✅ · Guías T001-7 y T001-8 ACEPTADAS SUNAT ✅ · AUDIT 14/14 módulos OK.
 **Último commit prod:** `6561f25` — fix: GRE "ya existe en NubeFacT" → consultar_guia fallback
@@ -49,35 +49,27 @@
 
 ---
 
-## ⚠️ 2026-06-11 mediodía — BUG ABIERTO: importador falla al confirmar (500) + descartar guía sin verificar
+## ✅ 2026-06-11 mediodía — RESUELTO: importador 500 al confirmar (FK unidad_medida)
 
-> La sesión de la mañana (~10:07) se cortó por créditos a mitad del debugging. Esto es lo que quedó a medias.
+> La sesión de la mañana se cortó por créditos a mitad del debugging; se cerró al mediodía.
 
-### Bug: `confirmarImportProductos` devuelve 500 en producción
+### Causa raíz y fix (commit `b09b54b`, desplegado `orion-ekc8k2fh7`)
 
-**Síntoma:** en `/idex/productos/importar`, los pasos 1 y 2 (subir archivo + parseo/preview) funcionan perfecto en prod (probado 3 veces: catálogo de 47 productos y archivo mínimo de 1 producto, validación "1 OK, 0 errores"). Al hacer clic en **"Confirmar import (1)"** → 500 "An error occurred in the Server Components render" (detalle suprimido en build de prod). El producto `PRUEBA-IMPORT-01` NO se creó.
+**Causa:** `insert or update on table "productos" violates foreign key constraint "productos_unidad_medida_fkey"` — `Key (unidad_medida)=(UND) is not present in table "unidades_medida"`. El parser pasaba la unidad del Excel tal cual (uppercase) sin validar contra el catálogo SUNAT cat. 03. Capturado con `vercel logs --follow` + reproducción en prod.
 
-**Diagnóstico ya hecho (no repetir):**
+**Fix en `src/server/actions/productos-importar.ts`:**
 
-- ✅ El producto NO existe en DB (sin insert parcial), pero la categoría **"Pruebas" SÍ se creó** → el fallo ocurre DESPUÉS de crear la categoría, en el insert del producto (`src/server/actions/productos-importar.ts`, bloque `db.insert(productos)...onConflictDoUpdate` ~línea 240).
-- ✅ Constraint `UNIQUE (tenant_id, codigo)` **SÍ existe en prod** (`productos_tenant_id_codigo_key`, verificado vía pg_constraint 11-jun 12:20) → el `onConflictDoUpdate` target NO es la causa.
-- ✅ Upsert manual con `RETURNING (xmax = 0)` vía SQL directo en prod funcionó → schema y técnica xmax OK.
-- ❌ Los logs de Vercel y Postgres del momento del error (10:04) **ya expiraron** sin capturarse. El log en vivo (`/tmp/vercel-live.log`) solo registró GETs normales.
+- Mapa `UNIDAD_ALIAS` (UND/UNID/U→NIU, M/MT/MTS→MTR, KG→KGM, L/LT→LTR, PZA→PCE, CAJA→BX, ROLLO→RLL, etc.) + validación contra tabla `unidades_medida`; lo no reconocido cae a **NIU**. Se aplica en el parseo (preview muestra el código final) Y en el confirm (las filas vienen del cliente, no se confía).
+- Fallas por fila ya no tumban el import completo con 500: try/catch por producto, reporta SKUs fallidos en el mensaje ("Se importaron X de Y… reintenta: upsert no duplica").
 
-**Sospechosos restantes (por revisar):**
+**Verificado end-to-end en prod (12:40):** subir `test-import.xlsx` (unidad "UND") → preview 1 OK → Confirmar → **"Importación completada, 1 producto creado"**, unidad en DB = NIU. Esto valida que el manual de usuario (que sugiere "MTR, UND, KG") funciona tal cual está escrito.
 
-- El insert de Drizzle con `onConflictDoUpdate().returning(sql\`(xmax = 0)\`)`en runtime de Vercel (¿prepared statements vs pooler en transaction mode? El resto de la app usa Drizzle y funciona, pero ninguna otra action usa`xmax` en RETURNING).
-- `createdBy: user.id` — verificar que `user.id` exista en la forma que la columna espera.
-- Serialización del resultado / `revalidatePath` tras el insert.
+**Limpieza hecha:** producto `PRUEBA-IMPORT-01` y categoría "Pruebas" borrados de prod. Catálogo queda en **476 productos activos** (CELSA intacto).
 
-**Próximo paso concreto:** correr `vercel logs <deployment-url> --follow` ANTES de hacer clic en Confirmar, reproducir el 500, y leer el stack trace real. El archivo de prueba mínimo (1 producto `PRUEBA-IMPORT-01`, S/0.50→S/1.00, familia "Pruebas") ya existe en orion-erp-setup. **Limpieza pendiente:** ya quedó la categoría "Pruebas" huérfana en prod; borrarla al cerrar el bug (el producto nunca se creó, no hay nada que desactivar).
+### Descartar guía (commit `9d0d3f1`) — verificación parcial
 
-### Feature: descartar guía (commit `9d0d3f1`) — desplegada, NO verificada
-
-- `descartarGuia` server action (`src/server/actions/guias.ts`): permiso `guias.anular`, bloquea si `estadoSunat='aceptada'`, setea `estado='anulada'`.
-- `DescartarGuiaButton.tsx` integrado en header de `guias/[id]/page.tsx` junto a ReenviarGuiaButton. Typecheck OK.
-- Ambos deploys de Vercel terminaron **Ready** (importador + guías están en prod).
-- **Pendiente:** probar en prod el flujo descartar guía con error → crear guía corregida.
+- Caso negativo verificado en prod: en guías ACEPTADAS por SUNAT (T001-7/8) NO aparece el botón Descartar ni Reenviar — el guard funciona.
+- Caso positivo (botón visible y acción sobre guía con error) NO probado: requeriría crear una guía basura en prod. Probar cuando ocurra un error real de emisión.
 
 ---
 
