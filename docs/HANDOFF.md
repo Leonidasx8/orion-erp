@@ -2,7 +2,7 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-11 12:45 (✅ BUG RESUELTO: el 500 del importador era FK `productos_unidad_medida_fkey` — el Excel traía "UND" y la columna exige códigos del catálogo SUNAT. Fix `b09b54b` desplegado y VERIFICADO end-to-end en prod. Datos de prueba limpiados, 476 productos activos. ⏰ LUCAS ENTRA A PROBAR HOY 2:00PM — va a meter productos, precios y líneas de crédito.)
+**Última actualización:** 2026-06-12 09:10 (✅ Consulta RUC/DNI HABILITADA en prod vía Decolecta — Lucas reportó "meter el RUC no funciona"; Leo consiguió token `sk_…` de decolecta.com (no apis.net.pe). Código adaptado, `DECOLECTA_TOKEN` en Vercel, deploy `b7c1bbb`, verificado E2E en tenant idex: RUC 20100070970 y DNI autocompletaron.)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
 **Estado verificado:** F001-13/14 emitidas y luego anuladas por NC (flujo completo demostrado) · NC F002-1 y F002-2 ACEPTADAS SUNAT ✅ · Guías T001-7 y T001-8 ACEPTADAS SUNAT ✅ · AUDIT 14/14 módulos OK.
 **Último commit prod:** `6561f25` — fix: GRE "ya existe en NubeFacT" → consultar_guia fallback
@@ -49,6 +49,22 @@
 
 ---
 
+## ✅ 2026-06-12 mañana — Consulta RUC/DNI habilitada vía Decolecta (commit `b7c1bbb`)
+
+**Reporte de Lucas:** "meter el RUC no funciona" en el tenant idex. Era el pendiente conocido del token (la app mostraba el mensaje honesto "consulta no habilitada todavía").
+
+**Resolución:** Leo se registró y pasó un token, pero resultó ser de **decolecta.com** (formato `sk_…`), no de apis.net.pe (devolvía 401 ahí). Se adaptó la integración:
+
+- `src/lib/sunat/consultar-documento.ts` → `API_BASE = https://api.decolecta.com/v1`, endpoints `sunat/ruc?numero=` y `reniec/dni?numero=`, mapeo de respuesta (`razon_social`, `first_name`/`first_last_name`/`second_last_name`).
+- Env var renombrada `APIS_NET_PE_TOKEN` → **`DECOLECTA_TOKEN`** (en `.env.example`, `.env.local` y Vercel **Production + Development**; Preview falló por bug del CLI 54.4.1 — no bloquea, agregar cuando se actualice el CLI).
+- El caché de 30 días en `validaciones_documento` se mantiene igual.
+
+**Verificado E2E en prod (tenant idex, login Lucas):** RUC `20100070970` → autocompletó razón social + "HABIDO · ACTIVO" + dirección fiscal; DNI `46027897` → autocompletó nombres y apellidos. No se guardó ningún cliente de prueba. Screenshot: `check-ruc-decolecta-ok.png` (orion-erp-setup).
+
+**Límite del plan free de Decolecta:** revisar cuota en su dashboard si Lucas reporta fallos intermitentes (HTTP 429 → el form sigue permitiendo alta manual).
+
+---
+
 ## ✅ 2026-06-11 mediodía — RESUELTO: importador 500 al confirmar (FK unidad_medida)
 
 > La sesión de la mañana se cortó por créditos a mitad del debugging; se cerró al mediodía.
@@ -68,7 +84,7 @@
 
 ### Reportes de Lucas en pruebas en vivo (3:30pm) — 3 fixes (commit `0c51f5c`)
 
-1. **"No existe ese RUC" al crear cliente** → `APIS_NET_PE_TOKEN` NUNCA se configuró (vacío en `.env.local`, ausente en Vercel). El catch silencioso convertía "sin token" en "no se encontró el documento". Fix: mensaje honesto que invita a llenar manual (el form SÍ permite alta manual). **PENDIENTE LEO: registrarse en apis.net.pe (gratis 100/día), obtener token → `vercel env add APIS_NET_PE_TOKEN production` → redeploy.**
+1. **"No existe ese RUC" al crear cliente** → `APIS_NET_PE_TOKEN` NUNCA se configuró (vacío en `.env.local`, ausente en Vercel). El catch silencioso convertía "sin token" en "no se encontró el documento". Fix: mensaje honesto que invita a llenar manual (el form SÍ permite alta manual). ~~PENDIENTE LEO: registrarse en apis.net.pe~~ → **RESUELTO 12-jun con Decolecta (ver entrada 2026-06-12).**
 2. **"Los precios de los cables están en soles y la lista es en USD"** → Lucas tenía razón: los precios de producto son USD en todo el sistema (cotización los copia sin convertir con USD como moneda base, kardex muestra USD, form dice "(USD)", actualizar-precios formatea USD). La carga de la madrugada (×3.75) fue el error y además inflaba cotizaciones 3.75×. Fix: **475 productos CELSA divididos entre 3.75 vía SQL** (CB-AWG12 demo intacto) + catálogo ahora formatea US$ (era el único display en PEN).
 3. **"Sigue en soles" (dashboard)** → ejes de los gráficos Ventas 12m y Pipeline tenían "S/" hardcodeado; ahora "US$". Nota: el view `dashboard_metricas` suma facturas sin separar moneda (limitación conocida B.11 "referencia histórica"); refinar en v2.
 
