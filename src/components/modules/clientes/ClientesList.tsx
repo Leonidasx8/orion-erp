@@ -363,9 +363,11 @@ export function ClientesList({
           />
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Upload className="mr-1.5 h-3.5 w-3.5" />
-            Importar
+          <Button variant="outline" size="sm" asChild>
+            <Link href="clientes/importar">
+              <Upload className="mr-1.5 h-3.5 w-3.5" />
+              Importar
+            </Link>
           </Button>
           <Button variant="outline" size="sm">
             <Download className="mr-1.5 h-3.5 w-3.5" />
