@@ -30,7 +30,7 @@ export default async function EditarCotizacionPage({
     .where(and(eq(cotizaciones.id, id), eq(cotizaciones.tenantId, tenant.id)))
     .limit(1);
   if (!row) notFound();
-  if (row.estado !== 'borrador') redirect(`/${companySlug}/cotizaciones/${id}`);
+  if (row.estado === 'convertida') redirect(`/${companySlug}/cotizaciones/${id}`);
 
   const [items, clientesRows, productosRows] = await Promise.all([
     db
