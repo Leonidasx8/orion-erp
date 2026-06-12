@@ -96,6 +96,8 @@ export function ClienteForm({ companySlug, cliente }: Props) {
           canalCaptacion: cliente.canalCaptacion ?? undefined,
           notas: cliente.notas ?? undefined,
           tags: cliente.tags ?? [],
+          esCliente: (cliente as Cliente & { esCliente?: boolean }).esCliente ?? true,
+          esProveedor: (cliente as Cliente & { esProveedor?: boolean }).esProveedor ?? false,
         }
       : {
           tipoDocumento: 'RUC',
@@ -104,6 +106,8 @@ export function ClienteForm({ companySlug, cliente }: Props) {
           plazoCredito: 'contado',
           listaPrecio: 'default',
           tags: [],
+          esCliente: true,
+          esProveedor: false,
         },
   });
 
@@ -458,6 +462,26 @@ export function ClienteForm({ companySlug, cliente }: Props) {
             rows={3}
             placeholder="Observaciones, acuerdos especiales…"
           />
+        </div>
+
+        {/* Roles */}
+        <div className="flex flex-wrap gap-6">
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              {...register('esCliente')}
+              className="h-4 w-4 rounded border-orion-border accent-tenant-accent"
+            />
+            <span>Es cliente</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              {...register('esProveedor')}
+              className="h-4 w-4 rounded border-orion-border accent-tenant-accent"
+            />
+            <span>Es proveedor</span>
+          </label>
         </div>
       </div>
     </form>

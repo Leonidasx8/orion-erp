@@ -38,6 +38,9 @@ export const clienteSchema = z
     ubigeoSunat: z.string().optional(),
     direccionSunat: z.string().optional(),
 
+    esCliente: z.boolean().default(true),
+    esProveedor: z.boolean().default(false),
+
     canalCaptacion: z.string().max(50).optional(),
     notas: z.string().max(2000).optional(),
     tags: z.array(z.string()).default([]),
