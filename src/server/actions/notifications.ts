@@ -21,11 +21,14 @@ export async function cargarNotificaciones(): Promise<Notificacion[]> {
   const [cxcRows, facturaRows, ocRows, cotRows] = await Promise.all([
     // CxC vencida (clientes con saldo vencido)
     db.execute<{ nombre_cliente: string; saldo_vencido: string; cliente_id: string }>(sql`
-      SELECT nombre_cliente, saldo_vencido::text, cliente_id::text
+      SELECT
+        razon_social AS nombre_cliente,
+        (COALESCE(saldo_vencido_usd, 0) + COALESCE(saldo_vencido_pen, 0))::text AS saldo_vencido,
+        cliente_id::text
       FROM cuentas_por_cobrar
       WHERE tenant_id = ${tenant.id}
-        AND saldo_vencido > 0
-      ORDER BY saldo_vencido DESC
+        AND (COALESCE(saldo_vencido_usd, 0) + COALESCE(saldo_vencido_pen, 0)) > 0
+      ORDER BY (COALESCE(saldo_vencido_usd, 0) + COALESCE(saldo_vencido_pen, 0)) DESC
       LIMIT 5
     `),
 

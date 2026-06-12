@@ -74,8 +74,8 @@ export default async function DashboardPage({
     // CxC totales agregados
     db.execute<CxCRow>(sql`
         SELECT
-          COALESCE(SUM(saldo_total), 0)::text   AS total,
-          COALESCE(SUM(saldo_vencido), 0)::text AS vencido
+          COALESCE(SUM(COALESCE(saldo_total_usd, 0) + COALESCE(saldo_total_pen, 0)), 0)::text   AS total,
+          COALESCE(SUM(COALESCE(saldo_vencido_usd, 0) + COALESCE(saldo_vencido_pen, 0)), 0)::text AS vencido
         FROM cuentas_por_cobrar
         WHERE tenant_id = ${tenant.id}
       `),

@@ -43,7 +43,7 @@ export default async function ReportesPage({
 
     // CxC: saldo total desde vista cuentas_por_cobrar
     db.execute(
-      sql`SELECT COALESCE(SUM(saldo_total), 0) AS cxc FROM cuentas_por_cobrar WHERE tenant_id = ${tenant.id}`
+      sql`SELECT COALESCE(SUM(COALESCE(saldo_total_usd, 0) + COALESCE(saldo_total_pen, 0)), 0) AS cxc FROM cuentas_por_cobrar WHERE tenant_id = ${tenant.id}`
     ),
 
     // Inventario crítico desde vista stock_actual
