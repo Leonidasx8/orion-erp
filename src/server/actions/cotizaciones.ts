@@ -155,20 +155,19 @@ export async function actualizarCotizacion(
   const parsed = cotizacionSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
 
-  const { tenant } = await requirePermission('cotizaciones.editar');
+  const { tenant, user } = await requirePermission('cotizaciones.editar');
   const data = parsed.data;
 
-  // Solo se puede editar si está en borrador
   const [actual] = await db
     .select({ estado: cotizaciones.estado })
     .from(cotizaciones)
     .where(and(eq(cotizaciones.id, cotizacionId), eq(cotizaciones.tenantId, tenant.id)));
 
   if (!actual) return { success: false, error: 'Cotización no encontrada' };
-  if (actual.estado !== 'borrador')
+  if (actual.estado === 'convertida')
     return {
       success: false,
-      error: `Solo se puede editar en estado borrador (actual: ${actual.estado})`,
+      error: 'Una cotización convertida en OC o factura no puede editarse.',
     };
 
   await validarCliente(tenant.id, data.clienteId);
@@ -180,6 +179,7 @@ export async function actualizarCotizacion(
 
   try {
     await db.transaction(async (tx) => {
+      await capturarVersion(tx, cotizacionId, tenant.id, user.id, 'pre_edicion');
       await tx
         .update(cotizaciones)
         .set({
@@ -203,6 +203,7 @@ export async function actualizarCotizacion(
           contactoClienteNombre: data.contactoClienteNombre ?? null,
           contactoClienteCargo: data.contactoClienteCargo ?? null,
           contactoClienteEmail: data.contactoClienteEmail || null,
+          vecesEditado: sql`${cotizaciones.vecesEditado} + 1`,
           updatedAt: new Date(),
         })
         .where(eq(cotizaciones.id, cotizacionId));
