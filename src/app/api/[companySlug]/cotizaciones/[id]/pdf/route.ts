@@ -63,6 +63,7 @@ export async function GET(
           cantidad: cotizacionItems.cantidad,
           precioUnitario: cotizacionItems.precioUnitario,
           subtotal: cotizacionItems.subtotal,
+          tiempoEntregaDias: cotizacionItems.tiempoEntregaDias,
         })
         .from(cotizacionItems)
         .where(eq(cotizacionItems.cotizacionId, id))
@@ -143,6 +144,7 @@ export async function GET(
         cantidad: Number(it.cantidad),
         precioUnitario: Number(it.precioUnitario),
         subtotal: Number(it.subtotal),
+        tiempoEntregaDias: it.tiempoEntregaDias ?? null,
       })),
       totales: {
         subtotal: Number(row.subtotal),

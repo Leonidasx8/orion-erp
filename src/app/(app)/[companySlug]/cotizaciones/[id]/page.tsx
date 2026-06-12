@@ -67,6 +67,7 @@ export default async function CotizacionDetallePage({
         cantidad: cotizacionItems.cantidad,
         precioUnitario: cotizacionItems.precioUnitario,
         subtotal: cotizacionItems.subtotal,
+        tiempoEntregaDias: cotizacionItems.tiempoEntregaDias,
       })
       .from(cotizacionItems)
       .where(eq(cotizacionItems.cotizacionId, id))
@@ -96,6 +97,7 @@ export default async function CotizacionDetallePage({
       cantidad: Number(it.cantidad),
       precioUnitario: Number(it.precioUnitario),
       subtotal: Number(it.subtotal),
+      tiempoEntregaDias: it.tiempoEntregaDias ?? null,
     })),
     totales: {
       subtotal: Number(row.subtotal),

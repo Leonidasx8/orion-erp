@@ -13,6 +13,7 @@ export type CotizacionDetalleItem = {
   cantidad: number;
   precioUnitario: number;
   subtotal: number;
+  tiempoEntregaDias: number | null;
 };
 
 export type TimelineEvento = {
@@ -134,6 +135,7 @@ export function CotizacionDetalle({
                     <Th>Descripción</Th>
                     <Th align="right">Cant.</Th>
                     <Th align="right">Precio</Th>
+                    <Th align="right">Entrega</Th>
                     <Th align="right">Subtotal</Th>
                   </tr>
                 </thead>
@@ -145,6 +147,9 @@ export function CotizacionDetalle({
                       <Td align="right">{it.cantidad.toLocaleString('en-US')}</Td>
                       <Td align="right">
                         <Money value={it.precioUnitario} ccy={data.moneda} dp={4} />
+                      </Td>
+                      <Td align="right" className="text-orion-fg-muted">
+                        {it.tiempoEntregaDias != null ? `${it.tiempoEntregaDias}d` : '—'}
                       </Td>
                       <Td align="right">
                         <Money value={it.subtotal} ccy={data.moneda} dp={2} />

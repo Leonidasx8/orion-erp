@@ -113,6 +113,7 @@ export default async function EditarCotizacionPage({
       precioUnitario: Number(it.precioUnitario),
       descuentoPorcentaje: Number(it.descuentoPorcentaje),
       afectaIgv: it.afectaIgv,
+      tiempoEntregaDias: it.tiempoEntregaDias ?? null,
     })),
   };
 

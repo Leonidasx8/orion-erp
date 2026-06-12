@@ -128,8 +128,9 @@ const s = StyleSheet.create({
   cSku: { width: '12%' },
   cDesc: { flex: 1 },
   cQty: { width: '8%', textAlign: 'right' },
-  cPrice: { width: '18%', textAlign: 'right' },
-  cTotal: { width: '18%', textAlign: 'right' },
+  cEntrega: { width: '10%', textAlign: 'right' },
+  cPrice: { width: '16%', textAlign: 'right' },
+  cTotal: { width: '16%', textAlign: 'right' },
   td: { fontSize: 8, color: C.body },
   tdMuted: { fontSize: 7.5, color: C.muted, fontFamily: 'Courier' },
 
@@ -284,6 +285,7 @@ export function CotizacionPDFDesignB({
             <Text style={[s.thText, s.cSku]}>SKU</Text>
             <Text style={[s.thText, s.cDesc]}>DESCRIPCIÓN</Text>
             <Text style={[s.thText, s.cQty]}>CANT.</Text>
+            <Text style={[s.thText, s.cEntrega]}>ENTREGA</Text>
             <Text style={[s.thText, s.cPrice]}>{data.moneda} P. UNIT.</Text>
             <Text style={[s.thText, s.cTotal]}>{data.moneda} SUBTOTAL</Text>
           </View>
@@ -292,6 +294,9 @@ export function CotizacionPDFDesignB({
               <Text style={[s.tdMuted, s.cSku]}>{it.sku ?? '—'}</Text>
               <Text style={[s.td, s.cDesc]}>{it.descripcion}</Text>
               <Text style={[s.td, s.cQty]}>{it.cantidad.toLocaleString('en-US')}</Text>
+              <Text style={[s.td, s.cEntrega]}>
+                {it.tiempoEntregaDias != null ? `${it.tiempoEntregaDias}d` : '—'}
+              </Text>
               <Text style={[s.td, s.cPrice]}>{num(it.precioUnitario, 4)}</Text>
               <Text style={[s.td, s.cTotal]}>{num(it.subtotal, 2)}</Text>
             </View>

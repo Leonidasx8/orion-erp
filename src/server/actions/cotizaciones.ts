@@ -131,6 +131,7 @@ export async function crearCotizacion(
           subtotal: String(calc.subtotal),
           igv: String(calc.igv),
           total: String(calc.total),
+          tiempoEntregaDias: item.tiempoEntregaDias ?? null,
         };
       });
 
@@ -217,6 +218,7 @@ export async function actualizarCotizacion(
           orden: idx + 1,
           productoId: item.productoId ?? null,
           codigo: item.codigo ?? null,
+          tiempoEntregaDias: item.tiempoEntregaDias ?? null,
           descripcion: item.descripcion,
           unidadMedida: item.unidadMedida,
           cantidad: String(item.cantidad),

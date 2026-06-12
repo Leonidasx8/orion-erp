@@ -11,6 +11,7 @@ export const cotizacionItemSchema = z.object({
   precioUnitario: z.coerce.number().min(0, 'Precio no puede ser negativo'),
   descuentoPorcentaje: z.coerce.number().min(0).max(100).default(0),
   afectaIgv: z.boolean().default(true),
+  tiempoEntregaDias: z.coerce.number().int().min(1).max(60).optional(),
 });
 
 export type CotizacionItemInput = z.infer<typeof cotizacionItemSchema>;

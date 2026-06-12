@@ -52,6 +52,7 @@ export type CotizacionFormInitial = {
     precioUnitario: number;
     descuentoPorcentaje: number;
     afectaIgv: boolean;
+    tiempoEntregaDias: number | null;
   }>;
 };
 
@@ -133,6 +134,7 @@ export function CotizacionForm({
             precioUnitario: it.precioUnitario,
             descuentoPorcentaje: it.descuentoPorcentaje,
             afectaIgv: it.afectaIgv,
+            tiempoEntregaDias: it.tiempoEntregaDias ?? undefined,
           })),
         }
       : {
@@ -407,6 +409,7 @@ export function CotizacionForm({
                     <Th align="right">Cant.</Th>
                     <Th align="right">Precio</Th>
                     <Th align="right">Margen</Th>
+                    <Th align="right">Entrega</Th>
                     <Th align="right">Subtotal</Th>
                     <Th />
                   </tr>
@@ -513,6 +516,21 @@ export function CotizacionForm({
                             <span className="text-orion-fg-muted">—</span>
                           )}
                         </Td>
+                        {/* Entrega días */}
+                        <Td align="right" className="w-[72px]">
+                          <input
+                            type="number"
+                            min="1"
+                            max="60"
+                            step="1"
+                            placeholder="—"
+                            {...register(`items.${idx}.tiempoEntregaDias`)}
+                            className={cn(
+                              inputCls,
+                              'h-8 w-16 text-right text-[12.5px] tabular-nums'
+                            )}
+                          />
+                        </Td>
                         {/* Subtotal */}
                         <Td
                           align="right"
@@ -575,6 +593,7 @@ export function CotizacionForm({
                     precioUnitario: 0,
                     descuentoPorcentaje: 0,
                     afectaIgv: true,
+                    tiempoEntregaDias: undefined,
                   })
                 }
                 className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-orion-fg-muted hover:text-orion-fg"

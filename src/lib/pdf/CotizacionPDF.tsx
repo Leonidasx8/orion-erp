@@ -220,6 +220,7 @@ export interface CotizacionPDFData {
     cantidad: number;
     precioUnitario: number;
     subtotal: number;
+    tiempoEntregaDias?: number | null;
   }>;
   totales: {
     subtotal: number;

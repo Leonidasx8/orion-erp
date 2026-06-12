@@ -100,6 +100,8 @@ export const cotizacionItems = pgTable('cotizacion_items', {
   igv: numeric('igv', { precision: 14, scale: 2 }).notNull().default('0'),
   total: numeric('total', { precision: 14, scale: 2 }).notNull(),
 
+  tiempoEntregaDias: integer('tiempo_entrega_dias'),
+
   createdAt: timestamptz('created_at').notNull().defaultNow(),
 });
 

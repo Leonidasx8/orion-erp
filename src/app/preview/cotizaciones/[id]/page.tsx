@@ -65,6 +65,7 @@ const MOCK: CotizacionDetalleData = {
       cantidad: 2,
       precioUnitario: 1240.0,
       subtotal: 2480.0,
+      tiempoEntregaDias: 7,
     },
     {
       id: 'it-2',
@@ -73,6 +74,7 @@ const MOCK: CotizacionDetalleData = {
       cantidad: 4,
       precioUnitario: 124.5,
       subtotal: 498.0,
+      tiempoEntregaDias: 3,
     },
     {
       id: 'it-3',
@@ -81,6 +83,7 @@ const MOCK: CotizacionDetalleData = {
       cantidad: 1,
       precioUnitario: 612.4,
       subtotal: 612.4,
+      tiempoEntregaDias: null,
     },
     {
       id: 'it-4',
@@ -89,6 +92,7 @@ const MOCK: CotizacionDetalleData = {
       cantidad: 1,
       precioUnitario: 628.0,
       subtotal: 628.0,
+      tiempoEntregaDias: null,
     },
   ],
   totales: {
