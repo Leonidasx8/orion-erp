@@ -239,12 +239,12 @@ export function CotizacionForm({
   }, [fields, itemsW, costosByIdx, margenMinimoByIdx]);
 
   const applyMargen = (pct: number) => {
-    fields.forEach((_, idx) => {
+    const newItems = itemsW.map((item, idx) => {
       const costo = costosByIdx.get(idx);
-      if (costo == null || costo === 0) return;
-      const nuevoPrecio = Math.round(costo * (1 + pct / 100) * 10000) / 10000;
-      setValue(`items.${idx}.precioUnitario`, nuevoPrecio, { shouldDirty: true });
+      if (costo == null || costo === 0) return item;
+      return { ...item, precioUnitario: Math.round(costo * (1 + pct / 100) * 10000) / 10000 };
     });
+    setValue('items', newItems as CotizacionInput['items'], { shouldDirty: true });
   };
 
   const aplicarProducto = (idx: number, productoId: string) => {
@@ -687,12 +687,10 @@ export function CotizacionForm({
                 <Money value={totales.subtotal} ccy={moneda} dp={2} />
               </Row>
 
-              {/* Margen — solo visible para el operador, no va al PDF */}
-              <div className="flex flex-col gap-1.5 rounded-md border border-orion-border bg-orion-bg-subtle p-2.5">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-orion-fg-muted">
-                  Margen sobre costo
-                </span>
-                <div className="grid grid-cols-4 gap-1">
+              {/* Margen — operador only, no va al PDF */}
+              <div className="flex items-center gap-2">
+                <span className="text-orion-fg-muted">Margen</span>
+                <div className="ml-auto flex items-center gap-1">
                   {([5, 10, 15] as const).map((v) => (
                     <button
                       key={v}
@@ -702,7 +700,7 @@ export function CotizacionForm({
                         applyMargen(v);
                       }}
                       className={cn(
-                        'rounded border py-1 text-[12px] font-medium transition-colors',
+                        'rounded border px-2 py-0.5 text-[12px] font-medium transition-colors',
                         targetMargen === v
                           ? 'border-tenant-accent/50 bg-tenant-accent/10 text-tenant-accent'
                           : 'border-orion-border bg-orion-bg text-orion-fg hover:bg-orion-bg-muted'
@@ -715,7 +713,7 @@ export function CotizacionForm({
                     type="button"
                     onClick={() => setTargetMargen('custom')}
                     className={cn(
-                      'rounded border py-1 text-[12px] font-medium transition-colors',
+                      'rounded border px-2 py-0.5 text-[12px] font-medium transition-colors',
                       targetMargen === 'custom'
                         ? 'border-tenant-accent/50 bg-tenant-accent/10 text-tenant-accent'
                         : 'border-orion-border bg-orion-bg text-orion-fg hover:bg-orion-bg-muted'
@@ -724,8 +722,11 @@ export function CotizacionForm({
                     Custom
                   </button>
                 </div>
-                {targetMargen === 'custom' && (
-                  <div className="flex items-center gap-2">
+              </div>
+              {targetMargen === 'custom' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-orion-fg-muted">Margen custom</span>
+                  <div className="ml-auto flex items-center gap-1">
                     <input
                       type="number"
                       min="0"
@@ -733,36 +734,28 @@ export function CotizacionForm({
                       step="0.1"
                       value={customMargenPct}
                       onChange={(e) => setCustomMargenPct(e.target.value)}
-                      className="h-7 w-16 rounded border border-orion-border bg-orion-bg px-2 text-[12px] tabular-nums text-orion-fg focus:outline-none focus:ring-1 focus:ring-tenant-accent"
+                      className={cn(inputCls, 'h-7 w-16 text-right text-[12px] tabular-nums')}
                     />
-                    <span className="text-[12px] text-orion-fg-muted">%</span>
+                    <span className="text-orion-fg-muted">%</span>
                     <button
                       type="button"
                       onClick={() => {
                         const n = parseFloat(customMargenPct);
                         if (!isNaN(n) && n >= 0 && n < 100) applyMargen(n);
                       }}
-                      className="border-tenant-accent/50 bg-tenant-accent/10 ml-auto rounded border px-2.5 py-1 text-[12px] font-medium text-tenant-accent"
+                      className="border-tenant-accent/50 bg-tenant-accent/10 rounded border px-2 py-0.5 text-[12px] font-medium text-tenant-accent"
                     >
                       Aplicar
                     </button>
                   </div>
-                )}
-                {lineasBajoMargen.length > 0 && (
-                  <div className="bg-warn-soft/50 rounded border border-warn-soft px-2.5 py-2 text-[11.5px]">
-                    <div className="mb-1 flex items-center gap-1 font-medium text-warn-fg">
-                      <AlertTriangle size={12} />
-                      {lineasBajoMargen.length} línea(s) bajo margen mínimo
-                    </div>
-                    {lineasBajoMargen.map(({ idx, margenActual, minMargen }) => (
-                      <div key={idx} className="text-warn-fg/80">
-                        {itemsW[idx]?.descripcion || `Línea ${idx + 1}`}: {margenActual.toFixed(1)}%
-                        vs {minMargen.toFixed(1)}%
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
+              {lineasBajoMargen.length > 0 && (
+                <div className="flex items-start gap-1.5 text-[11.5px] text-warn-fg">
+                  <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                  <span>{lineasBajoMargen.length} línea(s) bajo margen mínimo</span>
+                </div>
+              )}
 
               {/* Descuento global inline */}
               <div className="flex items-center gap-2">
