@@ -6,7 +6,8 @@ SELECT
   COUNT(*) FILTER (WHERE f.estado_sunat = 'aceptada') AS facturas_emitidas,
   COALESCE(SUM(f.total) FILTER (WHERE f.estado_sunat = 'aceptada'), 0) AS ventas_total,
   COUNT(DISTINCT f.cliente_id) FILTER (WHERE f.estado_sunat = 'aceptada') AS clientes_unicos,
-  COALESCE(AVG(f.total) FILTER (WHERE f.estado_sunat = 'aceptada'), 0) AS ticket_promedio
+  COALESCE(AVG(f.total) FILTER (WHERE f.estado_sunat = 'aceptada'), 0) AS ticket_promedio,
+  COALESCE(AVG(f.total) FILTER (WHERE f.estado_sunat = 'aceptada' AND f.moneda = 'USD'), 0) AS ticket_promedio_usd
 FROM facturas f
 GROUP BY f.tenant_id, date_trunc('month', f.fecha_emision);
 

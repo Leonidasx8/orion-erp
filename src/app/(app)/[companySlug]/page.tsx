@@ -39,7 +39,8 @@ export default async function DashboardPage({
           ventas_total::text,
           facturas_emitidas::text,
           clientes_unicos::text,
-          ticket_promedio::text
+          ticket_promedio::text,
+          ticket_promedio_usd::text
         FROM dashboard_metricas
         WHERE tenant_id = ${tenant.id}
           AND mes >= date_trunc('month', current_date) - INTERVAL '11 months'

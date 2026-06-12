@@ -7,6 +7,7 @@ export interface MetricasRow extends Record<string, unknown> {
   facturas_emitidas: string;
   clientes_unicos: string;
   ticket_promedio: string;
+  ticket_promedio_usd: string;
 }
 
 export interface CxCRow extends Record<string, unknown> {
@@ -75,13 +76,15 @@ export function DashboardKpis({
         <KpiCard label="Clientes únicos" value={Number(mesActual?.clientes_unicos ?? 0)} />
       </Link>
       <Link
-        href={`/${companySlug}/reportes/ventas`}
+        href={`/${companySlug}/reportes/ventas?moneda=USD`}
         className="block rounded-lg transition-opacity hover:opacity-80"
       >
         <KpiCard
-          label="Ticket promedio"
-          value={Number(mesActual?.ticket_promedio ?? 0)}
+          label="Ticket USD"
+          value={Number(mesActual?.ticket_promedio_usd ?? 0)}
           format="currency"
+          currency="USD"
+          subtitle="promedio por factura"
         />
       </Link>
       <Link
