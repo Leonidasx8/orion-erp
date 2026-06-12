@@ -97,7 +97,7 @@ export function CotizacionForm({
       initial.items.forEach((it, idx) => {
         if (it.productoId) {
           const p = pm.get(it.productoId);
-          if (p) m.set(idx, p.precio);
+          if (p && p.costoUnitario != null) m.set(idx, p.costoUnitario);
         }
       });
     }
@@ -275,14 +275,16 @@ export function CotizacionForm({
     setValue(`items.${idx}.codigo`, p.codigo, opts);
     setValue(`items.${idx}.descripcion`, p.nombre, opts);
     setValue(`items.${idx}.unidadMedida`, p.unidadMedida, opts);
-    // p.precio is the tenant's purchase cost (CELSA price). Apply margin on top.
+    // Use costoUnitario (supplier cost from CELSA) as cost basis for margin.
+    // Fall back to precioUnitario only if costoUnitario not set.
+    const costoBasis = p.costoUnitario ?? p.precio;
     const numMargen = typeof targetMargen === 'number' ? targetMargen : null;
     const precioConMargen =
-      numMargen != null ? Math.round(p.precio * (1 + numMargen / 100) * 10000) / 10000 : p.precio;
+      numMargen != null ? Math.round(costoBasis * (1 + numMargen / 100) * 10000) / 10000 : p.precio;
     setValue(`items.${idx}.precioUnitario`, precioConMargen, opts);
     setValue(`items.${idx}.afectaIgv`, p.tieneIgv, opts);
-    // Store catalog price as cost base for margin display and recalculation
-    setCostosByIdx((prev) => new Map(prev).set(idx, p.precio));
+    // Store supplier cost as cost base for margin display and recalculation
+    setCostosByIdx((prev) => new Map(prev).set(idx, costoBasis));
     if (p.margenMinimo != null) {
       setMargenMinimoByIdx((prev) => new Map(prev).set(idx, p.margenMinimo!));
     } else {
@@ -523,7 +525,7 @@ export function CotizacionForm({
                           })()}
                         </Td>
                         {/* Precio */}
-                        <Td align="right" className="w-[100px]">
+                        <Td align="right" className="w-[130px]">
                           <input
                             type="number"
                             step="0.0001"
