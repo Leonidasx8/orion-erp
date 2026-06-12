@@ -623,6 +623,20 @@ export function CotizacionForm({
                   className={inputCls}
                 />
               </Field>
+              <Field label="Tiempo de entrega">
+                <input
+                  {...register('tiempoEntrega')}
+                  placeholder="Ej: 7 días hábiles"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Lugar de entrega">
+                <input
+                  {...register('lugarEntrega')}
+                  placeholder="Ej: Almacén cliente, Lima"
+                  className={inputCls}
+                />
+              </Field>
               <Field label="Observaciones (visibles en PDF)">
                 <textarea
                   {...register('notas')}

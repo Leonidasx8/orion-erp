@@ -128,8 +128,9 @@ const s = StyleSheet.create({
   cSku: { width: '12%' },
   cDesc: { flex: 1 },
   cQty: { width: '8%', textAlign: 'right' },
-  cPrice: { width: '16%', textAlign: 'right' },
-  cTotal: { width: '16%', textAlign: 'right' },
+  cEntrega: { width: '11%', textAlign: 'right' },
+  cPrice: { width: '15%', textAlign: 'right' },
+  cTotal: { width: '15%', textAlign: 'right' },
   td: { fontSize: 8, color: C.body },
   tdMuted: { fontSize: 7.5, color: C.muted, fontFamily: 'Courier' },
 
@@ -279,24 +280,35 @@ export function CotizacionPDFDesignB({
           </View>
         </View>
 
-        <View style={s.tableWrap}>
-          <View style={s.thead}>
-            <Text style={[s.thText, s.cSku]}>SKU</Text>
-            <Text style={[s.thText, s.cDesc]}>DESCRIPCIÓN</Text>
-            <Text style={[s.thText, s.cQty]}>CANT.</Text>
-            <Text style={[s.thText, s.cPrice]}>{data.moneda} P. UNIT.</Text>
-            <Text style={[s.thText, s.cTotal]}>{data.moneda} SUBTOTAL</Text>
-          </View>
-          {data.items.map((it, i) => (
-            <View key={i} style={i % 2 === 1 ? s.trAlt : s.tr}>
-              <Text style={[s.tdMuted, s.cSku]}>{it.sku ?? '—'}</Text>
-              <Text style={[s.td, s.cDesc]}>{it.descripcion}</Text>
-              <Text style={[s.td, s.cQty]}>{it.cantidad.toLocaleString('en-US')}</Text>
-              <Text style={[s.td, s.cPrice]}>{num(it.precioUnitario, 4)}</Text>
-              <Text style={[s.td, s.cTotal]}>{num(it.subtotal, 2)}</Text>
+        {(() => {
+          const hasEntrega = data.items.some((it) => it.tiempoEntregaDias);
+          return (
+            <View style={s.tableWrap}>
+              <View style={s.thead}>
+                <Text style={[s.thText, s.cSku]}>SKU</Text>
+                <Text style={[s.thText, s.cDesc]}>DESCRIPCIÓN</Text>
+                <Text style={[s.thText, s.cQty]}>CANT.</Text>
+                {hasEntrega ? <Text style={[s.thText, s.cEntrega]}>ENTREGA</Text> : null}
+                <Text style={[s.thText, s.cPrice]}>{data.moneda} P. UNIT.</Text>
+                <Text style={[s.thText, s.cTotal]}>{data.moneda} SUBTOTAL</Text>
+              </View>
+              {data.items.map((it, i) => (
+                <View key={i} style={i % 2 === 1 ? s.trAlt : s.tr}>
+                  <Text style={[s.tdMuted, s.cSku]}>{it.sku ?? '—'}</Text>
+                  <Text style={[s.td, s.cDesc]}>{it.descripcion}</Text>
+                  <Text style={[s.td, s.cQty]}>{it.cantidad.toLocaleString('en-US')}</Text>
+                  {hasEntrega ? (
+                    <Text style={[s.td, s.cEntrega]}>
+                      {it.tiempoEntregaDias ? `${it.tiempoEntregaDias}d` : '—'}
+                    </Text>
+                  ) : null}
+                  <Text style={[s.td, s.cPrice]}>{num(it.precioUnitario, 4)}</Text>
+                  <Text style={[s.td, s.cTotal]}>{num(it.subtotal, 2)}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
+          );
+        })()}
 
         <View style={s.totalsRow}>
           <View style={s.totalsCard}>
