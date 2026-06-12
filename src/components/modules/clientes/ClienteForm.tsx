@@ -33,12 +33,22 @@ const COMERCIALES = [
   { id: '00000000-0000-0000-0000-000000000003', nombre: 'Rosa Condori' },
 ];
 
-const PLAZOS_PAGO = [
+const PLAZOS_PRESET = [
   { value: 'contado', label: 'Contado' },
   { value: '15dias', label: '15 días' },
   { value: '30dias', label: '30 días' },
   { value: '60dias', label: '60 días' },
 ] as const;
+
+const PLAZOS_PRESET_VALUES = PLAZOS_PRESET.map((p) => p.value);
+
+function plazoLabel(value: string): string {
+  const preset = PLAZOS_PRESET.find((p) => p.value === value);
+  if (preset) return preset.label;
+  const match = value.match(/^(\d+)dias$/);
+  if (match) return `${match[1]} días`;
+  return value;
+}
 
 export function ClienteForm({ companySlug, cliente }: Props) {
   const router = useRouter();
@@ -46,6 +56,14 @@ export function ClienteForm({ companySlug, cliente }: Props) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [tipoDoc, setTipoDoc] = useState<string>(cliente?.tipoDocumento ?? 'RUC');
   const [autocompletado, setAutocompletado] = useState(false);
+  const initialPlazo = (cliente as Cliente & { plazoCredito?: string })?.plazoCredito ?? 'contado';
+  const [modoCustom, setModoCustom] = useState(
+    () => !PLAZOS_PRESET_VALUES.includes(initialPlazo as (typeof PLAZOS_PRESET_VALUES)[number])
+  );
+  const [diasCustom, setDiasCustom] = useState(() => {
+    const match = initialPlazo.match(/^(\d+)dias$/);
+    return match ? match[1] : '45';
+  });
 
   const {
     register,
@@ -381,25 +399,53 @@ export function ClienteForm({ companySlug, cliente }: Props) {
           </div>
           <div className="space-y-1.5">
             <Label>Plazo de pago</Label>
-            <Select
-              defaultValue={
-                cliente
-                  ? ((cliente as Cliente & { plazoCredito?: string }).plazoCredito ?? 'contado')
-                  : 'contado'
-              }
-              onValueChange={(v) => setValue('plazoCredito', v as ClienteInput['plazoCredito'])}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PLAZOS_PAGO.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Select
+                value={modoCustom ? '__custom' : watch('plazoCredito')}
+                onValueChange={(v) => {
+                  if (v === '__custom') {
+                    setModoCustom(true);
+                    const dias = parseInt(diasCustom, 10);
+                    setValue('plazoCredito', `${isNaN(dias) || dias < 1 ? 1 : dias}dias`);
+                  } else {
+                    setModoCustom(false);
+                    setValue('plazoCredito', v);
+                  }
+                }}
+              >
+                <SelectTrigger className={modoCustom ? 'w-40' : 'w-full'}>
+                  <SelectValue>
+                    {modoCustom ? 'Personalizado' : plazoLabel(watch('plazoCredito') ?? 'contado')}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {PLAZOS_PRESET.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="__custom">Personalizado…</SelectItem>
+                </SelectContent>
+              </Select>
+              {modoCustom && (
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={365}
+                    className="w-20 tabular-nums"
+                    value={diasCustom}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setDiasCustom(raw);
+                      const n = parseInt(raw, 10);
+                      if (!isNaN(n) && n >= 1) setValue('plazoCredito', `${n}dias`);
+                    }}
+                  />
+                  <span className="text-sm text-muted-foreground">días</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

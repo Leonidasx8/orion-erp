@@ -20,7 +20,7 @@ export interface FilaClienteImportada {
   email: string;
   telefono: string;
   lineaCredito: number;
-  plazoCredito: 'contado' | '15dias' | '30dias' | '60dias';
+  plazoCredito: string;
   direccion: string;
   notas: string;
 }
@@ -78,11 +78,16 @@ function normalizar(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
 }
 
-function normalizarPlazo(raw: string): FilaClienteImportada['plazoCredito'] {
+function normalizarPlazo(raw: string): string {
   const limpio = normalizar(raw);
-  if (limpio.includes('15')) return '15dias';
-  if (limpio.includes('30')) return '30dias';
-  if (limpio.includes('60')) return '60dias';
+  if (!limpio || limpio === 'contado' || limpio === '0') return 'contado';
+  // Extraer cualquier número de días (ej: "45", "45 días", "45dias")
+  const match = limpio.match(/(\d+)/);
+  if (match) {
+    const n = parseInt(match[1], 10);
+    if (n === 0) return 'contado';
+    return `${n}dias`;
+  }
   return 'contado';
 }
 
@@ -222,7 +227,7 @@ const filaConfirmarSchema = z.object({
   email: z.string().email('Email inválido').max(150).or(z.literal('')),
   telefono: z.string().max(20),
   lineaCredito: z.number().min(0).finite(),
-  plazoCredito: z.enum(['contado', '15dias', '30dias', '60dias']),
+  plazoCredito: z.string().refine((v) => v === 'contado' || /^\d+dias$/.test(v), 'Plazo inválido'),
   direccion: z.string().max(300),
   notas: z.string().max(2000),
 });
