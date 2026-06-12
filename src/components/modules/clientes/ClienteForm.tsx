@@ -112,6 +112,10 @@ export function ClienteForm({ companySlug, cliente }: Props) {
     setAutocompletado(true);
   };
 
+  const onInvalid = (): void => {
+    setServerError('No se pudo guardar: revisa los campos marcados en rojo más abajo.');
+  };
+
   const onSubmit = (data: ClienteInput): void => {
     setServerError(null);
     startTransition(async () => {
@@ -133,7 +137,7 @@ export function ClienteForm({ companySlug, cliente }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
       {/* ── Acciones (cabecera) ── */}
       <div className="flex items-center justify-end gap-3">
         {serverError && <p className="mr-auto text-sm text-destructive">{serverError}</p>}
@@ -185,14 +189,20 @@ export function ClienteForm({ companySlug, cliente }: Props) {
 
           {/* Col 2: Número */}
           {tipoDoc === 'RUC' || tipoDoc === 'DNI' ? (
-            <DocAutocomplete
-              tipo={tipoDoc as 'RUC' | 'DNI'}
-              onResultado={onResultadoSunat}
-              onNumeroChange={(n) => {
-                setValue('numeroDocumento', n);
-                setAutocompletado(false);
-              }}
-            />
+            <div className="space-y-1.5">
+              <DocAutocomplete
+                tipo={tipoDoc as 'RUC' | 'DNI'}
+                initialNumero={cliente?.tipoDocumento === tipoDoc ? cliente.numeroDocumento : ''}
+                onResultado={onResultadoSunat}
+                onNumeroChange={(n) => {
+                  setValue('numeroDocumento', n);
+                  setAutocompletado(false);
+                }}
+              />
+              {errors.numeroDocumento && (
+                <p className="text-xs text-destructive">{errors.numeroDocumento.message}</p>
+              )}
+            </div>
           ) : (
             <div className="space-y-1.5">
               <Label htmlFor="numero-doc">Número de documento</Label>
@@ -260,6 +270,9 @@ export function ClienteForm({ companySlug, cliente }: Props) {
                 {...register('apellidoPaterno')}
                 className={autocompletado ? 'border-green-500 bg-green-50' : ''}
               />
+              {errors.apellidoPaterno && (
+                <p className="text-xs text-destructive">{errors.apellidoPaterno.message}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="apellido-m">Apellido materno</Label>

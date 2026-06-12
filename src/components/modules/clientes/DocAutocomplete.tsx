@@ -10,12 +10,13 @@ import type { DatosSunat } from '@/lib/sunat/consultar-documento';
 
 interface Props {
   tipo: 'RUC' | 'DNI';
+  initialNumero?: string;
   onResultado: (data: DatosSunat) => void;
   onNumeroChange?: (numero: string) => void;
 }
 
-export function DocAutocomplete({ tipo, onResultado, onNumeroChange }: Props) {
-  const [numero, setNumero] = useState('');
+export function DocAutocomplete({ tipo, initialNumero, onResultado, onNumeroChange }: Props) {
+  const [numero, setNumero] = useState(initialNumero ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const maxLen = tipo === 'RUC' ? 11 : 8;

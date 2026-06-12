@@ -8,15 +8,18 @@ export const tiposDireccion = ['fiscal', 'entrega', 'cobranza', 'otro'] as const
 export const clienteSchema = z
   .object({
     tipoDocumento: z.enum(tiposDocumento),
-    numeroDocumento: z.string().min(8).max(15),
+    numeroDocumento: z
+      .string()
+      .min(8, 'El número de documento debe tener al menos 8 dígitos')
+      .max(15, 'El número de documento no puede exceder 15 caracteres'),
     tipoPersona: z.enum(tiposPersona),
 
-    // Persona jurídica
-    razonSocial: z.string().min(2).max(200).optional(),
+    // Persona jurídica — la presencia según tipoPersona se valida en los refine de abajo
+    razonSocial: z.string().trim().max(200).optional(),
 
     // Persona natural
-    nombres: z.string().min(2).max(100).optional(),
-    apellidoPaterno: z.string().min(2).max(100).optional(),
+    nombres: z.string().trim().max(100).optional(),
+    apellidoPaterno: z.string().trim().max(100).optional(),
     apellidoMaterno: z.string().max(100).optional(),
 
     nombreComercial: z.string().optional(),
@@ -24,7 +27,7 @@ export const clienteSchema = z
     plazoCredito: z.enum(['contado', '15dias', '30dias', '60dias']).default('contado'),
     listaPrecio: z.string().default('default'),
 
-    email: z.string().email().optional().or(z.literal('')),
+    email: z.string().email('Email inválido').optional().or(z.literal('')),
     telefono: z.string().max(20).optional(),
 
     condicionSunat: z.string().optional(),
@@ -36,16 +39,14 @@ export const clienteSchema = z
     notas: z.string().max(2000).optional(),
     tags: z.array(z.string()).default([]),
   })
-  .refine(
-    (d) => {
-      if (d.tipoPersona === 'juridica') return !!d.razonSocial;
-      return !!d.nombres && !!d.apellidoPaterno;
-    },
-    {
-      message: 'Completa los nombres o razón social según el tipo de persona',
-      path: ['nombres'],
-    }
-  );
+  .refine((d) => d.tipoPersona !== 'juridica' || !!d.razonSocial, {
+    message: 'Ingresa la razón social',
+    path: ['razonSocial'],
+  })
+  .refine((d) => d.tipoPersona !== 'natural' || (!!d.nombres && !!d.apellidoPaterno), {
+    message: 'Ingresa los nombres y el apellido paterno',
+    path: ['nombres'],
+  });
 
 export type ClienteInput = z.infer<typeof clienteSchema>;
 
