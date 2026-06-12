@@ -41,8 +41,10 @@ export async function otorgarCredito(
         clienteId: data.clienteId,
         tenantId: tenant.id,
         lineaCredito: String(data.lineaCredito),
-        moneda: data.moneda,
+        moneda: 'USD',
         plazoDias: data.plazoDias,
+        lineaCreditoPen: String(data.lineaCreditoPen),
+        plazoDiasPen: data.plazoDiasPen,
         updatedBy: user.id,
         updatedAt: new Date(),
       })
@@ -50,8 +52,10 @@ export async function otorgarCredito(
         target: creditosCliente.clienteId,
         set: {
           lineaCredito: String(data.lineaCredito),
-          moneda: data.moneda,
+          moneda: 'USD',
           plazoDias: data.plazoDias,
+          lineaCreditoPen: String(data.lineaCreditoPen),
+          plazoDiasPen: data.plazoDiasPen,
           updatedBy: user.id,
           updatedAt: new Date(),
         },
@@ -140,6 +144,82 @@ export async function desbloquearCredito(clienteId: string): Promise<ActionResul
     return { success: true, data: undefined };
   } catch (err) {
     console.error('[creditos] desbloquearCredito error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Error interno' };
+  }
+}
+
+// ─── bloquearCreditoPen ───────────────────────────────────────────────────────
+
+export async function bloquearCreditoPen(clienteId: string, motivo: string): Promise<ActionResult> {
+  try {
+    const { user, tenant } = await requirePermission('credito.otorgar');
+
+    const [cliente] = await db
+      .select({ id: clientes.id })
+      .from(clientes)
+      .where(and(eq(clientes.id, clienteId), eq(clientes.tenantId, tenant.id)));
+
+    if (!cliente) {
+      return { success: false, error: 'Cliente no encontrado' };
+    }
+
+    await db
+      .update(creditosCliente)
+      .set({
+        bloqueadoPen: true,
+        motivoBloqueopPen: motivo,
+        bloqueadoPenPor: user.id,
+        bloqueadoPenAt: new Date(),
+        updatedBy: user.id,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(creditosCliente.clienteId, clienteId), eq(creditosCliente.tenantId, tenant.id))
+      );
+
+    revalidatePath(`/${tenant.slug}/credito`);
+    revalidatePath(`/${tenant.slug}/credito/${clienteId}`);
+    return { success: true, data: undefined };
+  } catch (err) {
+    console.error('[creditos] bloquearCreditoPen error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Error interno' };
+  }
+}
+
+// ─── desbloquearCreditoPen ────────────────────────────────────────────────────
+
+export async function desbloquearCreditoPen(clienteId: string): Promise<ActionResult> {
+  try {
+    const { user, tenant } = await requirePermission('credito.otorgar');
+
+    const [cliente] = await db
+      .select({ id: clientes.id })
+      .from(clientes)
+      .where(and(eq(clientes.id, clienteId), eq(clientes.tenantId, tenant.id)));
+
+    if (!cliente) {
+      return { success: false, error: 'Cliente no encontrado' };
+    }
+
+    await db
+      .update(creditosCliente)
+      .set({
+        bloqueadoPen: false,
+        motivoBloqueopPen: null,
+        bloqueadoPenPor: null,
+        bloqueadoPenAt: null,
+        updatedBy: user.id,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(creditosCliente.clienteId, clienteId), eq(creditosCliente.tenantId, tenant.id))
+      );
+
+    revalidatePath(`/${tenant.slug}/credito`);
+    revalidatePath(`/${tenant.slug}/credito/${clienteId}`);
+    return { success: true, data: undefined };
+  } catch (err) {
+    console.error('[creditos] desbloquearCreditoPen error:', err);
     return { success: false, error: err instanceof Error ? err.message : 'Error interno' };
   }
 }

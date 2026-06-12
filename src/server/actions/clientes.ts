@@ -61,13 +61,14 @@ export async function crearCliente(input: ClienteInput): Promise<ActionResult<{ 
     .values({
       ...data,
       lineaCredito: String(data.lineaCredito),
+      lineaCreditoPen: String(data.lineaCreditoPen),
       tenantId: tenant.id,
       createdBy: user.id,
     })
     .returning({ id: clientes.id });
 
   // Sincronizar creditosCliente para que el módulo CxC refleje la línea de crédito
-  if (data.lineaCredito > 0) {
+  if (data.lineaCredito > 0 || data.lineaCreditoPen > 0) {
     await db
       .insert(creditosCliente)
       .values({
@@ -76,6 +77,8 @@ export async function crearCliente(input: ClienteInput): Promise<ActionResult<{ 
         lineaCredito: String(data.lineaCredito),
         moneda: 'USD',
         plazoDias: plazoToDias(data.plazoCredito),
+        lineaCreditoPen: String(data.lineaCreditoPen),
+        plazoDiasPen: plazoToDias(data.plazoCreditoPen),
         updatedBy: user.id,
         updatedAt: new Date(),
       })
@@ -85,6 +88,8 @@ export async function crearCliente(input: ClienteInput): Promise<ActionResult<{ 
           lineaCredito: String(data.lineaCredito),
           moneda: 'USD',
           plazoDias: plazoToDias(data.plazoCredito),
+          lineaCreditoPen: String(data.lineaCreditoPen),
+          plazoDiasPen: plazoToDias(data.plazoCreditoPen),
           updatedBy: user.id,
           updatedAt: new Date(),
         },
@@ -107,41 +112,40 @@ export async function actualizarCliente(
 
   await db
     .update(clientes)
-    .set({ ...data, lineaCredito: String(data.lineaCredito), updatedAt: new Date() })
+    .set({
+      ...data,
+      lineaCredito: String(data.lineaCredito),
+      lineaCreditoPen: String(data.lineaCreditoPen),
+      updatedAt: new Date(),
+    })
     .where(and(eq(clientes.id, clienteId), eq(clientes.tenantId, tenant.id)));
 
   // Sincronizar creditosCliente con los nuevos valores de crédito
-  if (data.lineaCredito > 0) {
-    await db
-      .insert(creditosCliente)
-      .values({
-        clienteId,
-        tenantId: tenant.id,
+  await db
+    .insert(creditosCliente)
+    .values({
+      clienteId,
+      tenantId: tenant.id,
+      lineaCredito: String(data.lineaCredito),
+      moneda: 'USD',
+      plazoDias: plazoToDias(data.plazoCredito),
+      lineaCreditoPen: String(data.lineaCreditoPen),
+      plazoDiasPen: plazoToDias(data.plazoCreditoPen),
+      updatedBy: user.id,
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: creditosCliente.clienteId,
+      set: {
         lineaCredito: String(data.lineaCredito),
         moneda: 'USD',
         plazoDias: plazoToDias(data.plazoCredito),
+        lineaCreditoPen: String(data.lineaCreditoPen),
+        plazoDiasPen: plazoToDias(data.plazoCreditoPen),
         updatedBy: user.id,
         updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: creditosCliente.clienteId,
-        set: {
-          lineaCredito: String(data.lineaCredito),
-          moneda: 'USD',
-          plazoDias: plazoToDias(data.plazoCredito),
-          updatedBy: user.id,
-          updatedAt: new Date(),
-        },
-      });
-  } else {
-    // Si bajaron la línea a 0, actualizar el registro existente (si lo hay)
-    await db
-      .update(creditosCliente)
-      .set({ lineaCredito: '0', plazoDias: 0, updatedBy: user.id, updatedAt: new Date() })
-      .where(
-        and(eq(creditosCliente.clienteId, clienteId), eq(creditosCliente.tenantId, tenant.id))
-      );
-  }
+      },
+    });
 
   revalidatePath(`/${tenant.slug}/clientes`);
   revalidatePath(`/${tenant.slug}/clientes/${clienteId}`);

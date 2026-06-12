@@ -65,6 +65,16 @@ export function ClienteForm({ companySlug, cliente }: Props) {
     return match ? match[1] : '45';
   });
 
+  const initialPlazoPen =
+    (cliente as Cliente & { plazoCreditoPen?: string })?.plazoCreditoPen ?? 'contado';
+  const [modoCustomPen, setModoCustomPen] = useState(
+    () => !PLAZOS_PRESET_VALUES.includes(initialPlazoPen as (typeof PLAZOS_PRESET_VALUES)[number])
+  );
+  const [diasCustomPen, setDiasCustomPen] = useState(() => {
+    const match = initialPlazoPen.match(/^(\d+)dias$/);
+    return match ? match[1] : '45';
+  });
+
   const {
     register,
     handleSubmit,
@@ -88,6 +98,11 @@ export function ClienteForm({ companySlug, cliente }: Props) {
           plazoCredito: ((cliente as Cliente & { plazoCredito?: string }).plazoCredito ??
             'contado') as ClienteInput['plazoCredito'],
           listaPrecio: (cliente as Cliente & { listaPrecio?: string }).listaPrecio ?? 'default',
+          lineaCreditoPen: Number(
+            (cliente as Cliente & { lineaCreditoPen?: string }).lineaCreditoPen ?? 0
+          ),
+          plazoCreditoPen: ((cliente as Cliente & { plazoCreditoPen?: string }).plazoCreditoPen ??
+            'contado') as ClienteInput['plazoCreditoPen'],
           email: cliente.email ?? '',
           telefono: cliente.telefono ?? '',
           condicionSunat: cliente.condicionSunat ?? undefined,
@@ -105,6 +120,8 @@ export function ClienteForm({ companySlug, cliente }: Props) {
           lineaCredito: 0,
           plazoCredito: 'contado',
           listaPrecio: 'default',
+          lineaCreditoPen: 0,
+          plazoCreditoPen: 'contado',
           tags: [],
           esCliente: true,
           esProveedor: false,
@@ -444,6 +461,77 @@ export function ClienteForm({ companySlug, cliente }: Props) {
                       setDiasCustom(raw);
                       const n = parseInt(raw, 10);
                       if (!isNaN(n) && n >= 1) setValue('plazoCredito', `${n}dias`);
+                    }}
+                  />
+                  <span className="text-sm text-muted-foreground">días</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2b: Línea de crédito PEN | Plazo PEN */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="linea-credito-pen">Línea de crédito (PEN)</Label>
+            <Input
+              id="linea-credito-pen"
+              type="number"
+              min={0}
+              step={0.01}
+              {...register('lineaCreditoPen')}
+              placeholder="0"
+            />
+            <p className="text-xs text-muted-foreground">0 = sólo contado</p>
+            {errors.lineaCreditoPen && (
+              <p className="text-xs text-destructive">{errors.lineaCreditoPen.message}</p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Plazo de pago (PEN)</Label>
+            <div className="flex items-center gap-2">
+              <Select
+                value={modoCustomPen ? '__custom' : watch('plazoCreditoPen')}
+                onValueChange={(v) => {
+                  if (v === '__custom') {
+                    setModoCustomPen(true);
+                    const dias = parseInt(diasCustomPen, 10);
+                    setValue('plazoCreditoPen', `${isNaN(dias) || dias < 1 ? 1 : dias}dias`);
+                  } else {
+                    setModoCustomPen(false);
+                    setValue('plazoCreditoPen', v);
+                  }
+                }}
+              >
+                <SelectTrigger className={modoCustomPen ? 'w-40' : 'w-full'}>
+                  <SelectValue>
+                    {modoCustomPen
+                      ? 'Personalizado'
+                      : plazoLabel(watch('plazoCreditoPen') ?? 'contado')}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {PLAZOS_PRESET.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="__custom">Personalizado…</SelectItem>
+                </SelectContent>
+              </Select>
+              {modoCustomPen && (
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={365}
+                    className="w-20 tabular-nums"
+                    value={diasCustomPen}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setDiasCustomPen(raw);
+                      const n = parseInt(raw, 10);
+                      if (!isNaN(n) && n >= 1) setValue('plazoCreditoPen', `${n}dias`);
                     }}
                   />
                   <span className="text-sm text-muted-foreground">días</span>
