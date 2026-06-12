@@ -6,6 +6,7 @@ import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import {
   clientes,
+  creditosCliente,
   direccionesCliente,
   contactosCliente,
   cotizaciones,
@@ -15,6 +16,13 @@ import {
   ordenesCompra,
   pagos,
 } from '@/lib/db/schema';
+
+// 'contado' → 0, '30dias' → 30, '45dias' → 45
+function plazoToDias(plazo: string): number {
+  if (plazo === 'contado') return 0;
+  const m = plazo.match(/^(\d+)dias$/);
+  return m ? parseInt(m[1], 10) : 0;
+}
 import {
   clienteSchema,
   direccionClienteSchema,
@@ -58,6 +66,31 @@ export async function crearCliente(input: ClienteInput): Promise<ActionResult<{ 
     })
     .returning({ id: clientes.id });
 
+  // Sincronizar creditosCliente para que el módulo CxC refleje la línea de crédito
+  if (data.lineaCredito > 0) {
+    await db
+      .insert(creditosCliente)
+      .values({
+        clienteId: row.id,
+        tenantId: tenant.id,
+        lineaCredito: String(data.lineaCredito),
+        moneda: 'USD',
+        plazoDias: plazoToDias(data.plazoCredito),
+        updatedBy: user.id,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: creditosCliente.clienteId,
+        set: {
+          lineaCredito: String(data.lineaCredito),
+          moneda: 'USD',
+          plazoDias: plazoToDias(data.plazoCredito),
+          updatedBy: user.id,
+          updatedAt: new Date(),
+        },
+      });
+  }
+
   revalidatePath(`/${tenant.slug}/clientes`);
   return { success: true, data: { id: row.id } };
 }
@@ -69,7 +102,7 @@ export async function actualizarCliente(
   const parsed = clienteSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
 
-  const { tenant } = await requirePermission('clientes.editar');
+  const { tenant, user } = await requirePermission('clientes.editar');
   const data = parsed.data;
 
   await db
@@ -77,8 +110,42 @@ export async function actualizarCliente(
     .set({ ...data, lineaCredito: String(data.lineaCredito), updatedAt: new Date() })
     .where(and(eq(clientes.id, clienteId), eq(clientes.tenantId, tenant.id)));
 
+  // Sincronizar creditosCliente con los nuevos valores de crédito
+  if (data.lineaCredito > 0) {
+    await db
+      .insert(creditosCliente)
+      .values({
+        clienteId,
+        tenantId: tenant.id,
+        lineaCredito: String(data.lineaCredito),
+        moneda: 'USD',
+        plazoDias: plazoToDias(data.plazoCredito),
+        updatedBy: user.id,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: creditosCliente.clienteId,
+        set: {
+          lineaCredito: String(data.lineaCredito),
+          moneda: 'USD',
+          plazoDias: plazoToDias(data.plazoCredito),
+          updatedBy: user.id,
+          updatedAt: new Date(),
+        },
+      });
+  } else {
+    // Si bajaron la línea a 0, actualizar el registro existente (si lo hay)
+    await db
+      .update(creditosCliente)
+      .set({ lineaCredito: '0', plazoDias: 0, updatedBy: user.id, updatedAt: new Date() })
+      .where(
+        and(eq(creditosCliente.clienteId, clienteId), eq(creditosCliente.tenantId, tenant.id))
+      );
+  }
+
   revalidatePath(`/${tenant.slug}/clientes`);
   revalidatePath(`/${tenant.slug}/clientes/${clienteId}`);
+  revalidatePath(`/${tenant.slug}/credito`);
   return { success: true, data: undefined };
 }
 
