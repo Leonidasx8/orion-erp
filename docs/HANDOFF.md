@@ -2,7 +2,7 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-12 09:10 (✅ Consulta RUC/DNI HABILITADA en prod vía Decolecta — Lucas reportó "meter el RUC no funciona"; Leo consiguió token `sk_…` de decolecta.com (no apis.net.pe). Código adaptado, `DECOLECTA_TOKEN` en Vercel, deploy `b7c1bbb`, verificado E2E en tenant idex: RUC 20100070970 y DNI autocompletaron.)
+**Última actualización:** 2026-06-12 09:35 (✅ 2 reportes de Lucas resueltos hoy: consulta RUC/DNI habilitada vía Decolecta (`b7c1bbb`) y "editar cliente no guarda" — era el cliente 7 SEAS con datos inconsistentes + validación silenciosa del form; data corregida en DB y form arreglado+desplegado. Lucas ya está creando clientes con el lookup.)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
 **Estado verificado:** F001-13/14 emitidas y luego anuladas por NC (flujo completo demostrado) · NC F002-1 y F002-2 ACEPTADAS SUNAT ✅ · Guías T001-7 y T001-8 ACEPTADAS SUNAT ✅ · AUDIT 14/14 módulos OK.
 **Último commit prod:** `6561f25` — fix: GRE "ya existe en NubeFacT" → consultar_guia fallback
@@ -46,6 +46,24 @@
 
 - **Entorno real**: cargar productos (3 archivos) · serie/correlativo E001 desde 11 · personalizar factura (logo/colores) · prueba real de facturar un cable a un cliente.
 - Dashboard monedas separadas · catálogo unidades SUNAT (cat. 03) · guías 2-casos · roles=Admin · salida de stock al emitir guía.
+
+---
+
+## ✅ 2026-06-12 mañana — "Editar cliente no guarda" (7 SEAS PERU) — data + form
+
+**Reporte de Lucas:** al editar el cliente "7 SEAS PERÚ SAC" el botón Guardar cambios "no hace nada".
+
+**Causa doble:**
+
+1. **Data inconsistente:** el cliente (RUC 20608661159, creado 10-jun) estaba guardado con `tipo_persona='natural'` pero `razon_social` llena y `nombres/apellidos` NULL (versión vieja del form sin el refine actual). Al editar, zod rechazaba (natural sin nombres) → no guardaba.
+2. **Fallas de UX del form** que hacían el rechazo invisible: (a) el error aparecía como "Invalid input" diminuto bajo "Nombres", lejos del botón; (b) en modo edición el campo RUC/DNI cargaba VACÍO (`DocAutocomplete` sin valor inicial); (c) errores de `numeroDocumento` ni siquiera se renderizaban en la rama RUC/DNI.
+
+**Fixes:**
+
+- **DB (prod):** UPDATE del cliente → `tipo_persona='juridica'`, `razon_social='7 SEAS PERU S.A.C.'` (oficial SUNAT vía Decolecta), estado/condición ACTIVO·HABIDO. La dirección que tipeó Lucas (Av. Aviación 2405, San Borja) se conservó. Verificado: era el ÚNICO registro inconsistente en toda la tabla.
+- **Código:** `DocAutocomplete` acepta `initialNumero` (el RUC se precarga al editar) · error visible junto al botón Guardar (`handleSubmit(onSubmit, onInvalid)` → "revisa los campos marcados en rojo") · mensajes zod en español · refines separados (jurídica→razón social, natural→nombres) · errores de `numeroDocumento` y `apellidoPaterno` renderizados.
+
+**Verificado E2E en prod:** editar 7 SEAS → Guardar cambios → guardado OK (`updated_at` confirmado en DB) y lista muestra "7 SEAS PERU S.A.C. · Jurídico". Además Lucas creó 2 clientes nuevos con el lookup de RUC funcionando (LLANOS IBARRA, GRUPO PANITZ).
 
 ---
 
