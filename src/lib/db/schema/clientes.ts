@@ -25,6 +25,8 @@ export const clientes = pgTable('clientes', {
   nombreComercial: text('nombre_comercial'),
   lineaCredito: numeric('linea_credito', { precision: 14, scale: 2 }).notNull().default('0'),
   plazoCredito: text('plazo_credito').notNull().default('contado'),
+  lineaCreditoPen: numeric('linea_credito_pen', { precision: 14, scale: 2 }).notNull().default('0'),
+  plazoCreditoPen: text('plazo_credito_pen').notNull().default('contado'),
   listaPrecio: text('lista_precio').notNull().default('default'),
   comercialId: uuid('comercial_id'),
 

@@ -28,6 +28,11 @@ export const clienteSchema = z
       .string()
       .refine((v) => v === 'contado' || /^\d+dias$/.test(v), 'Plazo inválido')
       .default('contado'),
+    lineaCreditoPen: z.coerce.number().min(0).default(0),
+    plazoCreditoPen: z
+      .string()
+      .refine((v) => v === 'contado' || /^\d+dias$/.test(v), 'Plazo inválido')
+      .default('contado'),
     listaPrecio: z.string().default('default'),
 
     email: z.string().email('Email inválido').optional().or(z.literal('')),

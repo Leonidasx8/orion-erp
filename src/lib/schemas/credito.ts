@@ -3,8 +3,9 @@ import { z } from 'zod';
 export const OtorgarCreditoSchema = z.object({
   clienteId: z.string().uuid(),
   lineaCredito: z.number().nonnegative(),
-  moneda: z.enum(['PEN', 'USD']),
   plazoDias: z.number().int().min(0).max(180),
+  lineaCreditoPen: z.number().nonnegative().default(0),
+  plazoDiasPen: z.number().int().min(0).max(180).default(0),
 });
 
 export const PagoSchema = z.object({

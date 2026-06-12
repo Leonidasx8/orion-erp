@@ -21,6 +21,13 @@ export const creditosCliente = pgTable('creditos_cliente', {
   bloqueadoPor: uuid('bloqueado_por'),
   bloqueadoAt: timestamptz('bloqueado_at'),
 
+  lineaCreditoPen: numeric('linea_credito_pen', { precision: 14, scale: 4 }).notNull().default('0'),
+  plazoDiasPen: integer('plazo_dias_pen').notNull().default(0),
+  bloqueadoPen: boolean('bloqueado_pen').notNull().default(false),
+  motivoBloqueopPen: text('motivo_bloqueo_pen'),
+  bloqueadoPenPor: uuid('bloqueado_pen_por'),
+  bloqueadoPenAt: timestamptz('bloqueado_pen_at'),
+
   updatedBy: uuid('updated_by'),
   updatedAt: timestamptz('updated_at').notNull().defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
