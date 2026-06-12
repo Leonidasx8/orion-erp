@@ -167,7 +167,6 @@ export function CotizacionDetalle({
             </CardHead>
             <div className="grid grid-cols-2 gap-3 p-4 text-[12.5px]">
               <TerminoField label="Pago" value={data.terminos.pago} />
-              <TerminoField label="Entrega" value={data.terminos.entrega} />
               <TerminoField
                 label="Moneda"
                 value={`${data.moneda}${data.tipoCambio ? ` · TC S/ ${data.tipoCambio.toFixed(4)}` : ''}`}

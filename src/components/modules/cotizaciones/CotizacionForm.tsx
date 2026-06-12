@@ -610,22 +610,13 @@ export function CotizacionForm({
               <CardTitle>Términos y observaciones</CardTitle>
             </CardHead>
             <div className="flex flex-col gap-4 p-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Términos de pago">
-                  <input
-                    {...register('formaPago')}
-                    placeholder="Ej: 50% anticipo, saldo contra entrega"
-                    className={inputCls}
-                  />
-                </Field>
-                <Field label="Tiempo de entrega">
-                  <input
-                    {...register('tiempoEntrega')}
-                    placeholder="Ej: 5 días hábiles"
-                    className={inputCls}
-                  />
-                </Field>
-              </div>
+              <Field label="Términos de pago">
+                <input
+                  {...register('formaPago')}
+                  placeholder="Ej: 50% anticipo, saldo contra entrega"
+                  className={inputCls}
+                />
+              </Field>
               <Field label="Observaciones (visibles en PDF)">
                 <textarea
                   {...register('notas')}
