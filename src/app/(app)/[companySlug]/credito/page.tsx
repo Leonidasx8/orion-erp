@@ -114,16 +114,20 @@ export default async function CreditoPage({
     // KPIs generales desde cuentas_por_cobrar
     db.execute<{
       clientes_con_deuda: string;
-      total_cxc: string;
-      total_vencido: string;
+      total_cxc_usd: string;
+      total_cxc_pen: string;
+      total_vencido_usd: string;
+      total_vencido_pen: string;
     }>(sql`
       SELECT
-        COUNT(*)::text                        AS clientes_con_deuda,
-        COALESCE(SUM(saldo_total), 0)::text   AS total_cxc,
-        COALESCE(SUM(saldo_vencido), 0)::text AS total_vencido
+        COUNT(*)::text                              AS clientes_con_deuda,
+        COALESCE(SUM(saldo_total_usd), 0)::text    AS total_cxc_usd,
+        COALESCE(SUM(saldo_total_pen), 0)::text    AS total_cxc_pen,
+        COALESCE(SUM(saldo_vencido_usd), 0)::text  AS total_vencido_usd,
+        COALESCE(SUM(saldo_vencido_pen), 0)::text  AS total_vencido_pen
       FROM cuentas_por_cobrar
       WHERE tenant_id = ${tenant.id}
-        AND saldo_total > 0
+        AND (saldo_total_usd > 0 OR saldo_total_pen > 0)
     `),
 
     // Buckets aging
@@ -146,27 +150,33 @@ export default async function CreditoPage({
     db.execute<{
       cliente_id: string;
       nombre_cliente: string;
-      linea_credito: string;
-      saldo_total: string;
-      saldo_vencido: string;
+      linea_credito_usd: string;
+      linea_credito_pen: string;
+      saldo_total_usd: string;
+      saldo_total_pen: string;
+      saldo_vencido_usd: string;
+      saldo_vencido_pen: string;
       dias_mas_vencido: string | null;
       bloqueado: boolean;
-      moneda: string;
+      bloqueado_pen: boolean;
     }>(sql`
       SELECT
         cxc.cliente_id,
         cxc.razon_social                                          AS nombre_cliente,
-        COALESCE(cr.linea_credito, 0)::text                      AS linea_credito,
-        cxc.saldo_total,
-        cxc.saldo_vencido,
+        COALESCE(cxc.linea_credito_usd, 0)::text                 AS linea_credito_usd,
+        COALESCE(cxc.linea_credito_pen, 0)::text                 AS linea_credito_pen,
+        COALESCE(cxc.saldo_total_usd, 0)::text                   AS saldo_total_usd,
+        COALESCE(cxc.saldo_total_pen, 0)::text                   AS saldo_total_pen,
+        COALESCE(cxc.saldo_vencido_usd, 0)::text                 AS saldo_vencido_usd,
+        COALESCE(cxc.saldo_vencido_pen, 0)::text                 AS saldo_vencido_pen,
         (CURRENT_DATE - cxc.dia_mas_vencido)::text               AS dias_mas_vencido,
-        COALESCE(cr.bloqueado, false)                            AS bloqueado,
-        COALESCE(cr.moneda, 'PEN')                               AS moneda
+        COALESCE(cxc.bloqueado, false)                           AS bloqueado,
+        COALESCE(cxc.bloqueado_pen, false)                       AS bloqueado_pen
       FROM cuentas_por_cobrar cxc
-      LEFT JOIN creditos_cliente cr ON cr.cliente_id = cxc.cliente_id
       WHERE cxc.tenant_id = ${tenant.id}
-        AND cxc.saldo_total > 0
-      ORDER BY cxc.saldo_vencido DESC, cxc.saldo_total DESC
+        AND (cxc.saldo_total_usd > 0 OR cxc.saldo_total_pen > 0)
+      ORDER BY (COALESCE(cxc.saldo_vencido_usd, 0) + COALESCE(cxc.saldo_vencido_pen, 0)) DESC,
+               (COALESCE(cxc.saldo_total_usd, 0) + COALESCE(cxc.saldo_total_pen, 0)) DESC
       LIMIT 20
     `),
   ]);
@@ -174,15 +184,17 @@ export default async function CreditoPage({
   // Mapear resultados — db.execute devuelve el array directamente (no .rows)
   const totalesRow = totalesRaw[0] ?? {
     clientes_con_deuda: '0',
-    total_cxc: '0',
-    total_vencido: '0',
+    total_cxc_usd: '0',
+    total_cxc_pen: '0',
+    total_vencido_usd: '0',
+    total_vencido_pen: '0',
   };
 
   const dashboardData: DashboardCxCData = {
     clientesConDeuda: Number(totalesRow.clientes_con_deuda),
-    totalCxC: Number(totalesRow.total_cxc),
-    totalVencido: Number(totalesRow.total_vencido),
-    moneda: 'PEN',
+    totalCxC: Number(totalesRow.total_cxc_usd),
+    totalVencido: Number(totalesRow.total_vencido_usd),
+    moneda: 'USD',
   };
 
   const agingRow = agingRaw[0] ?? {
@@ -203,22 +215,28 @@ export default async function CreditoPage({
     clientesRaw as unknown as Array<{
       cliente_id: string;
       nombre_cliente: string;
-      linea_credito: string;
-      saldo_total: string;
-      saldo_vencido: string;
+      linea_credito_usd: string;
+      linea_credito_pen: string;
+      saldo_total_usd: string;
+      saldo_total_pen: string;
+      saldo_vencido_usd: string;
+      saldo_vencido_pen: string;
       dias_mas_vencido: string | null;
       bloqueado: boolean;
-      moneda: string;
+      bloqueado_pen: boolean;
     }>
   ).map((r) => ({
     clienteId: r.cliente_id,
     nombreCliente: r.nombre_cliente,
-    lineaCredito: Number(r.linea_credito),
-    saldoPendiente: Number(r.saldo_total),
-    saldoVencido: Number(r.saldo_vencido),
-    diasMasVencido: Number(r.dias_mas_vencido ?? 0),
+    lineaCreditoUsd: Number(r.linea_credito_usd),
+    saldoUsd: Number(r.saldo_total_usd),
+    saldoVencidoUsd: Number(r.saldo_vencido_usd),
     bloqueado: Boolean(r.bloqueado),
-    moneda: r.moneda,
+    lineaCreditoPen: Number(r.linea_credito_pen),
+    saldoPen: Number(r.saldo_total_pen),
+    saldoVencidoPen: Number(r.saldo_vencido_pen),
+    bloqueadoPen: Boolean(r.bloqueado_pen),
+    diasMasVencido: Number(r.dias_mas_vencido ?? 0),
   }));
 
   return (

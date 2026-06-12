@@ -158,9 +158,13 @@ export default async function ClienteCxCDetallePage({
           .join(' ') || '—';
 
   const lineaCredito = Number(credito?.lineaCredito ?? 0);
-  const monedaCredito = (credito?.moneda ?? 'PEN') as 'PEN' | 'USD';
   const plazoDias = credito?.plazoDias ?? 0;
   const bloqueado = credito?.bloqueado ?? false;
+  const motivoBloqueoUsd = credito?.motivoBloqueo ?? null;
+  const lineaCreditoPen = Number(credito?.lineaCreditoPen ?? 0);
+  const plazoDiasPen = credito?.plazoDiasPen ?? 0;
+  const bloqueadoPen = credito?.bloqueadoPen ?? false;
+  const motivoBloqueopPen = credito?.motivoBloqueopPen ?? null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -203,22 +207,46 @@ export default async function ClienteCxCDetallePage({
           )}
         </div>
 
-        <div className="mb-5 grid grid-cols-3 gap-4">
+        <div className="mb-5 grid grid-cols-2 gap-6">
+          {/* USD */}
           <div>
-            <p className="text-xs text-orion-fg-faint">Línea aprobada</p>
-            <p className="mt-0.5 text-lg font-bold text-orion-fg">
-              <Money value={lineaCredito} ccy={monedaCredito} />
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orion-fg-faint">
+              USD — Dólares
             </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-orion-fg-faint">Línea aprobada</p>
+                <p className="mt-0.5 text-lg font-bold text-orion-fg">
+                  <Money value={lineaCredito} ccy="USD" />
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-orion-fg-faint">Plazo</p>
+                <p className="mt-0.5 text-lg font-bold text-orion-fg">
+                  {plazoDias === 0 ? 'Contado' : `${plazoDias} días`}
+                </p>
+              </div>
+            </div>
           </div>
+          {/* PEN */}
           <div>
-            <p className="text-xs text-orion-fg-faint">Plazo</p>
-            <p className="mt-0.5 text-lg font-bold text-orion-fg">
-              {plazoDias === 0 ? 'Contado' : `${plazoDias} días`}
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orion-fg-faint">
+              PEN — Soles
             </p>
-          </div>
-          <div>
-            <p className="text-xs text-orion-fg-faint">Moneda</p>
-            <p className="mt-0.5 text-lg font-bold text-orion-fg">{monedaCredito}</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-orion-fg-faint">Línea aprobada</p>
+                <p className="mt-0.5 text-lg font-bold text-orion-fg">
+                  <Money value={lineaCreditoPen} ccy="PEN" />
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-orion-fg-faint">Plazo</p>
+                <p className="mt-0.5 text-lg font-bold text-orion-fg">
+                  {plazoDiasPen === 0 ? 'Contado' : `${plazoDiasPen} días`}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -227,7 +255,9 @@ export default async function ClienteCxCDetallePage({
           <BloqueoActions
             clienteId={id}
             bloqueado={bloqueado}
-            motivoBloqueo={credito?.motivoBloqueo ?? null}
+            motivoBloqueo={motivoBloqueoUsd}
+            bloqueadoPen={bloqueadoPen}
+            motivoBloqueopPen={motivoBloqueopPen}
           />
         )}
 
@@ -235,7 +265,9 @@ export default async function ClienteCxCDetallePage({
         {canOtorgar && (
           <details className="mt-5 rounded-md border border-orion-border">
             <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium text-orion-fg hover:bg-orion-bg-subtle">
-              {lineaCredito > 0 ? 'Editar línea de crédito' : 'Otorgar crédito'}
+              {lineaCredito > 0 || lineaCreditoPen > 0
+                ? 'Editar líneas de crédito'
+                : 'Otorgar crédito'}
             </summary>
             <div className="border-t border-orion-border p-4">
               <CreditoForm
@@ -243,8 +275,9 @@ export default async function ClienteCxCDetallePage({
                 companySlug={companySlug}
                 defaultValues={{
                   lineaCredito,
-                  moneda: monedaCredito,
                   plazoDias,
+                  lineaCreditoPen,
+                  plazoDiasPen,
                 }}
               />
             </div>

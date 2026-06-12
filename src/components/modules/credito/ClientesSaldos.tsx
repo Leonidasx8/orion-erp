@@ -6,12 +6,18 @@ import { cn } from '@/lib/utils';
 export type ClienteSaldoRow = {
   clienteId: string;
   nombreCliente: string;
-  lineaCredito: number;
-  saldoPendiente: number; // utilizado = total owed
-  saldoVencido: number;
-  diasMasVencido: number;
+  // USD
+  lineaCreditoUsd: number;
+  saldoUsd: number;
+  saldoVencidoUsd: number;
   bloqueado: boolean;
-  moneda: string;
+  // PEN
+  lineaCreditoPen: number;
+  saldoPen: number;
+  saldoVencidoPen: number;
+  bloqueadoPen: boolean;
+  // Shared
+  diasMasVencido: number;
 };
 
 export function ClientesSaldos({
@@ -36,130 +42,157 @@ export function ClientesSaldos({
         <thead>
           <tr className="border-b border-orion-border bg-orion-bg-subtle text-left text-xs uppercase tracking-wide text-orion-fg-muted">
             <th className="px-4 py-3">Cliente</th>
+            <th className="px-4 py-3">Mon.</th>
             <th className="px-4 py-3 text-right">Línea</th>
             <th className="px-4 py-3 text-right">Utilizado</th>
             <th className="px-4 py-3">Uso</th>
-            <th className="px-4 py-3 text-right">Por vencer</th>
             <th className="px-4 py-3 text-right">Vencido</th>
-            <th className="px-4 py-3 text-right">Días vencido</th>
-            <th className="px-4 py-3 text-right">Total</th>
+            <th className="px-4 py-3 text-right">Días venc.</th>
             <th className="px-4 py-3">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-orion-border">
           {rows.map((r) => {
-            const pct =
-              r.lineaCredito > 0
-                ? Math.min(100, Math.round((r.saldoPendiente / r.lineaCredito) * 100))
-                : 0;
-            const barColor = pct >= 90 ? 'bg-danger' : pct >= 70 ? 'bg-warn' : 'bg-success';
+            const hasUsd = r.lineaCreditoUsd > 0 || r.saldoUsd > 0;
+            const hasPen = r.lineaCreditoPen > 0 || r.saldoPen > 0;
+            const currencies: Array<{
+              ccy: 'USD' | 'PEN';
+              linea: number;
+              saldo: number;
+              vencido: number;
+              bloqueado: boolean;
+            }> = [];
+            if (hasUsd)
+              currencies.push({
+                ccy: 'USD',
+                linea: r.lineaCreditoUsd,
+                saldo: r.saldoUsd,
+                vencido: r.saldoVencidoUsd,
+                bloqueado: r.bloqueado,
+              });
+            if (hasPen)
+              currencies.push({
+                ccy: 'PEN',
+                linea: r.lineaCreditoPen,
+                saldo: r.saldoPen,
+                vencido: r.saldoVencidoPen,
+                bloqueado: r.bloqueadoPen,
+              });
+            if (currencies.length === 0)
+              currencies.push({ ccy: 'USD', linea: 0, saldo: 0, vencido: 0, bloqueado: false });
 
-            const porVencer = Math.max(0, r.saldoPendiente - r.saldoVencido);
+            return currencies.map((c, idx) => {
+              const pct = c.linea > 0 ? Math.min(100, Math.round((c.saldo / c.linea) * 100)) : 0;
+              const barColor = pct >= 90 ? 'bg-danger' : pct >= 70 ? 'bg-warn' : 'bg-success';
+              const diasColor =
+                r.diasMasVencido > 60
+                  ? 'text-danger-fg'
+                  : r.diasMasVencido >= 30
+                    ? 'text-warn-fg'
+                    : 'text-orion-fg';
 
-            const diasColor =
-              r.diasMasVencido > 60
-                ? 'text-danger-fg'
-                : r.diasMasVencido >= 30
-                  ? 'text-warn-fg'
-                  : 'text-orion-fg';
-
-            return (
-              <tr key={r.clienteId} className="transition-colors hover:bg-orion-bg-subtle">
-                {/* Cliente */}
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/${companySlug}/credito/clientes/${r.clienteId}`}
-                    className="text-orion-accent font-medium hover:underline"
-                  >
-                    {r.nombreCliente}
-                  </Link>
-                </td>
-
-                {/* Línea crédito */}
-                <td className="px-4 py-3 text-right">
-                  <Money value={r.lineaCredito} ccy={r.moneda as 'PEN' | 'USD'} />
-                </td>
-
-                {/* Utilizado */}
-                <td className="px-4 py-3 text-right font-medium">
-                  <Money value={r.saldoPendiente} ccy={r.moneda as 'PEN' | 'USD'} />
-                </td>
-
-                {/* Uso: progress bar + % */}
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-16 overflow-hidden rounded-full bg-orion-bg-muted">
-                      <div
-                        className={cn('h-full rounded-full', barColor)}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
+              return (
+                <tr
+                  key={`${r.clienteId}-${c.ccy}`}
+                  className={cn(
+                    'transition-colors hover:bg-orion-bg-subtle',
+                    idx > 0 && 'border-t-0'
+                  )}
+                >
+                  <td className="px-4 py-2.5">
+                    {idx === 0 ? (
+                      <Link
+                        href={`/${companySlug}/credito/clientes/${r.clienteId}`}
+                        className="text-orion-accent font-medium hover:underline"
+                      >
+                        {r.nombreCliente}
+                      </Link>
+                    ) : (
+                      <span className="text-orion-fg-faint">↳</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2.5">
                     <span
                       className={cn(
-                        'text-[11.5px] tabular-nums',
-                        pct >= 90
-                          ? 'text-danger-fg'
-                          : pct >= 70
-                            ? 'text-warn-fg'
-                            : 'text-orion-fg-muted'
+                        'inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-semibold',
+                        c.ccy === 'USD'
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
                       )}
                     >
-                      {pct}%
+                      {c.ccy}
                     </span>
-                  </div>
-                </td>
-
-                {/* Por vencer */}
-                <td className="px-4 py-3 text-right">
-                  {porVencer > 0 ? (
-                    <Money value={porVencer} ccy={r.moneda as 'PEN' | 'USD'} />
-                  ) : (
-                    <span className="text-orion-fg-faint">—</span>
-                  )}
-                </td>
-
-                {/* Vencido */}
-                <td
-                  className={cn(
-                    'px-4 py-3 text-right font-medium',
-                    r.saldoVencido > 0 ? 'text-danger-fg' : 'text-orion-fg-muted'
-                  )}
-                >
-                  <Money value={r.saldoVencido} ccy={r.moneda as 'PEN' | 'USD'} />
-                </td>
-
-                {/* Días vencido */}
-                <td
-                  className={cn(
-                    'px-4 py-3 text-right tabular-nums',
-                    r.diasMasVencido > 0 ? diasColor : 'text-orion-fg-muted'
-                  )}
-                >
-                  {r.diasMasVencido > 0 ? `${r.diasMasVencido}d` : '—'}
-                </td>
-
-                {/* Total = saldoPendiente */}
-                <td className="px-4 py-3 text-right font-medium">
-                  <Money value={r.saldoPendiente} ccy={r.moneda as 'PEN' | 'USD'} />
-                </td>
-
-                {/* Acciones */}
-                <td className="px-4 py-3">
-                  {r.saldoVencido > 0 ? (
-                    <Link
-                      href={`/${companySlug}/credito/pagos/nuevo?clienteId=${r.clienteId}`}
-                      className="inline-flex h-7 items-center gap-1.5 rounded-md border border-danger-soft bg-danger-soft px-2.5 text-[12px] font-medium text-danger-fg hover:opacity-80"
-                    >
-                      Cobrar
-                    </Link>
-                  ) : (
-                    <span className="text-orion-fg-faint">
-                      <MoreHorizontal size={14} />
-                    </span>
-                  )}
-                </td>
-              </tr>
-            );
+                    {c.bloqueado && (
+                      <span className="ml-1 inline-flex items-center rounded bg-danger-soft px-1 py-0.5 text-[10px] font-semibold text-danger-fg">
+                        BLQ
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <Money value={c.linea} ccy={c.ccy} />
+                  </td>
+                  <td className="px-4 py-2.5 text-right font-medium">
+                    <Money value={c.saldo} ccy={c.ccy} />
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-orion-bg-muted">
+                        <div
+                          className={cn('h-full rounded-full', barColor)}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span
+                        className={cn(
+                          'text-[11.5px] tabular-nums',
+                          pct >= 90
+                            ? 'text-danger-fg'
+                            : pct >= 70
+                              ? 'text-warn-fg'
+                              : 'text-orion-fg-muted'
+                        )}
+                      >
+                        {pct}%
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    className={cn(
+                      'px-4 py-2.5 text-right font-medium',
+                      c.vencido > 0 ? 'text-danger-fg' : 'text-orion-fg-muted'
+                    )}
+                  >
+                    <Money value={c.vencido} ccy={c.ccy} />
+                  </td>
+                  <td
+                    className={cn(
+                      'px-4 py-2.5 text-right tabular-nums',
+                      r.diasMasVencido > 0 ? diasColor : 'text-orion-fg-muted'
+                    )}
+                  >
+                    {idx === 0 && r.diasMasVencido > 0
+                      ? `${r.diasMasVencido}d`
+                      : idx === 0
+                        ? '—'
+                        : ''}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    {idx === 0 && (r.saldoVencidoUsd > 0 || r.saldoVencidoPen > 0) ? (
+                      <Link
+                        href={`/${companySlug}/credito/pagos/nuevo?clienteId=${r.clienteId}`}
+                        className="inline-flex h-7 items-center gap-1.5 rounded-md border border-danger-soft bg-danger-soft px-2.5 text-[12px] font-medium text-danger-fg hover:opacity-80"
+                      >
+                        Cobrar
+                      </Link>
+                    ) : (
+                      <span className="text-orion-fg-faint">
+                        {idx === 0 ? <MoreHorizontal size={14} /> : ''}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            });
           })}
         </tbody>
       </table>
