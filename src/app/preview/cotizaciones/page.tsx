@@ -59,6 +59,7 @@ const MOCK_ROWS: CotizacionRow[] = [
     total: 4218.4,
     moneda: 'USD',
     comercial: 'M. Quispe',
+    vecesEditado: 0,
   },
   {
     id: '2',
@@ -72,6 +73,7 @@ const MOCK_ROWS: CotizacionRow[] = [
     total: 8412.5,
     moneda: 'USD',
     comercial: 'M. Quispe',
+    vecesEditado: 0,
   },
   {
     id: '3',
@@ -85,6 +87,7 @@ const MOCK_ROWS: CotizacionRow[] = [
     total: 22150.5,
     moneda: 'USD',
     comercial: 'L. Escrivá',
+    vecesEditado: 0,
   },
   {
     id: '4',
@@ -98,6 +101,7 @@ const MOCK_ROWS: CotizacionRow[] = [
     total: 1840.2,
     moneda: 'USD',
     comercial: 'M. Quispe',
+    vecesEditado: 0,
   },
   {
     id: '5',
@@ -111,6 +115,7 @@ const MOCK_ROWS: CotizacionRow[] = [
     total: 12480.0,
     moneda: 'USD',
     comercial: 'A. Salinas',
+    vecesEditado: 0,
   },
   {
     id: '6',
@@ -124,6 +129,7 @@ const MOCK_ROWS: CotizacionRow[] = [
     total: 3210.0,
     moneda: 'USD',
     comercial: 'A. Salinas',
+    vecesEditado: 0,
   },
   {
     id: '7',
@@ -137,6 +143,7 @@ const MOCK_ROWS: CotizacionRow[] = [
     total: 890.0,
     moneda: 'USD',
     comercial: 'A. Salinas',
+    vecesEditado: 0,
   },
   {
     id: '8',
@@ -150,6 +157,7 @@ const MOCK_ROWS: CotizacionRow[] = [
     total: 38450.0,
     moneda: 'USD',
     comercial: 'L. Escrivá',
+    vecesEditado: 0,
   },
   {
     id: '9',
@@ -163,6 +171,7 @@ const MOCK_ROWS: CotizacionRow[] = [
     total: 7820.5,
     moneda: 'USD',
     comercial: 'M. Quispe',
+    vecesEditado: 2,
   },
 ];
 

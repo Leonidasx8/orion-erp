@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -12,8 +12,10 @@ import {
   Kanban,
   LayoutList,
   MoreHorizontal,
+  Pencil,
   Plus,
   Search,
+  Trash2,
   User,
   Users,
   X,
@@ -23,6 +25,18 @@ import { PageHead } from '@/components/shared/PageHead';
 import { ModuleHelp } from '@/components/shared/ModuleHelp';
 import { EstadoBadge, type Estado } from '@/components/shared/EstadoBadge';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { eliminarCotizacion } from '@/server/actions/cotizaciones';
 
 export type CotizacionRow = {
   id: string;
@@ -36,6 +50,7 @@ export type CotizacionRow = {
   total: number;
   moneda: 'PEN' | 'USD' | string;
   comercial: string;
+  vecesEditado: number;
 };
 
 export type CotizacionesListProps = {
@@ -96,6 +111,123 @@ function matchFecha(raw: string, filtro: string | null): boolean {
     return d.getFullYear() === mes.getFullYear() && d.getMonth() === mes.getMonth();
   }
   return true;
+}
+
+function MenuCotizacion({
+  id,
+  estado,
+  tenantSlug,
+}: {
+  id: string;
+  estado: string;
+  tenantSlug: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  const puedeEditar = estado !== 'convertida';
+  const puedeEliminar = estado === 'borrador';
+
+  function handleEliminar() {
+    startTransition(async () => {
+      const res = await eliminarCotizacion(id);
+      if (res.success) {
+        toast.success('Cotización eliminada');
+        router.refresh();
+      } else {
+        toast.error(res.error ?? 'No se pudo eliminar');
+      }
+    });
+  }
+
+  return (
+    <>
+      <div ref={menuRef} className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="grid h-6 w-6 place-items-center rounded-md text-orion-fg-faint hover:bg-orion-bg-muted hover:text-orion-fg"
+        >
+          <MoreHorizontal size={14} />
+        </button>
+
+        {open && (
+          <div className="absolute right-0 top-7 z-50 min-w-[140px] overflow-hidden rounded-lg border border-orion-border bg-orion-bg shadow-md">
+            {puedeEditar ? (
+              <Link
+                href={`/${tenantSlug}/cotizaciones/${id}/editar`}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-[13px] text-orion-fg hover:bg-orion-bg-subtle"
+              >
+                <Pencil size={13} />
+                Editar
+              </Link>
+            ) : (
+              <span className="flex cursor-not-allowed items-center gap-2 px-3 py-2 text-[13px] text-orion-fg-faint">
+                <Pencil size={13} />
+                Editar
+              </span>
+            )}
+
+            {puedeEliminar ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setAlertOpen(true);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+              >
+                <Trash2 size={13} />
+                Eliminar
+              </button>
+            ) : (
+              <span className="flex cursor-not-allowed items-center gap-2 px-3 py-2 text-[13px] text-orion-fg-faint">
+                <Trash2 size={13} />
+                Eliminar
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar cotización?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción es permanente y no se puede deshacer. Solo se pueden eliminar cotizaciones
+              en borrador.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleEliminar}
+              disabled={pending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {pending ? 'Eliminando…' : 'Sí, eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
 }
 
 export function CotizacionesList({
@@ -396,7 +528,18 @@ export function CotizacionesList({
                         estado={r.estado === 'aceptada' ? 'aceptada_cliente' : r.estado}
                       />
                     </Td>
-                    <Td className="whitespace-nowrap text-orion-fg-muted">{r.fechaEmision}</Td>
+                    <Td className="whitespace-nowrap text-orion-fg-muted">
+                      {r.fechaEmision}
+                      {r.vecesEditado > 0 && (
+                        <span
+                          className="ml-1.5 inline-flex items-center gap-0.5 rounded bg-amber-100 px-1 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                          title={`Editada ${r.vecesEditado} ${r.vecesEditado === 1 ? 'vez' : 'veces'}`}
+                        >
+                          <Pencil size={9} />
+                          {r.vecesEditado}
+                        </span>
+                      )}
+                    </Td>
                     <Td
                       className={cn(
                         'whitespace-nowrap',
@@ -411,12 +554,7 @@ export function CotizacionesList({
                     </Td>
                     <Td className="text-orion-fg-muted">{r.comercial}</Td>
                     <Td>
-                      <button
-                        type="button"
-                        className="grid h-6 w-6 place-items-center rounded-md text-orion-fg-faint hover:bg-orion-bg-muted hover:text-orion-fg"
-                      >
-                        <MoreHorizontal size={14} />
-                      </button>
+                      <MenuCotizacion id={r.id} estado={r.estado} tenantSlug={tenantSlug} />
                     </Td>
                   </tr>
                 ))
