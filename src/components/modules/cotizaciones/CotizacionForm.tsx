@@ -89,8 +89,34 @@ export function CotizacionForm({
   const [pending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
   // costosByIdx: Map<lineIndex, costoUnitario> — for margin display only, not submitted
-  const [costosByIdx, setCostosByIdx] = useState<Map<number, number>>(() => new Map());
-  const [margenMinimoByIdx, setMargenMinimoByIdx] = useState<Map<number, number>>(() => new Map());
+  const [costosByIdx, setCostosByIdx] = useState<Map<number, number>>(() => {
+    const m = new Map<number, number>();
+    if (initial) {
+      const pm = new Map<string, ProductoOption>();
+      productos.forEach((p) => pm.set(p.id, p));
+      initial.items.forEach((it, idx) => {
+        if (it.productoId) {
+          const p = pm.get(it.productoId);
+          if (p) m.set(idx, p.precio);
+        }
+      });
+    }
+    return m;
+  });
+  const [margenMinimoByIdx, setMargenMinimoByIdx] = useState<Map<number, number>>(() => {
+    const m = new Map<number, number>();
+    if (initial) {
+      const pm = new Map<string, ProductoOption>();
+      productos.forEach((p) => pm.set(p.id, p));
+      initial.items.forEach((it, idx) => {
+        if (it.productoId) {
+          const p = pm.get(it.productoId);
+          if (p?.margenMinimo != null) m.set(idx, p.margenMinimo!);
+        }
+      });
+    }
+    return m;
+  });
   const [stockByIdx, setStockByIdx] = useState<Map<number, number>>(() => new Map());
   const [targetMargen, setTargetMargen] = useState<5 | 10 | 15 | 'custom'>(10);
   const [customMargenPct, setCustomMargenPct] = useState('20');
@@ -651,95 +677,6 @@ export function CotizacionForm({
 
         {/* RIGHT COLUMN */}
         <div className="flex flex-col gap-4">
-          {/* Card 4: Margen general */}
-          <Card>
-            <CardHead>
-              <CardTitle>Margen general</CardTitle>
-            </CardHead>
-            <div className="flex flex-col gap-3 p-4">
-              {/* Margin target buttons */}
-              <div className="grid grid-cols-4 gap-1.5">
-                {([5, 10, 15] as const).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => {
-                      setTargetMargen(v);
-                      applyMargen(v);
-                    }}
-                    className={cn(
-                      'rounded-md border py-1.5 text-[12.5px] font-medium transition-colors',
-                      targetMargen === v
-                        ? 'border-tenant-accent/50 bg-tenant-accent/10 text-tenant-accent'
-                        : 'border-orion-border bg-orion-bg text-orion-fg hover:bg-orion-bg-muted'
-                    )}
-                  >
-                    {v}%
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setTargetMargen('custom')}
-                  className={cn(
-                    'rounded-md border py-1.5 text-[12.5px] font-medium transition-colors',
-                    targetMargen === 'custom'
-                      ? 'border-tenant-accent/50 bg-tenant-accent/10 text-tenant-accent'
-                      : 'border-orion-border bg-orion-bg text-orion-fg hover:bg-orion-bg-muted'
-                  )}
-                >
-                  Custom
-                </button>
-              </div>
-
-              {/* Custom margin input */}
-              {targetMargen === 'custom' && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="0"
-                    max="99"
-                    step="0.1"
-                    value={customMargenPct}
-                    onChange={(e) => setCustomMargenPct(e.target.value)}
-                    className="h-8 w-20 rounded border border-orion-border bg-orion-bg px-2 text-[12.5px] tabular-nums text-orion-fg focus:outline-none focus:ring-1 focus:ring-tenant-accent"
-                  />
-                  <span className="text-[12.5px] text-orion-fg-muted">%</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const n = parseFloat(customMargenPct);
-                      if (!isNaN(n) && n >= 0 && n < 100) applyMargen(n);
-                    }}
-                    className="border-tenant-accent/50 bg-tenant-accent/10 ml-auto rounded-md border px-3 py-1.5 text-[12.5px] font-medium text-tenant-accent"
-                  >
-                    Aplicar
-                  </button>
-                </div>
-              )}
-
-              {/* Warning alert for lines below minimum margin */}
-              {lineasBajoMargen.length > 0 && (
-                <div className="bg-warn-soft/50 rounded-md border border-warn-soft px-3 py-2.5 text-[12px]">
-                  <div className="mb-1.5 flex items-center gap-1.5 font-medium text-warn-fg">
-                    <AlertTriangle size={13} />
-                    {lineasBajoMargen.length} línea(s) por debajo del margen mínimo
-                  </div>
-                  <ul className="space-y-0.5">
-                    {lineasBajoMargen.map(({ idx, margenActual, minMargen }) => {
-                      const it = itemsW[idx];
-                      const label = it?.descripcion || `Línea ${idx + 1}`;
-                      return (
-                        <li key={idx} className="text-warn-fg/80">
-                          {label}: {margenActual.toFixed(1)}% vs mín. {minMargen.toFixed(1)}%
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </Card>
-
           {/* Card 5: Totales */}
           <Card>
             <CardHead>
@@ -749,6 +686,83 @@ export function CotizacionForm({
               <Row label="Subtotal">
                 <Money value={totales.subtotal} ccy={moneda} dp={2} />
               </Row>
+
+              {/* Margen — solo visible para el operador, no va al PDF */}
+              <div className="flex flex-col gap-1.5 rounded-md border border-orion-border bg-orion-bg-subtle p-2.5">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-orion-fg-muted">
+                  Margen sobre costo
+                </span>
+                <div className="grid grid-cols-4 gap-1">
+                  {([5, 10, 15] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => {
+                        setTargetMargen(v);
+                        applyMargen(v);
+                      }}
+                      className={cn(
+                        'rounded border py-1 text-[12px] font-medium transition-colors',
+                        targetMargen === v
+                          ? 'border-tenant-accent/50 bg-tenant-accent/10 text-tenant-accent'
+                          : 'border-orion-border bg-orion-bg text-orion-fg hover:bg-orion-bg-muted'
+                      )}
+                    >
+                      {v}%
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setTargetMargen('custom')}
+                    className={cn(
+                      'rounded border py-1 text-[12px] font-medium transition-colors',
+                      targetMargen === 'custom'
+                        ? 'border-tenant-accent/50 bg-tenant-accent/10 text-tenant-accent'
+                        : 'border-orion-border bg-orion-bg text-orion-fg hover:bg-orion-bg-muted'
+                    )}
+                  >
+                    Custom
+                  </button>
+                </div>
+                {targetMargen === 'custom' && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="99"
+                      step="0.1"
+                      value={customMargenPct}
+                      onChange={(e) => setCustomMargenPct(e.target.value)}
+                      className="h-7 w-16 rounded border border-orion-border bg-orion-bg px-2 text-[12px] tabular-nums text-orion-fg focus:outline-none focus:ring-1 focus:ring-tenant-accent"
+                    />
+                    <span className="text-[12px] text-orion-fg-muted">%</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const n = parseFloat(customMargenPct);
+                        if (!isNaN(n) && n >= 0 && n < 100) applyMargen(n);
+                      }}
+                      className="border-tenant-accent/50 bg-tenant-accent/10 ml-auto rounded border px-2.5 py-1 text-[12px] font-medium text-tenant-accent"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+                )}
+                {lineasBajoMargen.length > 0 && (
+                  <div className="bg-warn-soft/50 rounded border border-warn-soft px-2.5 py-2 text-[11.5px]">
+                    <div className="mb-1 flex items-center gap-1 font-medium text-warn-fg">
+                      <AlertTriangle size={12} />
+                      {lineasBajoMargen.length} línea(s) bajo margen mínimo
+                    </div>
+                    {lineasBajoMargen.map(({ idx, margenActual, minMargen }) => (
+                      <div key={idx} className="text-warn-fg/80">
+                        {itemsW[idx]?.descripcion || `Línea ${idx + 1}`}: {margenActual.toFixed(1)}%
+                        vs {minMargen.toFixed(1)}%
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Descuento global inline */}
               <div className="flex items-center gap-2">
