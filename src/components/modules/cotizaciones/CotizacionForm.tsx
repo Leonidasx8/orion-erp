@@ -249,24 +249,14 @@ export function CotizacionForm({
     setValue(`items.${idx}.codigo`, p.codigo, opts);
     setValue(`items.${idx}.descripcion`, p.nombre, opts);
     setValue(`items.${idx}.unidadMedida`, p.unidadMedida, opts);
-    // Apply active margin to cost if available; else fall back to catalog price
+    // p.precio is the tenant's purchase cost (CELSA price). Apply margin on top.
     const numMargen = typeof targetMargen === 'number' ? targetMargen : null;
     const precioConMargen =
-      p.costoUnitario != null && numMargen != null
-        ? Math.round(p.costoUnitario * (1 + numMargen / 100) * 10000) / 10000
-        : p.precio;
+      numMargen != null ? Math.round(p.precio * (1 + numMargen / 100) * 10000) / 10000 : p.precio;
     setValue(`items.${idx}.precioUnitario`, precioConMargen, opts);
     setValue(`items.${idx}.afectaIgv`, p.tieneIgv, opts);
-    // Track cost data for margin display
-    if (p.costoUnitario != null) {
-      setCostosByIdx((prev) => new Map(prev).set(idx, p.costoUnitario!));
-    } else {
-      setCostosByIdx((prev) => {
-        const next = new Map(prev);
-        next.delete(idx);
-        return next;
-      });
-    }
+    // Store catalog price as cost base for margin display and recalculation
+    setCostosByIdx((prev) => new Map(prev).set(idx, p.precio));
     if (p.margenMinimo != null) {
       setMargenMinimoByIdx((prev) => new Map(prev).set(idx, p.margenMinimo!));
     } else {
