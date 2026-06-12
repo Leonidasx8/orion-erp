@@ -10,8 +10,9 @@ export const metadata = { title: 'Clientes' };
 
 export default async function ClientesPage() {
   const tenant = await getCurrentTenant();
-  const [canCreate, rows] = await Promise.all([
+  const [canCreate, canDelete, rows] = await Promise.all([
     userHasPermission('clientes.crear'),
+    userHasPermission('clientes.eliminar'),
     db
       .select({
         id: clientes.id,
@@ -55,7 +56,7 @@ export default async function ClientesPage() {
           {rows.length !== 1 ? 's' : ''}
         </p>
       </div>
-      <ClientesList clientes={rows} canCreate={canCreate} />
+      <ClientesList clientes={rows} canCreate={canCreate} canDelete={canDelete} />
     </div>
   );
 }

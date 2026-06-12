@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   useReactTable,
   getCoreRowModel,
@@ -16,14 +17,29 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
+  Loader2,
   Plus,
   Search,
   Download,
+  Trash2,
   Upload,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { eliminarCliente } from '@/server/actions/clientes';
 
 type ClienteRow = {
   id: string;
@@ -66,7 +82,7 @@ function tiempoRelativo(date: Date) {
   return new Date(date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
 }
 
-const columns: ColumnDef<ClienteRow>[] = [
+const baseColumns: ColumnDef<ClienteRow>[] = [
   {
     id: 'nombre',
     header: 'Razón social',
@@ -122,26 +138,94 @@ const columns: ColumnDef<ClienteRow>[] = [
       </span>
     ),
   },
-  {
-    id: 'acciones',
-    cell: ({ row }) => (
-      <Button variant="ghost" size="sm" asChild>
-        <Link href={`clientes/${row.original.id}`}>Ver</Link>
-      </Button>
-    ),
-  },
 ];
+
+function EliminarClienteButton({ cliente }: { cliente: ClienteRow }) {
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
+  function handleDelete() {
+    startTransition(async () => {
+      const res = await eliminarCliente(cliente.id);
+      if (res.success) {
+        toast.success('Cliente eliminado');
+        router.refresh();
+      } else {
+        toast.error(res.error);
+      }
+    });
+  }
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isPending}
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          aria-label={`Eliminar ${nombreDisplay(cliente)}`}
+        >
+          {isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Trash2 className="h-3.5 w-3.5" />
+          )}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Se eliminará <strong>{nombreDisplay(cliente)}</strong> ({cliente.numeroDocumento}) junto
+            con sus direcciones y contactos. Esta acción no se puede deshacer. Si el cliente tiene
+            cotizaciones, facturas u otros documentos, no podrá eliminarse.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Eliminar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
 
 export function ClientesList({
   clientes,
   canCreate,
+  canDelete,
 }: {
   clientes: ClienteRow[];
   canCreate: boolean;
+  canDelete: boolean;
 }) {
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>([]);
   const [, startTransition] = useTransition();
+
+  const columns = useMemo<ColumnDef<ClienteRow>[]>(
+    () => [
+      ...baseColumns,
+      {
+        id: 'acciones',
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end gap-1">
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`clientes/${row.original.id}`}>Ver</Link>
+            </Button>
+            {canDelete && <EliminarClienteButton cliente={row.original} />}
+          </div>
+        ),
+      },
+    ],
+    [canDelete]
+  );
 
   const table = useReactTable({
     data: clientes,

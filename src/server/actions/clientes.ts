@@ -4,7 +4,16 @@ import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { clientes, direccionesCliente, contactosCliente } from '@/lib/db/schema';
+import {
+  clientes,
+  direccionesCliente,
+  contactosCliente,
+  cotizaciones,
+  facturas,
+  notasCreditoDebito,
+  guiasRemision,
+  ordenesCompra,
+} from '@/lib/db/schema';
 import {
   clienteSchema,
   direccionClienteSchema,
@@ -85,6 +94,65 @@ export async function cambiarEstadoCliente(
 
   revalidatePath(`/${tenant.slug}/clientes`);
   revalidatePath(`/${tenant.slug}/clientes/${clienteId}`);
+  return { success: true, data: undefined };
+}
+
+export async function eliminarCliente(clienteId: string): Promise<ActionResult> {
+  const { tenant } = await requirePermission('clientes.eliminar');
+
+  const [existente] = await db
+    .select({ id: clientes.id })
+    .from(clientes)
+    .where(and(eq(clientes.id, clienteId), eq(clientes.tenantId, tenant.id)));
+
+  if (!existente) return { success: false, error: 'Cliente no encontrado' };
+
+  const [enCotizaciones, enFacturas, enNotas, enGuias, enOrdenes] = await Promise.all([
+    db
+      .select({ id: cotizaciones.id })
+      .from(cotizaciones)
+      .where(eq(cotizaciones.clienteId, clienteId))
+      .limit(1),
+    db.select({ id: facturas.id }).from(facturas).where(eq(facturas.clienteId, clienteId)).limit(1),
+    db
+      .select({ id: notasCreditoDebito.id })
+      .from(notasCreditoDebito)
+      .where(eq(notasCreditoDebito.clienteId, clienteId))
+      .limit(1),
+    db
+      .select({ id: guiasRemision.id })
+      .from(guiasRemision)
+      .where(
+        or(eq(guiasRemision.remitenteId, clienteId), eq(guiasRemision.destinatarioId, clienteId))
+      )
+      .limit(1),
+    db
+      .select({ id: ordenesCompra.id })
+      .from(ordenesCompra)
+      .where(eq(ordenesCompra.proveedorId, clienteId))
+      .limit(1),
+  ]);
+
+  const usos = [
+    enCotizaciones.length > 0 && 'cotizaciones',
+    enFacturas.length > 0 && 'facturas',
+    enNotas.length > 0 && 'notas de crédito/débito',
+    enGuias.length > 0 && 'guías de remisión',
+    enOrdenes.length > 0 && 'órdenes de compra',
+  ].filter(Boolean);
+
+  if (usos.length > 0) {
+    return {
+      success: false,
+      error: `No se puede eliminar: el cliente tiene ${usos.join(', ')} asociadas. Márcalo como inactivo en su lugar.`,
+    };
+  }
+
+  await db
+    .delete(clientes)
+    .where(and(eq(clientes.id, clienteId), eq(clientes.tenantId, tenant.id)));
+
+  revalidatePath(`/${tenant.slug}/clientes`);
   return { success: true, data: undefined };
 }
 
