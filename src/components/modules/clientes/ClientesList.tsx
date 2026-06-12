@@ -87,9 +87,16 @@ const baseColumns: ColumnDef<ClienteRow>[] = [
     id: 'nombre',
     header: 'Razón social',
     cell: ({ row }) => (
-      <Link href={`clientes/${row.original.id}`} className="font-medium hover:underline">
-        {nombreDisplay(row.original)}
-      </Link>
+      <span className="flex items-center gap-2">
+        <Link href={`clientes/${row.original.id}`} className="font-medium hover:underline">
+          {nombreDisplay(row.original)}
+        </Link>
+        {row.original.estado !== 'activo' && (
+          <Badge variant="outline" className="text-xs text-muted-foreground">
+            {row.original.estado === 'bloqueado' ? 'Bloqueado' : 'Inactivo'}
+          </Badge>
+        )}
+      </span>
     ),
   },
   {
@@ -207,7 +214,14 @@ export function ClientesList({
 }) {
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [mostrarInactivos, setMostrarInactivos] = useState(false);
   const [, startTransition] = useTransition();
+
+  const inactivos = useMemo(() => clientes.filter((c) => c.estado !== 'activo'), [clientes]);
+  const data = useMemo(
+    () => (mostrarInactivos ? clientes : clientes.filter((c) => c.estado === 'activo')),
+    [clientes, mostrarInactivos]
+  );
 
   const columns = useMemo<ColumnDef<ClienteRow>[]>(
     () => [
@@ -228,7 +242,7 @@ export function ClientesList({
   );
 
   const table = useReactTable({
-    data: clientes,
+    data,
     columns,
     state: { globalFilter, sorting },
     onGlobalFilterChange: (v) => startTransition(() => setGlobalFilter(v)),
@@ -280,6 +294,15 @@ export function ClientesList({
           {table.getFilteredRowModel().rows.length !== 1 ? 's' : ''}
           {globalFilter && ` · búsqueda: "${globalFilter}"`}
         </span>
+        {inactivos.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setMostrarInactivos((v) => !v)}
+            className="text-xs underline-offset-2 hover:underline"
+          >
+            {mostrarInactivos ? 'Ocultar inactivos' : `Mostrar inactivos (${inactivos.length})`}
+          </button>
+        )}
       </div>
 
       {/* Table */}
