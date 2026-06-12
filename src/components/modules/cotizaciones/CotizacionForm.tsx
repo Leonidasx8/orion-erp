@@ -93,6 +93,7 @@ export function CotizacionForm({
   const [margenMinimoByIdx, setMargenMinimoByIdx] = useState<Map<number, number>>(() => new Map());
   const [stockByIdx, setStockByIdx] = useState<Map<number, number>>(() => new Map());
   const [targetMargen, setTargetMargen] = useState<5 | 10 | 15 | 'custom'>(10);
+  const [customMargenPct, setCustomMargenPct] = useState('20');
 
   const productosById = useMemo(() => {
     const m = new Map<string, ProductoOption>();
@@ -211,6 +212,15 @@ export function CotizacionForm({
       .filter((x): x is { idx: number; margenActual: number; minMargen: number } => x !== null);
   }, [fields, itemsW, costosByIdx, margenMinimoByIdx]);
 
+  const applyMargen = (pct: number) => {
+    fields.forEach((_, idx) => {
+      const costo = costosByIdx.get(idx);
+      if (costo == null || costo === 0) return;
+      const nuevoPrecio = Math.round(costo * (1 + pct / 100) * 10000) / 10000;
+      setValue(`items.${idx}.precioUnitario`, nuevoPrecio, { shouldDirty: true });
+    });
+  };
+
   const aplicarProducto = (idx: number, productoId: string) => {
     const opts = { shouldDirty: true };
     if (productoId === '__manual__') {
@@ -239,7 +249,13 @@ export function CotizacionForm({
     setValue(`items.${idx}.codigo`, p.codigo, opts);
     setValue(`items.${idx}.descripcion`, p.nombre, opts);
     setValue(`items.${idx}.unidadMedida`, p.unidadMedida, opts);
-    setValue(`items.${idx}.precioUnitario`, p.precio, opts);
+    // Apply active margin to cost if available; else fall back to catalog price
+    const numMargen = typeof targetMargen === 'number' ? targetMargen : null;
+    const precioConMargen =
+      p.costoUnitario != null && numMargen != null
+        ? Math.round(p.costoUnitario * (1 + numMargen / 100) * 10000) / 10000
+        : p.precio;
+    setValue(`items.${idx}.precioUnitario`, precioConMargen, opts);
     setValue(`items.${idx}.afectaIgv`, p.tieneIgv, opts);
     // Track cost data for margin display
     if (p.costoUnitario != null) {
@@ -643,7 +659,10 @@ export function CotizacionForm({
                   <button
                     key={v}
                     type="button"
-                    onClick={() => setTargetMargen(v)}
+                    onClick={() => {
+                      setTargetMargen(v);
+                      applyMargen(v);
+                    }}
                     className={cn(
                       'rounded-md border py-1.5 text-[12.5px] font-medium transition-colors',
                       targetMargen === v
@@ -667,6 +686,32 @@ export function CotizacionForm({
                   Custom
                 </button>
               </div>
+
+              {/* Custom margin input */}
+              {targetMargen === 'custom' && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="99"
+                    step="0.1"
+                    value={customMargenPct}
+                    onChange={(e) => setCustomMargenPct(e.target.value)}
+                    className="h-8 w-20 rounded border border-orion-border bg-orion-bg px-2 text-[12.5px] tabular-nums text-orion-fg focus:outline-none focus:ring-1 focus:ring-tenant-accent"
+                  />
+                  <span className="text-[12.5px] text-orion-fg-muted">%</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const n = parseFloat(customMargenPct);
+                      if (!isNaN(n) && n >= 0 && n < 100) applyMargen(n);
+                    }}
+                    className="border-tenant-accent/50 bg-tenant-accent/10 ml-auto rounded-md border px-3 py-1.5 text-[12.5px] font-medium text-tenant-accent"
+                  >
+                    Aplicar
+                  </button>
+                </div>
+              )}
 
               {/* Warning alert for lines below minimum margin */}
               {lineasBajoMargen.length > 0 && (
