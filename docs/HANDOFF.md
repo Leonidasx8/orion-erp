@@ -2,7 +2,7 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-12 09:35 (✅ 2 reportes de Lucas resueltos hoy: consulta RUC/DNI habilitada vía Decolecta (`b7c1bbb`) y "editar cliente no guarda" — era el cliente 7 SEAS con datos inconsistentes + validación silenciosa del form; data corregida en DB y form arreglado+desplegado. Lucas ya está creando clientes con el lookup.)
+**Última actualización:** 2026-06-12 09:40 (✅ Eliminar clientes habilitado (`6fe60c8`): botón Trash en la lista con AlertDialog; acción `eliminarCliente` con permiso `clientes.eliminar` (solo superadmin — Lucas lo tiene); bloquea si el cliente tiene cotizaciones/facturas/NC-ND/guías/OC y sugiere marcarlo inactivo. Verificado en prod: 7 SEAS bloqueado correctamente; durante la prueba se eliminó el registro de prueba "CELSA SAC" RUC ficticio 20887766554 (sin documentos, creado 1-jun) — el CELSA real 20100063680 sigue intacto y los 551 productos nunca tuvieron proveedor_principal asignado, sin impacto. Previo: consulta RUC/DNI vía Decolecta (`b7c1bbb`) y fix "editar cliente no guarda".)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
 **Estado verificado:** F001-13/14 emitidas y luego anuladas por NC (flujo completo demostrado) · NC F002-1 y F002-2 ACEPTADAS SUNAT ✅ · Guías T001-7 y T001-8 ACEPTADAS SUNAT ✅ · AUDIT 14/14 módulos OK.
 **Último commit prod:** `6561f25` — fix: GRE "ya existe en NubeFacT" → consultar_guia fallback
