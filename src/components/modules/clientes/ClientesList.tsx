@@ -39,7 +39,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { eliminarCliente } from '@/server/actions/clientes';
+import {
+  eliminarCliente,
+  obtenerImpactoEliminacion,
+  type ImpactoEliminacionCliente,
+} from '@/server/actions/clientes';
 
 type ClienteRow = {
   id: string;
@@ -148,14 +152,46 @@ const baseColumns: ColumnDef<ClienteRow>[] = [
 ];
 
 function EliminarClienteButton({ cliente }: { cliente: ClienteRow }) {
+  const [open, setOpen] = useState(false);
+  const [impacto, setImpacto] = useState<ImpactoEliminacionCliente | null>(null);
+  const [cargando, setCargando] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+
+  const totalDocs = impacto
+    ? impacto.cotizaciones.length +
+      impacto.ordenes.length +
+      impacto.facturas.length +
+      impacto.notas.length +
+      impacto.guias.length
+    : 0;
+  const haySunat =
+    !!impacto && [...impacto.facturas, ...impacto.notas, ...impacto.guias].some((d) => d.sunat);
+
+  function handleOpenChange(v: boolean) {
+    setOpen(v);
+    if (v) {
+      setImpacto(null);
+      setConfirmText('');
+      setCargando(true);
+      obtenerImpactoEliminacion(cliente.id).then((res) => {
+        if (res.success) setImpacto(res.data);
+        else toast.error(res.error);
+        setCargando(false);
+      });
+    }
+  }
 
   function handleDelete() {
     startTransition(async () => {
       const res = await eliminarCliente(cliente.id);
       if (res.success) {
-        toast.success('Cliente eliminado');
+        toast.success(
+          totalDocs > 0
+            ? `Cliente eliminado junto con ${totalDocs} documento${totalDocs !== 1 ? 's' : ''}`
+            : 'Cliente eliminado'
+        );
         router.refresh();
       } else {
         toast.error(res.error);
@@ -164,7 +200,7 @@ function EliminarClienteButton({ cliente }: { cliente: ClienteRow }) {
   }
 
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogTrigger asChild>
         <Button
           variant="ghost"
@@ -185,14 +221,73 @@ function EliminarClienteButton({ cliente }: { cliente: ClienteRow }) {
           <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
           <AlertDialogDescription>
             Se eliminará <strong>{nombreDisplay(cliente)}</strong> ({cliente.numeroDocumento}) junto
-            con sus direcciones y contactos. Esta acción no se puede deshacer. Si el cliente tiene
-            cotizaciones, facturas u otros documentos, no podrá eliminarse.
+            con sus direcciones y contactos. Esta acción no se puede deshacer.
           </AlertDialogDescription>
         </AlertDialogHeader>
+
+        {cargando && (
+          <p className="text-sm text-muted-foreground">Verificando documentos asociados…</p>
+        )}
+
+        {impacto && totalDocs > 0 && (
+          <div className="space-y-3 text-sm">
+            <p className="font-medium text-destructive">
+              Se eliminarán también {totalDocs} documento{totalDocs !== 1 ? 's' : ''} ligado
+              {totalDocs !== 1 ? 's' : ''}:
+            </p>
+            <ul className="max-h-44 space-y-1 overflow-y-auto rounded-md border p-2 text-xs">
+              {impacto.cotizaciones.map((d) => (
+                <li key={`cot-${d.doc}`}>
+                  Cotización {d.doc} <span className="text-muted-foreground">({d.estado})</span>
+                </li>
+              ))}
+              {impacto.ordenes.map((d) => (
+                <li key={`oc-${d.doc}`}>
+                  Orden de compra {d.doc}{' '}
+                  <span className="text-muted-foreground">({d.estado})</span>
+                </li>
+              ))}
+              {impacto.facturas.map((d) => (
+                <li key={`fac-${d.doc}`} className={d.sunat ? 'font-medium text-destructive' : ''}>
+                  Factura {d.doc} ({d.estado}){d.sunat && ' — informada a SUNAT'}
+                </li>
+              ))}
+              {impacto.notas.map((d) => (
+                <li key={`nc-${d.doc}`} className={d.sunat ? 'font-medium text-destructive' : ''}>
+                  Nota crédito/débito {d.doc} ({d.estado}){d.sunat && ' — informada a SUNAT'}
+                </li>
+              ))}
+              {impacto.guias.map((d) => (
+                <li key={`gre-${d.doc}`} className={d.sunat ? 'font-medium text-destructive' : ''}>
+                  Guía de remisión {d.doc} ({d.estado}){d.sunat && ' — informada a SUNAT'}
+                </li>
+              ))}
+            </ul>
+            {haySunat && (
+              <p className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">
+                ⚠ Incluye comprobantes informados a SUNAT: seguirán existiendo en SUNAT, pero se
+                perderá su registro en Orión.
+              </p>
+            )}
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                Para confirmar, escribe <strong>ELIMINAR</strong>:
+              </p>
+              <Input
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="ELIMINAR"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+        )}
+
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
+            disabled={cargando || (totalDocs > 0 && confirmText.trim() !== 'ELIMINAR')}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             Eliminar

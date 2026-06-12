@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
@@ -13,6 +13,7 @@ import {
   notasCreditoDebito,
   guiasRemision,
   ordenesCompra,
+  pagos,
 } from '@/lib/db/schema';
 import {
   clienteSchema,
@@ -97,6 +98,116 @@ export async function cambiarEstadoCliente(
   return { success: true, data: undefined };
 }
 
+export type ImpactoEliminacionCliente = {
+  cotizaciones: { doc: string; estado: string }[];
+  ordenes: { doc: string; estado: string }[];
+  facturas: { doc: string; estado: string; sunat: boolean }[];
+  notas: { doc: string; estado: string; sunat: boolean }[];
+  guias: { doc: string; estado: string; sunat: boolean }[];
+};
+
+/** Documentos que se eliminarían junto con el cliente (para mostrar en el diálogo). */
+export async function obtenerImpactoEliminacion(
+  clienteId: string
+): Promise<ActionResult<ImpactoEliminacionCliente>> {
+  const { tenant } = await requirePermission('clientes.eliminar');
+
+  const facts = await db
+    .select({
+      id: facturas.id,
+      numeroCompleto: facturas.numeroCompleto,
+      serie: facturas.serie,
+      numero: facturas.numero,
+      estado: facturas.estado,
+      estadoSunat: facturas.estadoSunat,
+    })
+    .from(facturas)
+    .where(and(eq(facturas.tenantId, tenant.id), eq(facturas.clienteId, clienteId)));
+
+  const factIds = facts.map((f) => f.id);
+  const notaCond = factIds.length
+    ? or(
+        eq(notasCreditoDebito.clienteId, clienteId),
+        inArray(notasCreditoDebito.documentoOrigenId, factIds)
+      )
+    : eq(notasCreditoDebito.clienteId, clienteId);
+
+  const [cots, nots, gus, ocs] = await Promise.all([
+    db
+      .select({
+        numeroCompleto: cotizaciones.numeroCompleto,
+        correlativo: cotizaciones.numeroCorrelativo,
+        estado: cotizaciones.estado,
+      })
+      .from(cotizaciones)
+      .where(and(eq(cotizaciones.tenantId, tenant.id), eq(cotizaciones.clienteId, clienteId))),
+    db
+      .select({
+        numeroCompleto: notasCreditoDebito.numeroCompleto,
+        serie: notasCreditoDebito.serie,
+        numero: notasCreditoDebito.numero,
+        estado: notasCreditoDebito.estado,
+        estadoSunat: notasCreditoDebito.estadoSunat,
+      })
+      .from(notasCreditoDebito)
+      .where(and(eq(notasCreditoDebito.tenantId, tenant.id), notaCond)),
+    db
+      .select({
+        numeroCompleto: guiasRemision.numeroCompleto,
+        serie: guiasRemision.serie,
+        numero: guiasRemision.numero,
+        estado: guiasRemision.estado,
+        estadoSunat: guiasRemision.estadoSunat,
+      })
+      .from(guiasRemision)
+      .where(
+        and(
+          eq(guiasRemision.tenantId, tenant.id),
+          or(eq(guiasRemision.remitenteId, clienteId), eq(guiasRemision.destinatarioId, clienteId))
+        )
+      ),
+    db
+      .select({ numero: ordenesCompra.numero, estado: ordenesCompra.estado })
+      .from(ordenesCompra)
+      .where(and(eq(ordenesCompra.tenantId, tenant.id), eq(ordenesCompra.proveedorId, clienteId))),
+  ]);
+
+  const num = (completo: string | null, serie: string, numero: number) =>
+    completo ?? `${serie}-${numero}`;
+
+  return {
+    success: true,
+    data: {
+      cotizaciones: cots.map((c) => ({
+        doc: c.numeroCompleto ?? `COT-${c.correlativo}`,
+        estado: c.estado,
+      })),
+      ordenes: ocs.map((o) => ({ doc: o.numero, estado: o.estado })),
+      facturas: facts.map((f) => ({
+        doc: num(f.numeroCompleto, f.serie, f.numero),
+        estado: f.estado,
+        sunat: f.estadoSunat !== 'sin_enviar',
+      })),
+      notas: nots.map((n) => ({
+        doc: num(n.numeroCompleto, n.serie, n.numero),
+        estado: n.estado,
+        sunat: n.estadoSunat !== 'sin_enviar',
+      })),
+      guias: gus.map((g) => ({
+        doc: num(g.numeroCompleto, g.serie, g.numero),
+        estado: g.estado,
+        sunat: g.estadoSunat !== 'sin_enviar',
+      })),
+    },
+  };
+}
+
+/**
+ * Elimina el cliente y TODOS sus documentos ligados en una transacción:
+ * pagos → NC/ND → facturas → guías → OC → cotizaciones → cliente.
+ * Los comprobantes informados a SUNAT siguen existiendo en SUNAT;
+ * solo se pierde el registro local (el diálogo lo advierte).
+ */
 export async function eliminarCliente(clienteId: string): Promise<ActionResult> {
   const { tenant } = await requirePermission('clientes.eliminar');
 
@@ -107,52 +218,84 @@ export async function eliminarCliente(clienteId: string): Promise<ActionResult> 
 
   if (!existente) return { success: false, error: 'Cliente no encontrado' };
 
-  const [enCotizaciones, enFacturas, enNotas, enGuias, enOrdenes] = await Promise.all([
-    db
-      .select({ id: cotizaciones.id })
-      .from(cotizaciones)
-      .where(eq(cotizaciones.clienteId, clienteId))
-      .limit(1),
-    db.select({ id: facturas.id }).from(facturas).where(eq(facturas.clienteId, clienteId)).limit(1),
-    db
-      .select({ id: notasCreditoDebito.id })
-      .from(notasCreditoDebito)
-      .where(eq(notasCreditoDebito.clienteId, clienteId))
-      .limit(1),
-    db
-      .select({ id: guiasRemision.id })
-      .from(guiasRemision)
-      .where(
-        or(eq(guiasRemision.remitenteId, clienteId), eq(guiasRemision.destinatarioId, clienteId))
-      )
-      .limit(1),
-    db
-      .select({ id: ordenesCompra.id })
-      .from(ordenesCompra)
-      .where(eq(ordenesCompra.proveedorId, clienteId))
-      .limit(1),
-  ]);
+  try {
+    await db.transaction(async (tx) => {
+      const cotIds = (
+        await tx
+          .select({ id: cotizaciones.id })
+          .from(cotizaciones)
+          .where(and(eq(cotizaciones.tenantId, tenant.id), eq(cotizaciones.clienteId, clienteId)))
+      ).map((r) => r.id);
 
-  const usos = [
-    enCotizaciones.length > 0 && 'cotizaciones',
-    enFacturas.length > 0 && 'facturas',
-    enNotas.length > 0 && 'notas de crédito/débito',
-    enGuias.length > 0 && 'guías de remisión',
-    enOrdenes.length > 0 && 'órdenes de compra',
-  ].filter(Boolean);
+      const factIds = (
+        await tx
+          .select({ id: facturas.id })
+          .from(facturas)
+          .where(and(eq(facturas.tenantId, tenant.id), eq(facturas.clienteId, clienteId)))
+      ).map((r) => r.id);
 
-  if (usos.length > 0) {
+      const guiaIds = (
+        await tx
+          .select({ id: guiasRemision.id })
+          .from(guiasRemision)
+          .where(
+            and(
+              eq(guiasRemision.tenantId, tenant.id),
+              or(
+                eq(guiasRemision.remitenteId, clienteId),
+                eq(guiasRemision.destinatarioId, clienteId)
+              )
+            )
+          )
+      ).map((r) => r.id);
+
+      if (factIds.length) {
+        await tx.delete(pagos).where(inArray(pagos.facturaId, factIds));
+      }
+
+      const notaCond = factIds.length
+        ? or(
+            eq(notasCreditoDebito.clienteId, clienteId),
+            inArray(notasCreditoDebito.documentoOrigenId, factIds)
+          )
+        : eq(notasCreditoDebito.clienteId, clienteId);
+      await tx
+        .delete(notasCreditoDebito)
+        .where(and(eq(notasCreditoDebito.tenantId, tenant.id), notaCond));
+
+      if (factIds.length) {
+        await tx.delete(facturas).where(inArray(facturas.id, factIds));
+      }
+      if (guiaIds.length) {
+        await tx.delete(guiasRemision).where(inArray(guiasRemision.id, guiaIds));
+      }
+
+      const ocCond = cotIds.length
+        ? or(
+            eq(ordenesCompra.proveedorId, clienteId),
+            inArray(ordenesCompra.cotizacionOrigenId, cotIds)
+          )
+        : eq(ordenesCompra.proveedorId, clienteId);
+      await tx.delete(ordenesCompra).where(and(eq(ordenesCompra.tenantId, tenant.id), ocCond));
+
+      if (cotIds.length) {
+        await tx.delete(cotizaciones).where(inArray(cotizaciones.id, cotIds));
+      }
+
+      await tx
+        .delete(clientes)
+        .where(and(eq(clientes.id, clienteId), eq(clientes.tenantId, tenant.id)));
+    });
+  } catch (e) {
     return {
       success: false,
-      error: `No se puede eliminar: el cliente tiene ${usos.join(', ')} asociadas. Márcalo como inactivo en su lugar.`,
+      error: `No se pudo eliminar: ${e instanceof Error ? e.message : 'error en la transacción'}`,
     };
   }
 
-  await db
-    .delete(clientes)
-    .where(and(eq(clientes.id, clienteId), eq(clientes.tenantId, tenant.id)));
-
-  revalidatePath(`/${tenant.slug}/clientes`);
+  for (const ruta of ['clientes', 'cotizaciones', 'facturas', 'guias', 'ordenes', 'credito']) {
+    revalidatePath(`/${tenant.slug}/${ruta}`);
+  }
   return { success: true, data: undefined };
 }
 
