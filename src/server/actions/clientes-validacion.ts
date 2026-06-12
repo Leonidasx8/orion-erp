@@ -15,7 +15,7 @@ export async function buscarDocumentoSunat(
   if (tipo === 'DNI' && limpio.length !== 8)
     return { success: false, error: 'DNI debe tener 8 dígitos' };
 
-  if (!process.env.APIS_NET_PE_TOKEN) {
+  if (!process.env.DECOLECTA_TOKEN) {
     return {
       success: false,
       error:

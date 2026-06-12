@@ -3,7 +3,7 @@ import { db } from '@/lib/db/client';
 import { validacionesDocumento } from '@/lib/db/schema';
 
 const CACHE_TTL_DAYS = 30;
-const API_BASE = 'https://api.apis.net.pe/v2';
+const API_BASE = 'https://api.decolecta.com/v1';
 
 export interface DatosSunatRUC {
   tipoDocumento: 'RUC';
@@ -54,18 +54,20 @@ async function upsertCache(tipo: string, numero: string, resultado: DatosSunat) 
 }
 
 async function fetchFromApi(tipo: 'RUC' | 'DNI', numero: string): Promise<DatosSunat> {
-  const token = process.env.APIS_NET_PE_TOKEN;
-  if (!token) throw new Error('APIS_NET_PE_TOKEN no configurado');
+  const token = process.env.DECOLECTA_TOKEN;
+  if (!token) throw new Error('DECOLECTA_TOKEN no configurado');
 
   const endpoint =
-    tipo === 'RUC' ? `${API_BASE}/sunat/ruc?ruc=${numero}` : `${API_BASE}/reniec/dni?dni=${numero}`;
+    tipo === 'RUC'
+      ? `${API_BASE}/sunat/ruc?numero=${numero}`
+      : `${API_BASE}/reniec/dni?numero=${numero}`;
 
   const res = await fetch(endpoint, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
 
-  if (!res.ok) throw new Error(`apis.net.pe ${tipo} ${numero}: HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`decolecta ${tipo} ${numero}: HTTP ${res.status}`);
 
   const data = await res.json();
 
@@ -73,11 +75,11 @@ async function fetchFromApi(tipo: 'RUC' | 'DNI', numero: string): Promise<DatosS
     return {
       tipoDocumento: 'RUC',
       numeroDocumento: numero,
-      razonSocial: data.razonSocial ?? data.nombre ?? '',
+      razonSocial: data.razon_social ?? '',
       condicion: data.condicion ?? '',
       estado: data.estado ?? '',
       ubigeo: data.ubigeo ?? null,
-      direccion: data.direccion ?? null,
+      direccion: data.direccion?.trim() || null,
       departamento: data.departamento ?? null,
       provincia: data.provincia ?? null,
       distrito: data.distrito ?? null,
@@ -87,9 +89,9 @@ async function fetchFromApi(tipo: 'RUC' | 'DNI', numero: string): Promise<DatosS
   return {
     tipoDocumento: 'DNI',
     numeroDocumento: numero,
-    nombres: data.nombres ?? '',
-    apellidoPaterno: data.apellidoPaterno ?? data.apellido_paterno ?? '',
-    apellidoMaterno: data.apellidoMaterno ?? data.apellido_materno ?? '',
+    nombres: data.first_name ?? '',
+    apellidoPaterno: data.first_last_name ?? '',
+    apellidoMaterno: data.second_last_name ?? '',
   };
 }
 
