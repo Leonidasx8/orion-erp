@@ -111,16 +111,19 @@ export default async function ClienteCxCDetallePage({
     .limit(20);
 
   // Suma de pagos por factura (para calcular saldo)
-  const pagosSumaRaw = await db.execute<{ factura_id: string; total_pagado: string }>(sql`
-    SELECT factura_id, COALESCE(SUM(monto), 0)::text AS total_pagado
-    FROM pagos
-    WHERE tenant_id = ${tenant.id}
-      AND factura_id = ANY(${sql`ARRAY[${sql.join(
-        facturasRows.map((f) => sql`${f.id}::uuid`),
-        sql`, `
-      )}]`})
-    GROUP BY factura_id
-  `);
+  const pagosSumaRaw =
+    facturasRows.length > 0
+      ? await db.execute<{ factura_id: string; total_pagado: string }>(sql`
+          SELECT factura_id, COALESCE(SUM(monto), 0)::text AS total_pagado
+          FROM pagos
+          WHERE tenant_id = ${tenant.id}
+            AND factura_id = ANY(${sql`ARRAY[${sql.join(
+              facturasRows.map((f) => sql`${f.id}::uuid`),
+              sql`, `
+            )}]`})
+          GROUP BY factura_id
+        `)
+      : [];
 
   const pagosPorFactura = new Map(
     (pagosSumaRaw as unknown as Array<{ factura_id: string; total_pagado: string }>).map((r) => [
