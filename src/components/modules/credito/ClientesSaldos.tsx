@@ -53,33 +53,28 @@ export function ClientesSaldos({
         </thead>
         <tbody className="divide-y divide-orion-border">
           {rows.map((r) => {
-            const hasUsd = r.lineaCreditoUsd > 0 || r.saldoUsd > 0;
-            const hasPen = r.lineaCreditoPen > 0 || r.saldoPen > 0;
             const currencies: Array<{
               ccy: 'USD' | 'PEN';
               linea: number;
               saldo: number;
               vencido: number;
               bloqueado: boolean;
-            }> = [];
-            if (hasUsd)
-              currencies.push({
+            }> = [
+              {
                 ccy: 'USD',
                 linea: r.lineaCreditoUsd,
                 saldo: r.saldoUsd,
                 vencido: r.saldoVencidoUsd,
                 bloqueado: r.bloqueado,
-              });
-            if (hasPen)
-              currencies.push({
+              },
+              {
                 ccy: 'PEN',
                 linea: r.lineaCreditoPen,
                 saldo: r.saldoPen,
                 vencido: r.saldoVencidoPen,
                 bloqueado: r.bloqueadoPen,
-              });
-            if (currencies.length === 0)
-              currencies.push({ ccy: 'USD', linea: 0, saldo: 0, vencido: 0, bloqueado: false });
+              },
+            ];
 
             return currencies.map((c, idx) => {
               const pct = c.linea > 0 ? Math.min(100, Math.round((c.saldo / c.linea) * 100)) : 0;
