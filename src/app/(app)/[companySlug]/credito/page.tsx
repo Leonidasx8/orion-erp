@@ -12,41 +12,90 @@ type AgingBuckets = {
   bucket90mas: number;
 };
 
-function AgingReportCard({
-  agingBuckets,
-  totalCxC,
-  clientesConDeuda,
+function AgingStrip({
+  buckets,
+  ccy,
+  totalVencido,
 }: {
-  agingBuckets: AgingBuckets;
-  totalCxC: number;
-  clientesConDeuda: number;
+  buckets: AgingBuckets;
+  ccy: 'USD' | 'PEN';
+  totalVencido: number;
 }) {
-  const porVencer = Math.max(
-    0,
-    totalCxC -
-      (agingBuckets.bucket0a30 +
-        agingBuckets.bucket31a60 +
-        agingBuckets.bucket61a90 +
-        agingBuckets.bucket90mas)
-  );
-  const agingTotal =
-    porVencer +
-    agingBuckets.bucket0a30 +
-    agingBuckets.bucket31a60 +
-    agingBuckets.bucket61a90 +
-    agingBuckets.bucket90mas;
+  const symbol = ccy === 'USD' ? 'USD' : 'S/';
+  const total =
+    buckets.bucket0a30 + buckets.bucket31a60 + buckets.bucket61a90 + buckets.bucket90mas;
 
-  const buckets = [
-    { label: 'Por vencer', value: porVencer, color: 'var(--success)' },
-    { label: '1-30 días', value: agingBuckets.bucket0a30, color: 'var(--accent)' },
-    { label: '31-60 días', value: agingBuckets.bucket31a60, color: 'var(--warn)' },
-    { label: '61-90 días', value: agingBuckets.bucket61a90, color: '#ea580c' },
-    { label: '+90 días', value: agingBuckets.bucket90mas, color: 'var(--danger)' },
+  const items = [
+    { label: '1-30 días', value: buckets.bucket0a30, color: 'var(--accent)' },
+    { label: '31-60 días', value: buckets.bucket31a60, color: 'var(--warn)' },
+    { label: '61-90 días', value: buckets.bucket61a90, color: '#ea580c' },
+    { label: '+90 días', value: buckets.bucket90mas, color: 'var(--danger)' },
   ] as const;
 
+  if (totalVencido === 0) return null;
+
+  return (
+    <div className="mt-3">
+      <div className="mb-2 flex items-center gap-2">
+        <span
+          className={`text-[11px] font-semibold ${ccy === 'USD' ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`}
+        >
+          {ccy}
+        </span>
+        <span className="text-[12px] text-orion-fg-muted">
+          {symbol} {totalVencido.toLocaleString('es-PE', { minimumFractionDigits: 2 })} vencido
+        </span>
+      </div>
+      <div className="mb-2 grid grid-cols-4 gap-2">
+        {items.map((b) => (
+          <div key={b.label} className="rounded-md bg-orion-bg-subtle p-2.5">
+            <div className="mb-1 flex items-center gap-1.5">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: b.color }} />
+              <span className="text-[11px] text-orion-fg-muted">{b.label}</span>
+            </div>
+            <div className="text-[16px] font-semibold text-orion-fg">
+              {symbol}{' '}
+              {b.value.toLocaleString('es-PE', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      {total > 0 && (
+        <div className="flex h-1.5 overflow-hidden rounded-full">
+          {items.map(
+            (seg) =>
+              seg.value > 0 && (
+                <div
+                  key={seg.label}
+                  style={{ width: `${(seg.value / total) * 100}%`, background: seg.color }}
+                />
+              )
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AgingReportCard({
+  agingUsd,
+  agingPen,
+  totalVencidoUsd,
+  totalVencidoPen,
+  clientesConDeuda,
+}: {
+  agingUsd: AgingBuckets;
+  agingPen: AgingBuckets;
+  totalVencidoUsd: number;
+  totalVencidoPen: number;
+  clientesConDeuda: number;
+}) {
   return (
     <div className="rounded-lg border border-orion-border bg-orion-bg p-4">
-      <div className="mb-3 flex items-center">
+      <div className="mb-1 flex items-center">
         <span className="text-[13px] font-semibold text-orion-fg">
           Aging report &middot;{' '}
           {new Date().toLocaleDateString('es-PE', {
@@ -56,45 +105,16 @@ function AgingReportCard({
           })}
         </span>
         <span className="ml-auto text-[11.5px] text-orion-fg-muted">
-          {clientesConDeuda} clientes &middot; S/{' '}
-          {totalCxC.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+          {clientesConDeuda} clientes
         </span>
       </div>
 
-      <div className="mb-3 grid grid-cols-5 gap-2">
-        {buckets.map((b) => (
-          <div key={b.label} className="rounded-md bg-orion-bg-subtle p-3">
-            <div className="mb-1 flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full" style={{ background: b.color }} />
-              <span className="text-[11.5px] text-orion-fg-muted">{b.label}</span>
-            </div>
-            <div className="text-[18px] font-semibold text-orion-fg">
-              S/{' '}
-              {b.value.toLocaleString('es-PE', {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {agingTotal > 0 && (
-        <div className="flex h-2 overflow-hidden rounded-full">
-          {buckets.map(
-            (seg) =>
-              seg.value > 0 && (
-                <div
-                  key={seg.label}
-                  style={{
-                    width: `${(seg.value / agingTotal) * 100}%`,
-                    background: seg.color,
-                  }}
-                />
-              )
-          )}
-        </div>
+      {totalVencidoUsd === 0 && totalVencidoPen === 0 && (
+        <p className="mt-3 text-sm text-orion-fg-muted">No hay facturas vencidas.</p>
       )}
+
+      <AgingStrip buckets={agingUsd} ccy="USD" totalVencido={totalVencidoUsd} />
+      <AgingStrip buckets={agingPen} ccy="PEN" totalVencido={totalVencidoPen} />
     </div>
   );
 }
@@ -192,9 +212,10 @@ export default async function CreditoPage({
 
   const dashboardData: DashboardCxCData = {
     clientesConDeuda: Number(totalesRow.clientes_con_deuda),
-    totalCxC: Number(totalesRow.total_cxc_usd),
-    totalVencido: Number(totalesRow.total_vencido_usd),
-    moneda: 'USD',
+    totalCxCUsd: Number(totalesRow.total_cxc_usd),
+    totalCxCPen: Number(totalesRow.total_cxc_pen),
+    totalVencidoUsd: Number(totalesRow.total_vencido_usd),
+    totalVencidoPen: Number(totalesRow.total_vencido_pen),
   };
 
   const agingRow = agingRaw[0] ?? {
@@ -266,8 +287,10 @@ export default async function CreditoPage({
 
       {/* Aging report card */}
       <AgingReportCard
-        agingBuckets={agingBuckets}
-        totalCxC={dashboardData.totalCxC}
+        agingUsd={agingBuckets}
+        agingPen={agingBuckets}
+        totalVencidoUsd={dashboardData.totalVencidoUsd}
+        totalVencidoPen={dashboardData.totalVencidoPen}
         clientesConDeuda={dashboardData.clientesConDeuda}
       />
 
