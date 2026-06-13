@@ -2,7 +2,8 @@
 
 > **Propósito:** evitar retrabajo si la sesión se cierra. Cualquier sesión nueva debe leer este archivo PRIMERO antes de tocar código. Actualizar al terminar cada tarea significativa o al hacer commit.
 
-**Última actualización:** 2026-06-12 10:10 (✅ Importador masivo de clientes (`245d082`): 3 pasos (subir Excel/CSV → vista previa con validación por fila → confirmar). Valida RUC 11 dígitos, DNI 8 dígitos, duplicados, razón social / nombres requeridos. Upsert por número de documento. Plantilla descargable. Botón Importar en lista de clientes enlazado. Build y typecheck OK, desplegado en prod.)
+**Última actualización:** 2026-06-13 (✅ Entrega formal enviada a Lucas. Soporte correctivo iniciado. Ver sección 2026-06-12/13 abajo.)
+**Última actualización anterior:** 2026-06-12 10:10 (✅ Importador masivo de clientes (`245d082`): 3 pasos (subir Excel/CSV → vista previa con validación por fila → confirmar). Valida RUC 11 dígitos, DNI 8 dígitos, duplicados, razón social / nombres requeridos. Upsert por número de documento. Plantilla descargable. Botón Importar en lista de clientes enlazado. Build y typecheck OK, desplegado en prod.)
 **Última actualización anterior:** 2026-06-12 09:40 (✅ Eliminar clientes habilitado (`6fe60c8`): botón Trash en la lista con AlertDialog; acción `eliminarCliente` con permiso `clientes.eliminar` (solo superadmin — Lucas lo tiene); bloquea si el cliente tiene cotizaciones/facturas/NC-ND/guías/OC y sugiere marcarlo inactivo. Verificado en prod: 7 SEAS bloqueado correctamente; durante la prueba se eliminó el registro de prueba "CELSA SAC" RUC ficticio 20887766554 (sin documentos, creado 1-jun) — el CELSA real 20100063680 sigue intacto y los 551 productos nunca tuvieron proveedor_principal asignado, sin impacto. Previo: consulta RUC/DNI vía Decolecta (`b7c1bbb`) y fix "editar cliente no guarda".)
 **Branch activa:** `main` — desplegada en orion-rp.com (`vercel --prod`).
 **Estado verificado:** F001-13/14 emitidas y luego anuladas por NC (flujo completo demostrado) · NC F002-1 y F002-2 ACEPTADAS SUNAT ✅ · Guías T001-7 y T001-8 ACEPTADAS SUNAT ✅ · AUDIT 14/14 módulos OK.
@@ -47,6 +48,85 @@
 
 - **Entorno real**: cargar productos (3 archivos) · serie/correlativo E001 desde 11 · personalizar factura (logo/colores) · prueba real de facturar un cable a un cliente.
 - Dashboard monedas separadas · catálogo unidades SUNAT (cat. 03) · guías 2-casos · roles=Admin · salida de stock al emitir guía.
+
+---
+
+## ✅ 2026-06-12/13 — Entrega formal + soporte correctivo iniciado
+
+### Estado comercial
+
+- **Entrega formal enviada** a Lucas (lescriva@grupoidex.com.pe) con 8 PDFs adjuntos: manual usuario, manual sistema, conciliación (17 extras), UAT, acta, roadmap v2, accesos, reporte pruebas.
+- **Paquete entrega:** `orion-erp-setup/entrega/pdf/` — 8 PDFs con branding DIGNITA.TECH.
+- **Saldo pendiente:** US$ 938.00 (segunda cuota + US$ 124.20 anteriores). Comunicado por correo y WhatsApp. Esperando pago para continuar soporte correctivo formal.
+- **Marcha blanca:** 30 días desde firma del acta. Soporte ya iniciado de facto desde el jueves.
+
+### Cambios desplegados en prod (commits `3b0f631` → `bd319fb`)
+
+**Crédito y CxC** (`e2656e4`, `9fa7e92`, `a10f897`, `0eba12d`, `93ddd38`, `21cf589`, `e3ab21e`, `993caaa`, `8f8a652`, `bd319fb`):
+
+- Módulo bimoneda completo: USD y Soles separados en tabla, KPIs y antigüedad de cartera
+- Filas USD + PEN siempre visibles por cliente (no colapsan)
+- Crash corregido: `sql.join` vacío al abrir detalle de cliente sin facturas
+- Botón "Registrar pago" visible para cualquier saldo pendiente (no solo vencido)
+- Badge "Pagada" dinámico cuando saldo = 0 y estado_sunat = 'aceptada'
+
+**Cotizaciones** (`cfccbff`, `3b2ca2`, `65da546`, `a75f2fb`, `bf0176f`, `2573af4`, `4c65924`, `f97c65d`, `a290053`, `ac0ce07`, `64d2f61`, `ec7ee4d`, `2d79b0e`):
+
+- Botones de margen recalculan precio de TODAS las líneas simultáneamente
+- Precio base corregido: usa `costoUnitario` (no precio de venta) como base del margen
+- Vista previa PDF inline con botón "Actualizar" — sin abrir otra ventana
+- Tiempo y lugar de entrega en formulario y PDF
+- Columna PRECIO ampliada a 160px para números de 4+ cifras
+- Bugs de precio: input controlado, hidden input para handleSubmit, coerción de tiempoEntregaDias
+
+**Clientes** (`fa2fffc`, `d30b075`, `f4d564d`):
+
+- Línea de crédito en soles (+ plazo en días) en formulario de creación/edición
+- Sincronización automática a tabla `creditos_cliente` al guardar
+- Búsqueda por nombre corregida (accessorFn faltante en columna)
+
+**GRE** (`b561482`):
+
+- Brevete del conductor reemplaza RUC como campo principal — resuelve rechazo SUNAT para transportistas persona natural
+- Migración `0050` aplicada en prod: columna `conductor_brevete` en `transportistas`
+
+**PDFs** (`d4276ac`, `1a2b4fc`, `582f021`, `3b0f631`):
+
+- Logo URL dinámica según `origin` (funciona en prod y en preview)
+- Razón social debajo del logo
+- Columna cantidad visible
+- Columna ENTREGA condicional (solo si algún ítem tiene tiempo de entrega)
+
+**Reportes / Dashboard** (`fcc93af`, `9bf124f`, `d30b075`):
+
+- Ticket promedio USD en KPI dashboard
+- Totales PEN y USD separados en reporte de ventas
+- Queries de dashboard/reportes/notifications actualizadas a schema bimoneda
+
+### DB prod — cambios manuales (sin migración)
+
+- **PuraFruit E001-12** (`109,047.08 PEN`, emitida, aceptada) — con líneas de anticipo negativas (−43,844.68)
+- **PuraFruit E001-13** (`46,163.06 PEN`, emitida, aceptada) — con líneas de anticipo negativas (−43,844.67)
+- **Pago anticipo E001-6** registrado en tabla `pagos`: `103,473.43 PEN`, método transferencia — CxC queda en S/ 155,210.14 pendiente
+- **Crédito PuraFruit**: `linea_credito_pen = 300,000`, `plazo_credito_pen = '30dias'` — instrucción de Lucas
+- **Materialized view** `cuentas_por_cobrar` refrescada tras los inserts
+
+### Pendientes soporte correctivo (30 días)
+
+- [ ] Pipeline: excluir facturas anuladas del resumen de etapas
+- [ ] CxC: deuda generada solo desde cotizaciones aprobadas y facturadas
+- [ ] Cotizaciones: dropdown términos de pago (contado / crédito + días) en formulario
+- [ ] Historial de ventas del año: migrar facturas previas al sistema para reportes
+- [ ] Pruebas integrales: cotización → crédito → facturación en vivo con Lucas
+- [ ] Guías: evaluar anulación/edición post-emisión (depende de SUNAT/Nubefact)
+
+### PDFs de entrega actualizados (13-jun)
+
+- `conciliacion.md`: 17 extras (era 10), fecha 13-jun
+- `acta-de-entrega.md`: fecha 13-jun
+- `roadmap-v2.md`: 6 nuevas ideas en "Visión a futuro" (app móvil, contabilidad, administración, CRM, IA, variantes)
+- `correo-entrega.md`: reescrito — entrega formal + soporte ya iniciado + solicitud pago US$938
+- Script `generar-pdfs.sh`: todos los 8 PDFs regenerados ✅
 
 ---
 
