@@ -341,7 +341,11 @@ export default async function ClienteCxCDetallePage({
                       >
                         <Money value={saldo} ccy={ccy} />
                       </td>
-                      <td className="px-4 py-3">{estadoFacturaBadge(f.estado)}</td>
+                      <td className="px-4 py-3">
+                        {estadoFacturaBadge(
+                          f.estadoSunat === 'aceptada' && saldo === 0 ? 'pagada' : f.estado
+                        )}
+                      </td>
                     </tr>
                   );
                 })}

@@ -173,12 +173,17 @@ export function ClientesSaldos({
                         : ''}
                   </td>
                   <td className="px-4 py-2.5">
-                    {idx === 0 && (r.saldoVencidoUsd > 0 || r.saldoVencidoPen > 0) ? (
+                    {idx === 0 && (r.saldoUsd > 0 || r.saldoPen > 0) ? (
                       <Link
                         href={`/${companySlug}/credito/pagos/nuevo?clienteId=${r.clienteId}`}
-                        className="inline-flex h-7 items-center gap-1.5 rounded-md border border-danger-soft bg-danger-soft px-2.5 text-[12px] font-medium text-danger-fg hover:opacity-80"
+                        className={cn(
+                          'inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-[12px] font-medium hover:opacity-80',
+                          r.saldoVencidoUsd > 0 || r.saldoVencidoPen > 0
+                            ? 'border-danger-soft bg-danger-soft text-danger-fg'
+                            : 'border-orion-border bg-orion-bg-subtle text-orion-fg'
+                        )}
                       >
-                        Cobrar
+                        Registrar pago
                       </Link>
                     ) : (
                       <span className="text-orion-fg-faint">
