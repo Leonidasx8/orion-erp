@@ -336,6 +336,14 @@ export async function POST(req: Request) {
               },
             }
           : {}),
+        ...(guia.transportistaNombreSnapshot || guia.conductorBreveateSnapshot
+          ? {
+              conductor: {
+                nombre: guia.transportistaNombreSnapshot ?? '',
+                brevete: guia.conductorBreveateSnapshot ?? '',
+              },
+            }
+          : {}),
         motivoTraslado: guia.motivoTraslado as MotivoTraslado,
         descripcionMotivo: guia.descripcionMotivo ?? undefined,
         modalidadTraslado: guia.modalidadTraslado as '01' | '02',

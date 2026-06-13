@@ -78,12 +78,12 @@ export function buildGuia(p: GuiaRemisionPayload): Record<string, unknown> {
     base.transportista_placa_numero = p.vehiculo.placa;
   }
 
-  // Conductor (campos vacíos cuando no aplica — Nubefact los espera)
+  // Conductor — nombre y brevete cuando están disponibles
   base.conductor_documento_tipo = '';
   base.conductor_documento_numero = '';
-  base.conductor_nombre = '';
+  base.conductor_nombre = p.conductor?.nombre ?? '';
   base.conductor_apellidos = '';
-  base.conductor_numero_licencia = '';
+  base.conductor_numero_licencia = p.conductor?.brevete ?? '';
 
   // Para GRE Transportista (31): agregar destinatario separado
   if (!esRemitente) {

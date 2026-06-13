@@ -137,6 +137,11 @@ export interface GuiaRemisionPayload {
     configuracionVehicular?: string;
   };
 
+  conductor?: {
+    nombre: string;
+    brevete: string;
+  };
+
   facturaRelacionada?: {
     serie: string;
     numero: number;

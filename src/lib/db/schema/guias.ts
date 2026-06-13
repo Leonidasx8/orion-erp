@@ -95,6 +95,7 @@ export const guiasRemision = pgTable('guias_remision', {
   transportistaRucSnapshot: text('transportista_ruc_snapshot'),
   transportistaNombreSnapshot: text('transportista_nombre_snapshot'),
   vehiculoPlacaSnapshot: text('vehiculo_placa_snapshot'),
+  conductorBreveateSnapshot: text('conductor_brevete_snapshot'),
 
   facturaRelacionadaId: uuid('factura_relacionada_id'),
   cotizacionId: uuid('cotizacion_id'),

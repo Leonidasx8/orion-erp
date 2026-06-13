@@ -59,6 +59,7 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos, cotizacion
   const [transportista, setTransportista] = useState('');
   const [transportistaRuc, setTransportistaRuc] = useState('');
   const [placa, setPlaca] = useState('');
+  const [conductorBrevete, setConductorBrevete] = useState('');
   const [pesoBruto, setPesoBruto] = useState('');
   const [observaciones, setObservaciones] = useState('');
 
@@ -128,9 +129,7 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos, cotizacion
     if (items.some((it) => !it.descripcion.trim()))
       return toast.error('Completa la descripción de todos los ítems');
     if (caso === 'idex_envia' && !transportista.trim())
-      return toast.error('Ingresa el nombre/razón social del transportista');
-    if (caso === 'idex_envia' && !transportistaRuc.trim())
-      return toast.error('Ingresa el RUC de la empresa transportista');
+      return toast.error('Ingresa el nombre del transportista');
     const pesoNum = parseFloat(pesoBruto);
     if (!pesoBruto || isNaN(pesoNum) || pesoNum <= 0)
       return toast.error('Ingresa el peso bruto total en kg (mayor a 0)');
@@ -147,6 +146,7 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos, cotizacion
         transportistaNombre: caso === 'idex_envia' ? transportista || undefined : undefined,
         transportistaRuc: caso === 'idex_envia' ? transportistaRuc || undefined : undefined,
         vehiculoPlaca: caso === 'idex_envia' ? placa || undefined : undefined,
+        conductorBrevete: caso === 'idex_envia' ? conductorBrevete || undefined : undefined,
         observaciones:
           caso === 'cliente_recoge'
             ? ['El cliente retira la mercadería en almacén', observaciones]
@@ -265,23 +265,22 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos, cotizacion
           </Field>
           {caso === 'idex_envia' && (
             <>
-              <Field label="Empresa transportista *">
+              <Field label="Nombre del transportista *">
                 <input
                   type="text"
                   value={transportista}
                   onChange={(e) => setTransportista(e.target.value)}
-                  placeholder="Razón social del transportista"
+                  placeholder="Nombre del conductor / transportista"
                   className={inp}
                 />
               </Field>
-              <Field label="RUC del transportista *">
+              <Field label="N° Brevete">
                 <input
                   type="text"
-                  value={transportistaRuc}
-                  onChange={(e) => setTransportistaRuc(e.target.value)}
-                  placeholder="20XXXXXXXXX"
-                  maxLength={11}
-                  className={inp}
+                  value={conductorBrevete}
+                  onChange={(e) => setConductorBrevete(e.target.value.toUpperCase())}
+                  placeholder="Ej: Q41782578"
+                  className={`${inp} uppercase`}
                 />
               </Field>
               <Field label="Placa del vehículo">
@@ -291,6 +290,16 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos, cotizacion
                   onChange={(e) => setPlaca(e.target.value.toUpperCase())}
                   placeholder="ABC-123"
                   className={`${inp} uppercase`}
+                />
+              </Field>
+              <Field label="RUC del transportista (opcional)">
+                <input
+                  type="text"
+                  value={transportistaRuc}
+                  onChange={(e) => setTransportistaRuc(e.target.value)}
+                  placeholder="Solo si el transportista tiene RUC"
+                  maxLength={11}
+                  className={inp}
                 />
               </Field>
             </>
