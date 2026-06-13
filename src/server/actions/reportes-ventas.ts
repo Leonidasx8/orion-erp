@@ -23,6 +23,7 @@ export type FiltrosVentas = z.infer<typeof FiltrosSchema>;
 
 export interface FilaReporte {
   grupo: string;
+  moneda: 'PEN' | 'USD';
   facturas: number;
   total: number;
 }
@@ -112,9 +113,15 @@ export async function getReporteVentas(rawFiltros: FiltrosVentas): Promise<FilaR
   const joinFinal =
     filtros.comercialId || filtros.groupBy === 'comercial' ? joinClientes : joinLineas;
 
-  const rows = await db.execute<{ grupo: string; facturas: number; total: string }>(sql`
+  const rows = await db.execute<{
+    grupo: string;
+    moneda: string;
+    facturas: number;
+    total: string;
+  }>(sql`
     SELECT
       ${selectGrupo},
+      f.moneda,
       ${selectCount},
       ${selectTotal}
     FROM facturas f
@@ -126,12 +133,13 @@ export async function getReporteVentas(rawFiltros: FiltrosVentas): Promise<FilaR
       AND f.fecha_emision <= ${filtros.hasta}::date
       ${whereClienteId}
       ${whereComercialId}
-    GROUP BY ${groupByClause}
-    ORDER BY 1 ASC
+    GROUP BY ${groupByClause}, f.moneda
+    ORDER BY 1 ASC, f.moneda ASC
   `);
 
   return rows.map((r) => ({
     grupo: r.grupo ?? '—',
+    moneda: (r.moneda ?? 'PEN') as 'PEN' | 'USD',
     facturas: Number(r.facturas),
     total: parseFloat(r.total ?? '0'),
   }));

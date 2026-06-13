@@ -20,12 +20,11 @@ function primerDiaMes(): string {
   return d.toISOString().slice(0, 10);
 }
 
-function formatMoney(n: number): string {
-  return new Intl.NumberFormat('es-PE', {
-    style: 'currency',
-    currency: 'PEN',
-    minimumFractionDigits: 2,
-  }).format(n);
+function formatMoney(n: number, ccy: 'PEN' | 'USD' = 'PEN'): string {
+  return (
+    (ccy === 'USD' ? 'USD ' : 'S/ ') +
+    new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
+  );
 }
 
 function labelGroupBy(g: FiltrosVentas['groupBy']): string {
@@ -77,7 +76,8 @@ export default function ReportesVentasPage() {
   // ─── Totales ───────────────────────────────────────────────────────────────
 
   const totalFacturas = filas.reduce((acc, f) => acc + f.facturas, 0);
-  const totalMonto = filas.reduce((acc, f) => acc + f.total, 0);
+  const totalPen = filas.filter((f) => f.moneda === 'PEN').reduce((acc, f) => acc + f.total, 0);
+  const totalUsd = filas.filter((f) => f.moneda === 'USD').reduce((acc, f) => acc + f.total, 0);
   const colGrupo = labelGroupBy(groupBy);
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -181,33 +181,39 @@ export default function ReportesVentasPage() {
                   <th className="px-4 py-3 text-left font-medium text-orion-fg-muted">
                     {colGrupo}
                   </th>
+                  <th className="px-4 py-3 text-center font-medium text-orion-fg-muted">Moneda</th>
                   <th className="px-4 py-3 text-right font-medium text-orion-fg-muted">
                     Documentos
                   </th>
-                  <th className="px-4 py-3 text-right font-medium text-orion-fg-muted">
-                    Total (PEN)
-                  </th>
+                  <th className="px-4 py-3 text-right font-medium text-orion-fg-muted">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {filas.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-orion-fg-muted">
+                    <td colSpan={4} className="px-4 py-8 text-center text-orion-fg-muted">
                       No hay datos para los filtros seleccionados.
                     </td>
                   </tr>
                 ) : (
                   filas.map((fila, idx) => (
                     <tr
-                      key={`${fila.grupo}-${idx}`}
+                      key={`${fila.grupo}-${fila.moneda}-${idx}`}
                       className="border-b border-orion-border last:border-b-0 hover:bg-orion-bg-subtle"
                     >
                       <td className="px-4 py-2.5 text-orion-fg">{fila.grupo}</td>
+                      <td className="px-4 py-2.5 text-center">
+                        <span
+                          className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${fila.moneda === 'USD' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'}`}
+                        >
+                          {fila.moneda}
+                        </span>
+                      </td>
                       <td className="px-4 py-2.5 text-right tabular-nums text-orion-fg">
                         {fila.facturas.toLocaleString('es-PE')}
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums text-orion-fg">
-                        {formatMoney(fila.total)}
+                        {formatMoney(fila.total, fila.moneda)}
                       </td>
                     </tr>
                   ))
@@ -218,12 +224,15 @@ export default function ReportesVentasPage() {
               {filas.length > 0 && (
                 <tfoot>
                   <tr className="border-t-2 border-orion-border bg-orion-bg-subtle font-semibold">
-                    <td className="px-4 py-3 text-orion-fg">Total</td>
+                    <td className="px-4 py-3 text-orion-fg" colSpan={2}>
+                      Total
+                    </td>
                     <td className="px-4 py-3 text-right tabular-nums text-orion-fg">
                       {totalFacturas.toLocaleString('es-PE')}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-orion-fg">
-                      {formatMoney(totalMonto)}
+                      {totalPen > 0 && <div>{formatMoney(totalPen, 'PEN')}</div>}
+                      {totalUsd > 0 && <div>{formatMoney(totalUsd, 'USD')}</div>}
                     </td>
                   </tr>
                 </tfoot>
