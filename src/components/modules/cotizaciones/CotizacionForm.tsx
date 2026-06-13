@@ -545,13 +545,19 @@ export function CotizacionForm({
                             return null;
                           })()}
                         </Td>
-                        {/* Precio */}
+                        {/* Precio — input controlado para que setValue/applyMargen actualice DOM y totales */}
                         <Td align="right" className="w-[160px]">
                           <input
                             type="number"
                             step="0.0001"
                             min="0"
-                            {...register(`items.${idx}.precioUnitario`)}
+                            value={precio || ''}
+                            onChange={(e) => {
+                              const v = parseFloat(e.target.value);
+                              setValue(`items.${idx}.precioUnitario`, isNaN(v) ? 0 : v, {
+                                shouldDirty: true,
+                              });
+                            }}
                             className={cn(
                               inputCls,
                               'h-8 min-w-[140px] text-right text-[12.5px] tabular-nums'
