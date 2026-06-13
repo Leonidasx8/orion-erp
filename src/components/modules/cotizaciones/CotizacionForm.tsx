@@ -556,10 +556,7 @@ export function CotizacionForm({
                         </Td>
                         {/* Precio — hidden registered input keeps RHF state; visible input is controlled */}
                         <Td align="right" className="w-[160px]">
-                          <input
-                            type="hidden"
-                            {...register(`items.${idx}.precioUnitario`, { valueAsNumber: true })}
-                          />
+                          <input type="hidden" {...register(`items.${idx}.precioUnitario`)} />
                           <input
                             type="number"
                             step="0.0001"
