@@ -89,6 +89,7 @@ function tiempoRelativo(date: Date) {
 const baseColumns: ColumnDef<ClienteRow>[] = [
   {
     id: 'nombre',
+    accessorFn: (row) => nombreDisplay(row),
     header: 'Razón social',
     cell: ({ row }) => (
       <span className="flex items-center gap-2">
