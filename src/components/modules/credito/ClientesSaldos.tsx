@@ -52,7 +52,7 @@ export function ClientesSaldos({
           </tr>
         </thead>
         <tbody className="divide-y divide-orion-border">
-          {rows.map((r) => {
+          {rows.map((r, clientIdx) => {
             const currencies: Array<{
               ccy: 'USD' | 'PEN';
               linea: number;
@@ -91,7 +91,8 @@ export function ClientesSaldos({
                   key={`${r.clienteId}-${c.ccy}`}
                   className={cn(
                     'transition-colors hover:bg-orion-bg-subtle',
-                    idx > 0 && 'border-t-0'
+                    idx > 0 && 'border-t-0',
+                    clientIdx % 2 === 0 ? 'bg-orion-bg' : 'bg-orion-bg-subtle/40'
                   )}
                 >
                   <td className="px-4 py-2.5">
