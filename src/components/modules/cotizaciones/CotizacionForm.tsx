@@ -525,13 +525,16 @@ export function CotizacionForm({
                           })()}
                         </Td>
                         {/* Precio */}
-                        <Td align="right" className="w-[130px]">
+                        <Td align="right" className="w-[160px]">
                           <input
                             type="number"
                             step="0.0001"
                             min="0"
                             {...register(`items.${idx}.precioUnitario`)}
-                            className={cn(inputCls, 'h-8 text-right text-[12.5px] tabular-nums')}
+                            className={cn(
+                              inputCls,
+                              'h-8 min-w-[140px] text-right text-[12.5px] tabular-nums'
+                            )}
                           />
                         </Td>
                         {/* Margen */}
