@@ -120,6 +120,9 @@ export function CotizacionForm({
   const [stockByIdx, setStockByIdx] = useState<Map<number, number>>(() => new Map());
   const [targetMargen, setTargetMargen] = useState<5 | 10 | 15 | 'custom'>(10);
   const [customMargenPct, setCustomMargenPct] = useState('20');
+  // previewId: cotización guardada como borrador para mostrar PDF inline
+  const [previewId, setPreviewId] = useState<string | null>(initial?.id ?? null);
+  const [previewPending, setPreviewPending] = useState(false);
 
   const productosById = useMemo(() => {
     const m = new Map<string, ProductoOption>();
@@ -326,6 +329,24 @@ export function CotizacionForm({
       router.push(`/${companySlug}/cotizaciones/${id}`);
     });
   };
+
+  const saveAndPreview = handleSubmit(async (data) => {
+    setPreviewPending(true);
+    setServerError(null);
+    try {
+      const res = initial
+        ? await actualizarCotizacion(initial.id, data)
+        : await crearCotizacion(data);
+      if (!res.success) {
+        setServerError(res.error);
+      } else {
+        const id = initial ? initial.id : (res.data as { id: string }).id;
+        setPreviewId(id);
+      }
+    } finally {
+      setPreviewPending(false);
+    }
+  });
 
   const monedaSymbol = moneda === 'USD' ? 'USD' : 'PEN';
 
@@ -847,46 +868,77 @@ export function CotizacionForm({
           <Card>
             <CardHead>
               <CardTitle>Vista previa PDF</CardTitle>
-              <button
-                type="button"
-                className="ml-auto text-orion-fg-muted hover:text-orion-fg"
-                aria-label="Abrir vista previa"
-              >
-                <ExternalLink size={14} />
-              </button>
+              {previewId && (
+                <a
+                  href={`/api/${companySlug}/cotizaciones/${previewId}/pdf`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto text-orion-fg-muted hover:text-orion-fg"
+                  aria-label="Abrir PDF en pestaña nueva"
+                >
+                  <ExternalLink size={14} />
+                </a>
+              )}
             </CardHead>
             <div className="p-3">
-              {/* Aspect ratio 8.5/11 PDF preview */}
-              <div
-                className="w-full overflow-hidden rounded border border-orion-border bg-orion-bg-subtle p-3"
-                style={{ aspectRatio: '8.5 / 11' }}
-              >
-                {/* Company initials header */}
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="grid h-6 w-6 shrink-0 place-items-center rounded bg-tenant-accent text-[9px] font-bold text-white">
-                    IX
+              {previewId ? (
+                <div className="flex flex-col gap-2">
+                  <iframe
+                    key={previewId}
+                    src={`/api/${companySlug}/cotizaciones/${previewId}/pdf`}
+                    className="w-full rounded border border-orion-border bg-orion-bg-subtle"
+                    style={{ aspectRatio: '8.5 / 11' }}
+                    title="Vista previa PDF"
+                  />
+                  <button
+                    type="button"
+                    onClick={saveAndPreview}
+                    disabled={previewPending}
+                    className={cn(btnSecondary, 'w-full justify-center text-[12px]')}
+                  >
+                    {previewPending ? 'Guardando…' : 'Actualizar vista previa PDF'}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {/* Skeleton */}
+                  <div
+                    className="w-full overflow-hidden rounded border border-orion-border bg-orion-bg-subtle p-3"
+                    style={{ aspectRatio: '8.5 / 11' }}
+                  >
+                    <div className="mb-3 flex items-center gap-2">
+                      <div className="grid h-6 w-6 shrink-0 place-items-center rounded bg-tenant-accent text-[9px] font-bold text-white">
+                        IX
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="h-2 w-24 rounded-sm bg-orion-border" />
+                        <div className="bg-orion-border/60 h-1.5 w-16 rounded-sm" />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="bg-orion-border/50 h-2 w-full rounded-sm" />
+                      <div className="bg-orion-border/50 h-2 w-[90%] rounded-sm" />
+                      <div className="bg-orion-border/50 h-2 w-[75%] rounded-sm" />
+                      <div className="bg-orion-border/50 h-2 w-[85%] rounded-sm" />
+                      <div className="bg-orion-border/50 h-2 w-[60%] rounded-sm" />
+                      <div className="bg-orion-border/50 h-2 w-[70%] rounded-sm" />
+                    </div>
+                    <div className="mt-4">
+                      <span className="font-mono text-[9px] text-orion-fg-muted">
+                        {numero ?? 'COT-XXXX'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-0.5">
-                    <div className="h-2 w-24 rounded-sm bg-orion-border" />
-                    <div className="bg-orion-border/60 h-1.5 w-16 rounded-sm" />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={saveAndPreview}
+                    disabled={previewPending}
+                    className={cn(btnSecondary, 'w-full justify-center text-[12px]')}
+                  >
+                    {previewPending ? 'Guardando borrador…' : 'Actualizar vista previa PDF'}
+                  </button>
                 </div>
-                {/* Skeleton rows */}
-                <div className="space-y-1.5">
-                  <div className="bg-orion-border/50 h-2 w-full rounded-sm" />
-                  <div className="bg-orion-border/50 h-2 w-[90%] rounded-sm" />
-                  <div className="bg-orion-border/50 h-2 w-[75%] rounded-sm" />
-                  <div className="bg-orion-border/50 h-2 w-[85%] rounded-sm" />
-                  <div className="bg-orion-border/50 h-2 w-[60%] rounded-sm" />
-                  <div className="bg-orion-border/50 h-2 w-[70%] rounded-sm" />
-                </div>
-                {/* Cotización number */}
-                <div className="mt-4">
-                  <span className="font-mono text-[9px] text-orion-fg-muted">
-                    {numero ?? 'COT-XXXX'}
-                  </span>
-                </div>
-              </div>
+              )}
             </div>
           </Card>
         </div>
