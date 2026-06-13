@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm'; // noqa
+import { sql } from 'drizzle-orm';
 import { requirePermissionPage } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
 import { DashboardCxC, type DashboardCxCData } from '@/components/modules/credito/DashboardCxC';
@@ -32,49 +32,57 @@ function AgingStrip({
     { label: '+90 días', value: buckets.bucket90mas, color: 'var(--danger)' },
   ] as const;
 
-  if (totalVencido === 0) return null;
-
   return (
     <div className="mt-3">
       <div className="mb-2 flex items-center gap-2">
         <span
           className={`text-[11px] font-semibold ${ccy === 'USD' ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`}
         >
-          {ccy}
+          {ccy === 'USD' ? 'USD' : 'Soles'}
         </span>
-        <span className="text-[12px] text-orion-fg-muted">
-          {symbol} {totalVencido.toLocaleString('es-PE', { minimumFractionDigits: 2 })} vencido
-        </span>
+        {totalVencido > 0 ? (
+          <span className="text-[12px] text-orion-fg-muted">
+            {symbol} {totalVencido.toLocaleString('es-PE', { minimumFractionDigits: 2 })} vencido
+          </span>
+        ) : (
+          <span className="text-[12px] italic text-orion-fg-faint">
+            Sin facturas vencidas en {ccy === 'USD' ? 'USD' : 'soles'}
+          </span>
+        )}
       </div>
-      <div className="mb-2 grid grid-cols-4 gap-2">
-        {items.map((b) => (
-          <div key={b.label} className="rounded-md bg-orion-bg-subtle p-2.5">
-            <div className="mb-1 flex items-center gap-1.5">
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: b.color }} />
-              <span className="text-[11px] text-orion-fg-muted">{b.label}</span>
-            </div>
-            <div className="text-[16px] font-semibold text-orion-fg">
-              {symbol}{' '}
-              {b.value.toLocaleString('es-PE', {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })}
-            </div>
+      {totalVencido > 0 && (
+        <>
+          <div className="mb-2 grid grid-cols-4 gap-2">
+            {items.map((b) => (
+              <div key={b.label} className="rounded-md bg-orion-bg-subtle p-2.5">
+                <div className="mb-1 flex items-center gap-1.5">
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: b.color }} />
+                  <span className="text-[11px] text-orion-fg-muted">{b.label}</span>
+                </div>
+                <div className="text-[16px] font-semibold text-orion-fg">
+                  {symbol}{' '}
+                  {b.value.toLocaleString('es-PE', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      {total > 0 && (
-        <div className="flex h-1.5 overflow-hidden rounded-full">
-          {items.map(
-            (seg) =>
-              seg.value > 0 && (
-                <div
-                  key={seg.label}
-                  style={{ width: `${(seg.value / total) * 100}%`, background: seg.color }}
-                />
-              )
+          {total > 0 && (
+            <div className="flex h-1.5 overflow-hidden rounded-full">
+              {items.map(
+                (seg) =>
+                  seg.value > 0 && (
+                    <div
+                      key={seg.label}
+                      style={{ width: `${(seg.value / total) * 100}%`, background: seg.color }}
+                    />
+                  )
+              )}
+            </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
@@ -97,7 +105,7 @@ function AgingReportCard({
     <div className="rounded-lg border border-orion-border bg-orion-bg p-4">
       <div className="mb-1 flex items-center">
         <span className="text-[13px] font-semibold text-orion-fg">
-          Aging report &middot;{' '}
+          Antigüedad de cartera &middot;{' '}
           {new Date().toLocaleDateString('es-PE', {
             day: 'numeric',
             month: 'short',
@@ -109,11 +117,10 @@ function AgingReportCard({
         </span>
       </div>
 
-      {totalVencidoUsd === 0 && totalVencidoPen === 0 && (
-        <p className="mt-3 text-sm text-orion-fg-muted">No hay facturas vencidas.</p>
-      )}
-
       <AgingStrip buckets={agingUsd} ccy="USD" totalVencido={totalVencidoUsd} />
+
+      <hr className="my-3 border-orion-border" />
+
       <AgingStrip buckets={agingPen} ccy="PEN" totalVencido={totalVencidoPen} />
     </div>
   );
@@ -129,9 +136,43 @@ export default async function CreditoPage({
   const { companySlug } = await params;
   const { tenant } = await requirePermissionPage('credito.ver', companySlug);
 
-  // Queries paralelas sobre vistas materializadas / vistas normales
-  const [totalesRaw, agingRaw, clientesRaw] = await Promise.all([
-    // KPIs generales desde cuentas_por_cobrar
+  const agingQuery = (moneda: 'USD' | 'PEN') =>
+    db.execute<{
+      bucket_0_30: string;
+      bucket_31_60: string;
+      bucket_61_90: string;
+      bucket_90_plus: string;
+    }>(sql`
+      SELECT
+        COALESCE(SUM(f.total - COALESCE(p.total_pagado, 0)) FILTER (
+          WHERE COALESCE(p.total_pagado, 0) < f.total
+            AND CURRENT_DATE - f.fecha_vencimiento BETWEEN 0 AND 30
+        ), 0)::text AS bucket_0_30,
+        COALESCE(SUM(f.total - COALESCE(p.total_pagado, 0)) FILTER (
+          WHERE COALESCE(p.total_pagado, 0) < f.total
+            AND CURRENT_DATE - f.fecha_vencimiento BETWEEN 31 AND 60
+        ), 0)::text AS bucket_31_60,
+        COALESCE(SUM(f.total - COALESCE(p.total_pagado, 0)) FILTER (
+          WHERE COALESCE(p.total_pagado, 0) < f.total
+            AND CURRENT_DATE - f.fecha_vencimiento BETWEEN 61 AND 90
+        ), 0)::text AS bucket_61_90,
+        COALESCE(SUM(f.total - COALESCE(p.total_pagado, 0)) FILTER (
+          WHERE COALESCE(p.total_pagado, 0) < f.total
+            AND CURRENT_DATE - f.fecha_vencimiento > 90
+        ), 0)::text AS bucket_90_plus
+      FROM facturas f
+      LEFT JOIN (
+        SELECT factura_id, SUM(monto) AS total_pagado
+        FROM pagos
+        GROUP BY factura_id
+      ) p ON p.factura_id = f.id
+      WHERE f.tenant_id = ${tenant.id}
+        AND f.estado_sunat = 'aceptada'
+        AND f.forma_pago = 'credito'
+        AND f.moneda = ${moneda}
+    `);
+
+  const [totalesRaw, agingUsdRaw, agingPenRaw, clientesRaw] = await Promise.all([
     db.execute<{
       clientes_con_deuda: string;
       total_cxc_usd: string;
@@ -149,24 +190,8 @@ export default async function CreditoPage({
       WHERE tenant_id = ${tenant.id}
         AND (saldo_total_usd > 0 OR saldo_total_pen > 0)
     `),
-
-    // Buckets aging
-    db.execute<{
-      bucket_0_30: string;
-      bucket_31_60: string;
-      bucket_61_90: string;
-      bucket_90_plus: string;
-    }>(sql`
-      SELECT
-        COALESCE(SUM(bucket_0_30), 0)::text    AS bucket_0_30,
-        COALESCE(SUM(bucket_31_60), 0)::text   AS bucket_31_60,
-        COALESCE(SUM(bucket_61_90), 0)::text   AS bucket_61_90,
-        COALESCE(SUM(bucket_90_plus), 0)::text AS bucket_90_plus
-      FROM aging_cxc
-      WHERE tenant_id = ${tenant.id}
-    `),
-
-    // Lista clientes con saldo, ordenada por vencido DESC
+    agingQuery('USD'),
+    agingQuery('PEN'),
     db.execute<{
       cliente_id: string;
       nombre_cliente: string;
@@ -201,7 +226,6 @@ export default async function CreditoPage({
     `),
   ]);
 
-  // Mapear resultados — db.execute devuelve el array directamente (no .rows)
   const totalesRow = totalesRaw[0] ?? {
     clientes_con_deuda: '0',
     total_cxc_usd: '0',
@@ -218,18 +242,17 @@ export default async function CreditoPage({
     totalVencidoPen: Number(totalesRow.total_vencido_pen),
   };
 
-  const agingRow = agingRaw[0] ?? {
-    bucket_0_30: '0',
-    bucket_31_60: '0',
-    bucket_61_90: '0',
-    bucket_90_plus: '0',
-  };
+  const zeroAging: AgingBuckets = { bucket0a30: 0, bucket31a60: 0, bucket61a90: 0, bucket90mas: 0 };
 
-  const agingBuckets: AgingBuckets = {
-    bucket0a30: Number(agingRow.bucket_0_30),
-    bucket31a60: Number(agingRow.bucket_31_60),
-    bucket61a90: Number(agingRow.bucket_61_90),
-    bucket90mas: Number(agingRow.bucket_90_plus),
+  const toAgingBuckets = (raw: Awaited<ReturnType<typeof agingQuery>>): AgingBuckets => {
+    const r = raw[0];
+    if (!r) return zeroAging;
+    return {
+      bucket0a30: Number(r.bucket_0_30),
+      bucket31a60: Number(r.bucket_31_60),
+      bucket61a90: Number(r.bucket_61_90),
+      bucket90mas: Number(r.bucket_90_plus),
+    };
   };
 
   const clientesRows: ClienteSaldoRow[] = (
@@ -262,7 +285,6 @@ export default async function CreditoPage({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -274,27 +296,26 @@ export default async function CreditoPage({
               tips={[
                 'Otorga línea de crédito al cliente antes de registrar pagos',
                 'Los pagos parciales reducen el saldo — registra cada cobro',
-                'El aging muestra cuántos días llevan pendientes las facturas',
+                'La antigüedad de cartera muestra cuántos días llevan pendientes las facturas',
               ]}
             />
           </div>
-          <p className="mt-0.5 text-sm text-orion-fg-muted">Saldos pendientes y aging de cartera</p>
+          <p className="mt-0.5 text-sm text-orion-fg-muted">
+            Saldos pendientes y antigüedad de cartera
+          </p>
         </div>
       </div>
 
-      {/* KPI cards */}
       <DashboardCxC data={dashboardData} />
 
-      {/* Aging report card */}
       <AgingReportCard
-        agingUsd={agingBuckets}
-        agingPen={agingBuckets}
+        agingUsd={toAgingBuckets(agingUsdRaw)}
+        agingPen={toAgingBuckets(agingPenRaw)}
         totalVencidoUsd={dashboardData.totalVencidoUsd}
         totalVencidoPen={dashboardData.totalVencidoPen}
         clientesConDeuda={dashboardData.clientesConDeuda}
       />
 
-      {/* Tabla clientes */}
       <div>
         <h2 className="mb-3 text-sm font-semibold text-orion-fg">Clientes con saldo pendiente</h2>
         <ClientesSaldos rows={clientesRows} companySlug={tenant.slug} />
