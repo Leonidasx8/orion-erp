@@ -146,7 +146,7 @@ export default async function CreditoPage({
       SELECT
         COALESCE(SUM(f.total - COALESCE(p.total_pagado, 0)) FILTER (
           WHERE COALESCE(p.total_pagado, 0) < f.total
-            AND CURRENT_DATE - f.fecha_vencimiento BETWEEN 0 AND 30
+            AND CURRENT_DATE - f.fecha_vencimiento BETWEEN 1 AND 30
         ), 0)::text AS bucket_0_30,
         COALESCE(SUM(f.total - COALESCE(p.total_pagado, 0)) FILTER (
           WHERE COALESCE(p.total_pagado, 0) < f.total
@@ -161,11 +161,12 @@ export default async function CreditoPage({
             AND CURRENT_DATE - f.fecha_vencimiento > 90
         ), 0)::text AS bucket_90_plus
       FROM facturas f
-      LEFT JOIN (
-        SELECT factura_id, SUM(monto) AS total_pagado
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(SUM(monto), 0) AS total_pagado
         FROM pagos
-        GROUP BY factura_id
-      ) p ON p.factura_id = f.id
+        WHERE factura_id = f.id
+          AND moneda = f.moneda
+      ) p ON true
       WHERE f.tenant_id = ${tenant.id}
         AND f.estado_sunat = 'aceptada'
         AND f.forma_pago = 'credito'
@@ -255,8 +256,8 @@ export default async function CreditoPage({
     };
   };
 
-  const clientesRows: ClienteSaldoRow[] = (
-    clientesRaw as unknown as Array<{
+  const clientesRows: ClienteSaldoRow[] = Array.from(
+    clientesRaw as Iterable<{
       cliente_id: string;
       nombre_cliente: string;
       linea_credito_usd: string;
