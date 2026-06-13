@@ -123,6 +123,7 @@ export function CotizacionForm({
   // previewId: cotización guardada como borrador para mostrar PDF inline
   const [previewId, setPreviewId] = useState<string | null>(initial?.id ?? null);
   const [previewPending, setPreviewPending] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   const productosById = useMemo(() => {
     const m = new Map<string, ProductoOption>();
@@ -330,23 +331,31 @@ export function CotizacionForm({
     });
   };
 
-  const saveAndPreview = handleSubmit(async (data) => {
-    setPreviewPending(true);
-    setServerError(null);
-    try {
-      const res = initial
-        ? await actualizarCotizacion(initial.id, data)
-        : await crearCotizacion(data);
-      if (!res.success) {
-        setServerError(res.error);
-      } else {
-        const id = initial ? initial.id : (res.data as { id: string }).id;
-        setPreviewId(id);
+  const saveAndPreview = handleSubmit(
+    async (data) => {
+      setPreviewPending(true);
+      setPreviewError(null);
+      setServerError(null);
+      try {
+        const res = initial
+          ? await actualizarCotizacion(initial.id, data)
+          : await crearCotizacion(data);
+        if (!res.success) {
+          setPreviewError(res.error);
+        } else {
+          const id = initial ? initial.id : (res.data as { id: string }).id;
+          setPreviewId(id);
+        }
+      } finally {
+        setPreviewPending(false);
       }
-    } finally {
-      setPreviewPending(false);
+    },
+    () => {
+      setPreviewError(
+        'Selecciona un cliente y agrega al menos un ítem para generar la vista previa.'
+      );
     }
-  });
+  );
 
   const monedaSymbol = moneda === 'USD' ? 'USD' : 'PEN';
 
@@ -904,6 +913,9 @@ export function CotizacionForm({
                   >
                     {previewPending ? 'Guardando…' : 'Actualizar vista previa PDF'}
                   </button>
+                  {previewError && (
+                    <p className="text-center text-[11px] text-danger-fg">{previewError}</p>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
@@ -943,6 +955,9 @@ export function CotizacionForm({
                   >
                     {previewPending ? 'Guardando borrador…' : 'Actualizar vista previa PDF'}
                   </button>
+                  {previewError && (
+                    <p className="text-center text-[11px] text-danger-fg">{previewError}</p>
+                  )}
                 </div>
               )}
             </div>

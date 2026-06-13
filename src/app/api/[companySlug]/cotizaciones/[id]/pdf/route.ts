@@ -9,10 +9,12 @@ import { CotizacionPDF } from '@/lib/pdf/CotizacionPDF';
 import { CotizacionPDFDesignA } from '@/lib/pdf/CotizacionPDF-A';
 import { CotizacionPDFDesignB } from '@/lib/pdf/CotizacionPDF-B';
 
-const LOGOS: Record<string, string> = {
-  idex: 'http://localhost:3000/idex-logo.png',
-  agroalves: 'http://localhost:3000/agroalves-logo.png',
-};
+function getLogoUrl(req: NextRequest, slug: string): string {
+  const origin = req.nextUrl.origin;
+  const known: Record<string, string> = { idex: 'idex-logo.png', agroalves: 'agroalves-logo.png' };
+  const file = known[slug];
+  return file ? `${origin}/${file}` : '';
+}
 
 export async function GET(
   req: NextRequest,
@@ -162,7 +164,7 @@ export async function GET(
       terminosCondiciones: row.terminosCondiciones,
     };
 
-    const logoUrl = LOGOS[companySlug];
+    const logoUrl = getLogoUrl(req, companySlug);
     const Component =
       design === 'a'
         ? CotizacionPDFDesignA
