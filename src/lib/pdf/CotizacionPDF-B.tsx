@@ -40,9 +40,9 @@ const s = StyleSheet.create({
     paddingBottom: 20,
     borderBottom: `1 solid ${C.border}`,
   },
-  headerL: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  logo: { width: 110, height: 36, objectFit: 'contain' },
-  tenantBlock: { marginLeft: 4 },
+  headerL: { flexDirection: 'column', alignItems: 'flex-start' },
+  logo: { width: 120, height: 40, objectFit: 'contain', marginBottom: 8 },
+  tenantBlock: {},
   tenantName: { fontSize: 13, fontWeight: 700, color: C.ink, letterSpacing: -0.2 },
   tenantSub: { fontSize: 8.5, color: C.muted, marginTop: 1 },
   tenantSub2: { fontSize: 8.5, color: C.muted },
@@ -127,10 +127,10 @@ const s = StyleSheet.create({
   },
   cSku: { width: '12%' },
   cDesc: { flex: 1 },
-  cQty: { width: '8%', textAlign: 'right' },
-  cEntrega: { width: '11%', textAlign: 'right' },
-  cPrice: { width: '15%', textAlign: 'right' },
-  cTotal: { width: '15%', textAlign: 'right' },
+  cQty: { width: '12%', alignItems: 'flex-end' },
+  cEntrega: { width: '11%', alignItems: 'flex-end' },
+  cPrice: { width: '14%', alignItems: 'flex-end' },
+  cTotal: { width: '14%', alignItems: 'flex-end' },
   td: { fontSize: 8, color: C.body },
   tdMuted: { fontSize: 7.5, color: C.muted, fontFamily: 'Courier' },
 
@@ -287,23 +287,41 @@ export function CotizacionPDFDesignB({
               <View style={s.thead}>
                 <Text style={[s.thText, s.cSku]}>SKU</Text>
                 <Text style={[s.thText, s.cDesc]}>DESCRIPCIÓN</Text>
-                <Text style={[s.thText, s.cQty]}>CANT.</Text>
-                {hasEntrega ? <Text style={[s.thText, s.cEntrega]}>ENTREGA</Text> : null}
-                <Text style={[s.thText, s.cPrice]}>{data.moneda} P. UNIT.</Text>
-                <Text style={[s.thText, s.cTotal]}>{data.moneda} SUBTOTAL</Text>
+                <View style={s.cQty}>
+                  <Text style={s.thText}>CANT.</Text>
+                </View>
+                {hasEntrega ? (
+                  <View style={s.cEntrega}>
+                    <Text style={s.thText}>ENTREGA</Text>
+                  </View>
+                ) : null}
+                <View style={s.cPrice}>
+                  <Text style={s.thText}>{data.moneda} P. UNIT.</Text>
+                </View>
+                <View style={s.cTotal}>
+                  <Text style={s.thText}>{data.moneda} SUBTOTAL</Text>
+                </View>
               </View>
               {data.items.map((it, i) => (
                 <View key={i} style={i % 2 === 1 ? s.trAlt : s.tr}>
                   <Text style={[s.tdMuted, s.cSku]}>{it.sku ?? '—'}</Text>
                   <Text style={[s.td, s.cDesc]}>{it.descripcion}</Text>
-                  <Text style={[s.td, s.cQty]}>{it.cantidad.toLocaleString('en-US')}</Text>
+                  <View style={s.cQty}>
+                    <Text style={s.td}>{it.cantidad.toLocaleString('en-US')}</Text>
+                  </View>
                   {hasEntrega ? (
-                    <Text style={[s.td, s.cEntrega]}>
-                      {it.tiempoEntregaDias ? `${it.tiempoEntregaDias}d` : '—'}
-                    </Text>
+                    <View style={s.cEntrega}>
+                      <Text style={s.td}>
+                        {it.tiempoEntregaDias ? `${it.tiempoEntregaDias}d` : '—'}
+                      </Text>
+                    </View>
                   ) : null}
-                  <Text style={[s.td, s.cPrice]}>{num(it.precioUnitario, 4)}</Text>
-                  <Text style={[s.td, s.cTotal]}>{num(it.subtotal, 2)}</Text>
+                  <View style={s.cPrice}>
+                    <Text style={s.td}>{num(it.precioUnitario, 4)}</Text>
+                  </View>
+                  <View style={s.cTotal}>
+                    <Text style={s.td}>{num(it.subtotal, 2)}</Text>
+                  </View>
                 </View>
               ))}
             </View>
