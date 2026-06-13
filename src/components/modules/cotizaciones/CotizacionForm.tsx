@@ -239,12 +239,12 @@ export function CotizacionForm({
   }, [fields, itemsW, costosByIdx, margenMinimoByIdx]);
 
   const applyMargen = (pct: number) => {
-    const newItems = itemsW.map((item, idx) => {
+    itemsW.forEach((_item, idx) => {
       const costo = costosByIdx.get(idx);
-      if (costo == null || costo === 0) return item;
-      return { ...item, precioUnitario: Math.round(costo * (1 + pct / 100) * 10000) / 10000 };
+      if (costo == null || costo === 0) return;
+      const newPrice = Math.round(costo * (1 + pct / 100) * 10000) / 10000;
+      setValue(`items.${idx}.precioUnitario`, newPrice, { shouldDirty: true });
     });
-    setValue('items', newItems as CotizacionInput['items'], { shouldDirty: true });
   };
 
   const aplicarProducto = (idx: number, productoId: string) => {
