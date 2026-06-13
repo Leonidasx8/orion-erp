@@ -554,8 +554,12 @@ export function CotizacionForm({
                             return null;
                           })()}
                         </Td>
-                        {/* Precio — input controlado para que setValue/applyMargen actualice DOM y totales */}
+                        {/* Precio — hidden registered input keeps RHF state; visible input is controlled */}
                         <Td align="right" className="w-[160px]">
+                          <input
+                            type="hidden"
+                            {...register(`items.${idx}.precioUnitario`, { valueAsNumber: true })}
+                          />
                           <input
                             type="number"
                             step="0.0001"
