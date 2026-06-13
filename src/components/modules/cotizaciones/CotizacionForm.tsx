@@ -243,9 +243,10 @@ export function CotizacionForm({
   }, [fields, itemsW, costosByIdx, margenMinimoByIdx]);
 
   const applyMargen = (pct: number) => {
-    itemsW.forEach((_item, idx) => {
-      const costo = costosByIdx.get(idx);
-      if (costo == null || costo === 0) return;
+    itemsW.forEach((item, idx) => {
+      // Use catalog cost if available; fall back to current price for manual items
+      const costo = costosByIdx.get(idx) ?? Number(item?.precioUnitario);
+      if (!costo || costo === 0) return;
       const newPrice = Math.round(costo * (1 + pct / 100) * 10000) / 10000;
       setValue(`items.${idx}.precioUnitario`, newPrice, { shouldDirty: true });
     });
@@ -282,10 +283,8 @@ export function CotizacionForm({
     // Use costoUnitario (supplier cost from CELSA) as cost basis for margin.
     // Fall back to precioUnitario only if costoUnitario not set.
     const costoBasis = p.costoUnitario ?? p.precio;
-    const numMargen = typeof targetMargen === 'number' ? targetMargen : null;
-    const precioConMargen =
-      numMargen != null ? Math.round(costoBasis * (1 + numMargen / 100) * 10000) / 10000 : p.precio;
-    setValue(`items.${idx}.precioUnitario`, precioConMargen, opts);
+    // Set catalog list price; user applies margin via the margin buttons
+    setValue(`items.${idx}.precioUnitario`, p.precio, opts);
     setValue(`items.${idx}.afectaIgv`, p.tieneIgv, opts);
     // Store supplier cost as cost base for margin display and recalculation
     setCostosByIdx((prev) => new Map(prev).set(idx, costoBasis));
