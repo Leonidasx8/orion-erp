@@ -247,7 +247,8 @@ export function CotizacionForm({
       // Use catalog cost if available; fall back to current price for manual items
       const costo = costosByIdx.get(idx) ?? Number(item?.precioUnitario);
       if (!costo || costo === 0) return;
-      const newPrice = Math.round(costo * (1 + pct / 100) * 10000) / 10000;
+      // margen sobre venta: precio = costo / (1 - pct/100) — consistente con el display
+      const newPrice = Math.round((costo / (1 - pct / 100)) * 10000) / 10000;
       setValue(`items.${idx}.precioUnitario`, newPrice, { shouldDirty: true });
     });
   };
