@@ -5,13 +5,19 @@ import { Clock } from 'lucide-react';
 
 // Ventana de comunicación de baja SUNAT: hasta el 7.º día calendario
 // contado desde el día siguiente a la emisión (RS 097-2012/SUNAT).
-// Pasada la ventana, la anulación sigue siendo posible vía NC (sin plazo).
 const DIAS_VENTANA_BAJA = 7;
+// Ventana de baja para Nota de Crédito: 15 días calendario desde su emisión.
+const DIAS_VENTANA_NC = 15;
 
 export function deadlineBaja(fechaEmision: string): number {
   // fechaEmision es 'YYYY-MM-DD'; la ventana corre en hora de Lima (UTC-5)
   const inicio = new Date(`${fechaEmision}T00:00:00-05:00`).getTime();
   return inicio + (DIAS_VENTANA_BAJA + 1) * 24 * 60 * 60 * 1000;
+}
+
+export function deadlineBajaNc(fechaEmisionNc: string): number {
+  const inicio = new Date(`${fechaEmisionNc}T00:00:00-05:00`).getTime();
+  return inicio + (DIAS_VENTANA_NC + 1) * 24 * 60 * 60 * 1000;
 }
 
 export function formatDuracion(ms: number): string {
@@ -56,9 +62,9 @@ export function AnulacionCountdown({
     return (
       <span
         className="text-xs text-orion-fg-faint"
-        title="Pasó la ventana de baja SUNAT (7 días). La anulación vía Nota de Crédito sigue disponible, sin plazo."
+        title="Pasó la ventana de baja directa SUNAT (7 días). Aún puede anularse emitiendo una Nota de Crédito (ventana de baja de la NC: 15 días desde su emisión)."
       >
-        Ventana de baja vencida · NC sin plazo
+        Ventana de baja vencida · NC: 15 días
       </span>
     );
   }
@@ -69,7 +75,7 @@ export function AnulacionCountdown({
       className={`inline-flex items-center gap-1 font-mono text-xs ${
         urgente ? 'text-warn-fg' : 'text-orion-fg-muted'
       }`}
-      title="Tiempo restante de la ventana de baja SUNAT (7 días desde la emisión). Después solo se anula vía Nota de Crédito, sin plazo."
+      title="Tiempo restante de la ventana de baja directa SUNAT (7 días desde la emisión). Después se anula emitiendo una Nota de Crédito (la NC tiene 15 días para su propia baja)."
     >
       <Clock size={11} className="shrink-0" />
       {compact ? formatRestante(restante) : `Baja SUNAT: ${formatRestante(restante)}`}

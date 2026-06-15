@@ -160,7 +160,7 @@ export default async function FacturasPage({
             tips={[
               'Las facturas se envían automáticamente a Nubefact cada 60 segundos',
               'Estado SUNAT: Pendiente → Aceptada (con PDF/CDR) o Rechazada (ver motivo)',
-              'Toda factura puede anularse con "Generar Nota de Crédito" desde el detalle — la NC no tiene plazo SUNAT (la ventana de baja directa es de 7 días). La factura anulada queda marcada y conserva su NC vinculada',
+              'Toda factura puede anularse con "Generar Nota de Crédito" desde el detalle. Plazos SUNAT: baja directa de la factura = 7 días desde emisión; baja de la NC = 15 días desde que se emite la NC. La factura anulada queda marcada y conserva su NC vinculada.',
             ]}
           />
         </div>
