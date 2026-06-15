@@ -2,7 +2,8 @@ import { eq } from 'drizzle-orm';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { userHasPermission } from '@/lib/auth/require-permission';
 import { db } from '@/lib/db/client';
-import { productos, categoriasProducto, unidadesMedida } from '@/lib/db/schema';
+import { productos } from '@/lib/db/schema';
+import { getUnidadesMedida, getCategoriasByTenant } from '@/lib/db/queries/cached';
 import { ProductosList } from '@/components/modules/productos/ProductosList';
 import { ModuleHelp } from '@/components/shared/ModuleHelp';
 
@@ -31,8 +32,8 @@ export default async function ProductosPage() {
       .from(productos)
       .where(eq(productos.tenantId, tenant.id))
       .orderBy(productos.nombre),
-    db.select().from(categoriasProducto).where(eq(categoriasProducto.tenantId, tenant.id)),
-    db.select().from(unidadesMedida),
+    getCategoriasByTenant(tenant.id),
+    getUnidadesMedida(),
   ]);
 
   return (

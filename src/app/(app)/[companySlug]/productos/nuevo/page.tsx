@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/db/client';
-import { categoriasProducto, unidadesMedida, clientes } from '@/lib/db/schema';
+import { clientes } from '@/lib/db/schema';
 import { userHasPermission } from '@/lib/auth/require-permission';
 import { getCurrentTenant } from '@/lib/auth/current-tenant';
 import { ProductoForm } from '@/components/modules/productos/ProductoForm';
 import { and, eq } from 'drizzle-orm';
+import { getUnidadesMedida, getCategoriasByTenant } from '@/lib/db/queries/cached';
 
 export const metadata = { title: 'Nuevo producto' };
 
@@ -20,8 +21,8 @@ export default async function NuevoProductoPage({
 
   const tenant = await getCurrentTenant();
   const [categorias, uoms, proveedoresRows] = await Promise.all([
-    db.select().from(categoriasProducto).where(eq(categoriasProducto.tenantId, tenant.id)),
-    db.select().from(unidadesMedida),
+    getCategoriasByTenant(tenant.id),
+    getUnidadesMedida(),
     db
       .select({
         id: clientes.id,

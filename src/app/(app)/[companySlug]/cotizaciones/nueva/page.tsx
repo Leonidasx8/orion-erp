@@ -27,7 +27,7 @@ export default async function NuevaCotizacionPage({
   const canCreate = await userHasPermission('cotizaciones.crear');
   if (!canCreate) redirect(`/${companySlug}/cotizaciones`);
 
-  const [clientesRows, productosRows] = await Promise.all([
+  const [clientesRows, productosRows, stockRows] = await Promise.all([
     db
       .select({
         id: clientes.id,
@@ -49,14 +49,16 @@ export default async function NuevaCotizacionPage({
         tieneIgv: productos.tieneIgv,
         unidadMedida: productos.unidadMedida,
         activo: productos.activo,
-        stockActual: sql<
-          number | null
-        >`(SELECT stock FROM stock_actual WHERE producto_id = ${productos.id})`,
       })
       .from(productos)
       .where(eq(productos.tenantId, tenant.id))
       .orderBy(asc(productos.codigo)),
+    db.execute<{ producto_id: string; stock: string }>(
+      sql`SELECT producto_id::text, stock::text FROM stock_actual WHERE tenant_id = ${tenant.id}`
+    ),
   ]);
+
+  const stockMap = new Map(Array.from(stockRows).map((r) => [r.producto_id, Number(r.stock)]));
 
   const clientesOpt: ClienteOption[] = clientesRows.map((c) => ({
     id: c.id,
@@ -74,7 +76,7 @@ export default async function NuevaCotizacionPage({
       margenMinimo: p.margenMinimo != null ? Number(p.margenMinimo) : null,
       tieneIgv: p.tieneIgv,
       unidadMedida: p.unidadMedida,
-      stockActual: p.stockActual != null ? Number(p.stockActual) : null,
+      stockActual: stockMap.get(p.id) ?? null,
     }));
 
   return (
