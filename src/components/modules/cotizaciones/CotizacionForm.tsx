@@ -529,13 +529,16 @@ export function CotizacionForm({
                           )}
                         </Td>
                         {/* Cant. */}
-                        <Td align="right" className="w-[80px]">
+                        <Td align="right" className="w-[96px]">
                           <input
                             type="number"
                             step="0.01"
                             min="0"
                             {...register(`items.${idx}.cantidad`)}
-                            className={cn(inputCls, 'h-8 text-right text-[12.5px] tabular-nums')}
+                            className={cn(
+                              inputCls,
+                              'h-8 text-right text-[12.5px] tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+                            )}
                           />
                           {(() => {
                             const stock = stockByIdx.get(idx);

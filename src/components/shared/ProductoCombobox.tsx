@@ -30,7 +30,7 @@ export function ProductoCombobox({ value, productos, onChange, className }: Prop
   const searchRef = useRef<HTMLInputElement>(null);
 
   const selected = value ? productos.find((p) => p.id === value) : null;
-  const label = selected ? `${selected.codigo} · ${selected.nombre}` : '— Manual —';
+  const label = selected ? selected.codigo : '— Manual —';
 
   const q = query.trim().toLowerCase();
   const filtered = q
