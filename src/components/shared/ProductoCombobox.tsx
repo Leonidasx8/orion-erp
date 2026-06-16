@@ -86,7 +86,7 @@ export function ProductoCombobox({ value, productos, onChange, className }: Prop
               position: 'fixed',
               top: rect.bottom + 2,
               left: rect.left,
-              width: Math.max(rect.width, 280),
+              width: Math.max(rect.width, 460),
               zIndex: 9999,
             }}
             className="rounded-md border border-orion-border bg-orion-bg shadow-lg"
@@ -126,14 +126,14 @@ export function ProductoCombobox({ value, productos, onChange, className }: Prop
                     type="button"
                     onClick={() => select(p.id)}
                     className={cn(
-                      'flex w-full items-baseline gap-2 px-3 py-1.5 text-left text-[12px] hover:bg-orion-bg-muted',
+                      'flex w-full items-start gap-2 px-3 py-1.5 text-left text-[12px] hover:bg-orion-bg-muted',
                       value === p.id && 'bg-tenant-accent/10 font-medium'
                     )}
                   >
-                    <span className="shrink-0 font-mono text-[10.5px] text-orion-fg-muted">
+                    <span className="mt-0.5 shrink-0 font-mono text-[10.5px] text-orion-fg-muted">
                       {p.codigo}
                     </span>
-                    <span className="truncate text-orion-fg">{p.nombre}</span>
+                    <span className="text-orion-fg">{p.nombre}</span>
                   </button>
                 ))
               )}

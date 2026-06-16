@@ -350,6 +350,60 @@ export function ClientesList({
     initialState: { pagination: { pageSize: 25 } },
   });
 
+  function handleExport() {
+    const filas = table.getFilteredRowModel().rows.map((r) => r.original);
+    if (filas.length === 0) {
+      toast.error('No hay clientes para exportar');
+      return;
+    }
+    const headers = [
+      'Razón social / Nombre',
+      'Tipo doc',
+      'RUC / DNI',
+      'Tipo persona',
+      'Email',
+      'Teléfono',
+      'Línea crédito (USD)',
+      'Plazo crédito (días)',
+      'Estado',
+    ];
+    // Escapado CSV: comillas dobles + envolver si hay coma, comilla o salto de línea.
+    const esc = (v: string | null) => {
+      const s = (v ?? '').toString();
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const lineas = filas.map((c) =>
+      [
+        nombreDisplay(c),
+        c.tipoDocumento,
+        c.numeroDocumento,
+        c.tipoPersona === 'juridica' ? 'Jurídica' : 'Natural',
+        c.email,
+        c.telefono,
+        c.lineaCredito ? parseFloat(c.lineaCredito).toFixed(2) : '',
+        c.plazoCredito ?? '',
+        c.estado,
+      ]
+        .map(esc)
+        .join(',')
+    );
+    // BOM para que Excel reconozca UTF-8 (tildes/ñ).
+    const csv = '﻿' + [headers.join(','), ...lineas].join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const fecha = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `clientes-${fecha}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(
+      `${filas.length} cliente${filas.length !== 1 ? 's' : ''} exportado${filas.length !== 1 ? 's' : ''}`
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -370,7 +424,7 @@ export function ClientesList({
               Importar
             </Link>
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="mr-1.5 h-3.5 w-3.5" />
             Exportar
           </Button>

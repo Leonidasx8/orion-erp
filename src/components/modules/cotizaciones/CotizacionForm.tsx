@@ -530,7 +530,7 @@ export function CotizacionForm({
                           )}
                         </Td>
                         {/* Cant. */}
-                        <Td align="right" className="w-[96px]">
+                        <Td align="right" className="w-[124px]">
                           <input
                             type="number"
                             step="0.01"
@@ -538,7 +538,7 @@ export function CotizacionForm({
                             {...register(`items.${idx}.cantidad`)}
                             className={cn(
                               inputCls,
-                              'h-8 text-right text-[12.5px] tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+                              'h-8 min-w-[100px] text-right text-[12.5px] tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
                             )}
                           />
                           {(() => {
