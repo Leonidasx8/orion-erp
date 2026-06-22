@@ -86,17 +86,27 @@ export function buildFactura(p: FacturaPayload): Record<string, unknown> {
     items: p.lineas.map(buildItem),
   };
 
-  // Forma de pago
-  if (p.formaPago === 'credito' && p.cuotasCredito?.length) {
-    base.formato_de_pago = 'Credito';
-    base.cuotas = p.cuotasCredito.map((c) => ({
-      numero: c.numero,
+  // Forma de pago.
+  // Nubefact marca el comprobante como Crédito SOLO si recibe `medio_de_pago: 'credito'`
+  // (trigger) JUNTO con el cronograma `venta_al_credito` [{ cuota, fecha_de_pago, importe }].
+  // Verificado contra SUNAT: con solo `venta_al_credito` el XML salía como Contado.
+  // Los campos `formato_de_pago`/`cuotas` NO existen en la API de Nubefact y eran ignorados
+  // → por eso toda factura a crédito se emitía como Contado. Ref: ejemplo oficial Nubefact
+  // "FACTURA 29 PAGO AL CREDITO" + verificación end-to-end (XML cbc:PaymentMeansID=Credito).
+  if (p.formaPago === 'credito') {
+    // Si no se especificaron cuotas, se asume una sola por el total a la fecha de vencimiento.
+    const cuotas = p.cuotasCredito?.length
+      ? p.cuotasCredito
+      : [{ numero: 1, fecha: p.fechaVencimiento ?? p.fechaEmision, monto: p.total }];
+
+    base.medio_de_pago = 'credito';
+    base.venta_al_credito = cuotas.map((c) => ({
+      cuota: c.numero,
       fecha_de_pago: isoAFecha(c.fecha),
       importe: c.monto,
     }));
-  } else {
-    base.formato_de_pago = 'Contado';
   }
+  // Contado: no se envía nada (Nubefact lo asume Contado).
 
   // Documento de referencia (ej. cotización → no aplica; guía relacionada)
   if (p.documentoReferencia) {
