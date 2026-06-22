@@ -88,6 +88,14 @@ export async function crearGuia(
     const destinatarioTipoDoc = cliente.tipoDocumento ?? '6';
     const destinatarioNumDoc = cliente.numeroDocumento ?? '';
 
+    // "Cliente recoge" (transporte público, modalidad 01) sin transportista explícito:
+    // el propio cliente que retira es el transportista. SUNAT exige ese dato en la GRE
+    // pública; sin él la guía se rechaza.
+    const esPublico = d.modalidadTraslado === '01';
+    const transportistaRuc = d.transportistaRuc ?? (esPublico ? destinatarioNumDoc : null);
+    const transportistaNombre =
+      d.transportistaNombre ?? (esPublico ? destinatarioRazonSocial : null);
+
     // Serie T001 por defecto para guías
     const [serie] = await db
       .select()
@@ -118,8 +126,8 @@ export async function crearGuia(
         destinatarioRazonSocialSnapshot: destinatarioRazonSocial,
         destinatarioNumDocSnapshot: destinatarioNumDoc,
         destinatarioTipoDocSnapshot: destinatarioTipoDoc,
-        transportistaNombreSnapshot: d.transportistaNombre ?? null,
-        transportistaRucSnapshot: d.transportistaRuc ?? null,
+        transportistaNombreSnapshot: transportistaNombre,
+        transportistaRucSnapshot: transportistaRuc,
         vehiculoPlacaSnapshot: d.vehiculoPlaca ?? null,
         conductorBreveateSnapshot: d.conductorBrevete ?? null,
         motivoTraslado: d.motivoTraslado,

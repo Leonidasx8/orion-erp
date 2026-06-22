@@ -336,7 +336,10 @@ export async function POST(req: Request) {
               },
             }
           : {}),
-        ...(guia.transportistaNombreSnapshot || guia.conductorBreveateSnapshot
+        // Conductor solo cuando hay brevete (transporte privado / Idex lo lleva). En
+        // público (cliente recoge) NO se envía conductor: si se mandara con licencia
+        // vacía, SUNAT rechaza la guía. El transportista ahí es el cliente que retira.
+        ...(guia.conductorBreveateSnapshot
           ? {
               conductor: {
                 nombre: guia.transportistaNombreSnapshot ?? '',

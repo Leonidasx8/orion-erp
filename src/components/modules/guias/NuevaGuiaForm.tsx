@@ -140,7 +140,9 @@ export function NuevaGuiaForm({ tenantSlug, destinatarios, productos, cotizacion
         direccionLlegada,
         fechaInicioTraslado: fechaEnvio,
         motivoTraslado: motivo,
-        modalidadTraslado: caso === 'idex_envia' ? '01' : '02',
+        // "Cliente recoge" va como transporte público (01): el cliente retira, SUNAT no
+        // exige conductor ni placa. Antes iba como privado (02) y por eso lo rechazaba.
+        modalidadTraslado: caso === 'idex_envia' ? '01' : '01',
         items,
         pesoBrutoTotal: pesoNum,
         transportistaNombre: caso === 'idex_envia' ? transportista || undefined : undefined,
